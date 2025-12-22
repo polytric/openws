@@ -1,0 +1,43 @@
+using Polytric.OpenWsSdk.Core;
+using PolytricNetwork = Polytric.OpenWsSdk.Core.Network;
+using Polytric.OpenWsSdk.Core.Serializer;
+using Polytric.OpenWsSdk.Unity;
+using System;
+using System.Threading.Tasks;
+using <%= ctx.namespace %>.Models;
+
+namespace <%= ctx.namespace %> {
+    public partial class Network : PolytricNetwork {
+        public Network() {
+            _serializer = new NewtonSoftSerializer();
+            _transport = new NativeWebSocketTransport();
+        }
+
+        <% for (const message of ctx.messages) { %>
+        public async Task Send<%= message.modelClassName %>Async(<%= message.modelClassName %> message) {
+            await SendAsync("<%= message.handlerName %>", _serializer.Serialize(message)).ConfigureAwait(false);
+        }
+
+        public void Send<%= message.modelClassName %>Async(<%= message.modelClassName %> message) {
+            Send<%= message.modelClassName %>Async(message);
+        }
+        <% } %>
+
+        protected override void HandleMessage(string handlerName, string payload) {
+            switch (handlerName) {
+                <% for (const handler of ctx.handlers) { %>
+                case "<%= handler.handlerName %>":
+                    var message = _serializer.Deserialize<<%= handler.modelClassName %>>(payload);
+                    Handle<%= handler.modelClassName %>(message);
+                    On<%= handler.modelClassName %>?.Invoke(message);
+                    break;
+                <% } %>
+            }
+        }
+
+        <% for (const handler of ctx.handlers) { %>
+        private partial void Handle<%= handler.modelClassName %>(<%= handler.modelClassName %> message);
+        public event Action<<%= handler.modelClassName %>> On<%= handler.modelClassName %>;
+        <% } %>
+    }
+}

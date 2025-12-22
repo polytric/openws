@@ -1,0 +1,10 @@
+using Newtonsoft.Json;
+
+namespace <%= ctx.namespace %> {
+    public class <%= ctx.className %> {
+        <% for (const property of ctx.properties) { %>
+        [JsonProperty("<%= property.modelName %>")]
+        public <%- property.typeName %> <%= property.propertyName %><%= property.required ? "" : "?" %>;
+        <% } %>
+    }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@polytric/fastify-openws-spec",
+  "version": "0.0.1",
+  "description": "Polytric OpenWS specification plugin for Fastify",
+  "main": "index.js",
+  "scripts": {
+    "run:server": "nodemon test/server.js",
+    "test:schema": "node test/validate-schema.js && echo valid"
+  },
+  "keywords": ["websocket", "openws", "specification", "schema", "code-generation"],
+  "files": ["index.js", "LICENSE", "README.md"],
+  "author": "Polytric",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.26.1",
+  "dependencies": {
+    "fastify-plugin": "^5.1.0"
+  },
+  "devDependencies": {
+    "fastify": "^5.6.2",
+    "@fastify/websocket": "^11.2.0",
+    "@polytric/openws-spec": "workspace:*",
+    "@polytric/fastify-openws": "workspace:*",
+    "nodemon": "^3.1.11"
+  }
+}

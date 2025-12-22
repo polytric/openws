@@ -1,0 +1,8 @@
+{
+  "name": "openws",
+  "private": true,
+  "packageManager": "pnpm@10.26.1",
+  "scripts": {
+    "i": "pnpm -r install"
+  }
+}

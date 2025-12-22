@@ -1,0 +1,17 @@
+{
+    "name": "Polytric.OpenWsSdk.Unity.Runtime",
+    "rootNamespace": "",
+    "references": [
+        "Polytric.OpenWsSdk.Core.Runtime",
+        "endel.nativewebsocket"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

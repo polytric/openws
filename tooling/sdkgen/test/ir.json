@@ -1,0 +1,91 @@
+{
+	"service": {
+        "title": "Chat Example",
+        "description": "A simple chat server with one client using WS.",
+        "version": "1.0.0"
+    },
+    "network": {
+        "networkName": "ChatServer",
+        "description": "A simple chat server with one client using WS.",
+        "version": "1.0.0",
+        "handlers": [
+            {
+                "participantName": "unityClient",
+                "handlerName": "broadcastMessage",
+                "description": "A message sent from the server"
+            }
+        ],
+        "messages": [
+            {
+                "participantName": "server",
+                "handlerName": "message",
+                "description": "A message sent by a user"
+            }
+        ],
+        "endpoints": {
+            "server": [
+                {
+                    "host": "localhost",
+                    "port": 8082,
+                    "path": "/ws/chat"
+                }
+            ]
+        }
+    },
+    "payloads": [
+        {
+            "participantName": "unityClient",
+            "handlerName": "broadcastMessage",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "required": true
+                    },
+                    "sender": {
+                        "type": "string",
+                        "required": true
+                    },
+                    "mentions": {
+                        "type": "array",
+                        "required": true,
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": "A message sent by a user"
+            }
+        },
+        {
+            "participantName": "server",
+            "handlerName": "message",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "required": true
+                    },
+                    "sender": {
+                        "type": "string",
+                        "required": true
+                    },
+                    "mentions": {
+                        "type": "array",
+                        "required": true,
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "timestamp": {
+                        "type": "integer",
+                        "required": true
+                    }
+                },
+                "description": "A message sent from the server"
+            }
+        }
+    ]
+}

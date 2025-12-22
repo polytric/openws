@@ -1,0 +1,55 @@
+{
+	"openws": "0.0.1",
+	"info": {
+        "title": "OpenWS Chat Example",
+        "description": "A simple WS system with a server-client pair."
+	},
+    "networks": {
+        "default": {
+            "participants": {
+                "server": {
+                    "endpoints": [{
+                        "host": "localhost",
+                        "port": 8082,
+                        "path": "/ws/chat"
+                    }],
+                    "handlers": {
+                        "message": {
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "message": {
+                                        "type": "string"
+                                    },
+                                    "sender": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["message", "sender"]
+                            }
+                        }
+                    }
+                },
+                "client": {
+                    "handlers": {
+                        "message": {
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "message": {
+                                        "type": "string"
+                                    },
+                                    "sender": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["message", "sender"]
+                            },
+                            "description": "Handles broad casted message from server"
+                        }
+                    }
+                }    
+            }    
+        }
+    }
+}

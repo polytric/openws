@@ -1,0 +1,23 @@
+{
+  "name": "@polytric/openws-spec",
+  "version": "0.0.1",
+  "description": "Polytric OpenWS Specification",
+  "module": "commonjs",
+  "main": "index.js",
+  "files": ["index.js", "spec.json", "LICENSE", "spec.js"],
+  "keywords": ["websocket", "openws", "specification"],
+  "scripts": {
+    "emit": "node spec.js > spec.json",
+    "prepublishOnly": "pnpm run emit",
+    "test": "node test/validate-spec.js && echo valid"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Polytric",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.26.1",
+  "dependencies": {
+    "@pocketgems/schema": "^0.1.3"
+  }
+}

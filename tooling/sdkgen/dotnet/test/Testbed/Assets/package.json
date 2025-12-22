@@ -1,0 +1,8 @@
+{
+    "name": "io.polytric.openwssdk.testbed",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "io.polytric.openwssdk.unity": "workspace:*"
+    }
+}
