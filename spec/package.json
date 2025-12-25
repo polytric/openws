@@ -1,15 +1,33 @@
 {
   "name": "@polytric/openws-spec",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Polytric OpenWS Specification",
-  "module": "commonjs",
-  "main": "index.js",
-  "files": ["index.js", "spec.json", "LICENSE", "spec.js"],
-  "keywords": ["websocket", "openws", "specification"],
+  "main": "./dist/index.cjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "websocket",
+    "openws",
+    "specification"
+  ],
   "scripts": {
-    "emit": "node spec.js > spec.json",
-    "prepublishOnly": "pnpm run emit",
-    "test": "node test/validate-spec.js && echo valid"
+    "build": "pnpm emit && tsup",
+    "prepublishOnly": "pnpm build",
+    "emit": "tsx -e \"import schema from './src/spec-schema.ts'; console.log(JSON.stringify(schema.jsonSchema()))\" > ./src/spec-schema.json",
+    "test:validate": "tsx test/validate-spec.ts",
+    "test:commonjs": "node test/commonjs.cjs"
   },
   "publishConfig": {
     "access": "public"
@@ -19,5 +37,10 @@
   "packageManager": "pnpm@10.26.1",
   "dependencies": {
     "@pocketgems/schema": "^0.1.3"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
