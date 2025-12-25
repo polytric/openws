@@ -28,6 +28,10 @@ class Component {
         return this.#setMetadata(name, value)
     }
 
+    desc(description: string): this {
+        return this.description(description)
+    }
+    
     description(description: string): this {
         return this.#setMetadata('description', description)
     }
@@ -40,10 +44,14 @@ class Component {
         return this.#setMetadata('title', title)
     }
 
-    toJson(): Record<string, SpecValue> {
+    valueOf(): Record<string, SpecValue> {
         return {
             ...this.#metadata,
         }
+    }
+
+    toJson(): Record<string, SpecValue> {
+        return this.valueOf()
     }
 }
 
@@ -59,13 +67,13 @@ export class Message extends Component {
         return this
     }
 
-    toJson(): Record<string, SpecValue> {
+    valueOf(): Record<string, SpecValue> {
         if (!this.payload) {
             throw new Error('Payload is required')
         }
         return {
-            ...super.toJson(),
-            payload: (this.#payload?.valueOf ? this.#payload.valueOf() : this.#payload) as Record<string, SpecValue>,        
+            ...super.valueOf(),
+            payload: this.#payload?.valueOf() as Record<string, SpecValue> | undefined,
         }
     }
 }
@@ -78,13 +86,13 @@ export class Role extends Component {
         return this
     }
 
-    toJson(): Record<string, SpecValue> {
+    valueOf(): Record<string, SpecValue> {
         const messages: Record<string, Record<string, SpecValue>> = {}
         for (const [name, message] of Object.entries(this.messages)) {
-            messages[name] = message.toJson()
+            messages[name] = message.valueOf()
         }
         return {
-            ...super.toJson(),
+            ...super.valueOf(),
             messages,
         }
     }
@@ -98,13 +106,13 @@ export class Network extends Component {
         return this
     }
 
-    toJson(): Record<string, SpecValue> {
+    valueOf(): Record<string, SpecValue> {
         const roles: Record<string, Record<string, SpecValue>> = {}
         for (const [name, role] of Object.entries(this.roles)) {
-            roles[name] = role.toJson()
+            roles[name] = role.valueOf()
         }
         return {
-            ...super.toJson(),
+            ...super.valueOf(),
             roles,
         }
     }
@@ -129,11 +137,11 @@ export class Spec extends Component {
         return this
     }
 
-    toJson(): Record<string, SpecValue> {
-        const { version, description, ...rest } = super.toJson()
+    valueOf(): Record<string, SpecValue> {
+        const { version, description, ...rest } = super.valueOf()
         const networks: Record<string, Record<string, SpecValue>> = {}
         for (const [name, network] of Object.entries(this.#networks)) {
-            networks[name] = network.toJson()
+            networks[name] = network.valueOf()
         }
         return {
             ...rest,
