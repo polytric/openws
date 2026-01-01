@@ -1,14 +1,14 @@
-import specSchemaJson from './spec-schema.json'
+import pkg from '../package.json'
+
 import specSchemaValidator from './spec-schema'
-import { WS } from './builder'
 
-let validator: (spec: Record<string, any>) => void
+export const VERSION = pkg.version
 
-export const specSchema = specSchemaJson
+export { default as specSchema } from './spec-schema.json'
 
-export function validate(spec: Record<string, any>): void {
+let validator: (spec: any) => void
+
+export function validate(spec: any): void {
     validator = validator ?? specSchemaValidator.compile('Validator')
     validator(spec)
 }
-
-export { WS }

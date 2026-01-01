@@ -1,0 +1,76 @@
+{
+    "name": "@polytric/openws",
+    "version": "0.0.1",
+    "description": "Polytric WS Runtime",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./decorator": {
+            "types": "./dist/decorator/index.d.ts",
+            "import": "./dist/decorator/index.js",
+            "require": "./dist/decorator/index.cjs"
+        },
+        "./fluent": {
+            "types": "./dist/fluent/index.d.ts",
+            "import": "./dist/fluent/index.js",
+            "require": "./dist/fluent/index.cjs"
+        },
+        "./class": {
+            "types": "./dist/class/index.d.ts",
+            "import": "./dist/class/index.js",
+            "require": "./dist/class/index.cjs"
+        }
+    },
+    "keywords": [
+        "websocket",
+        "openws",
+        "ws",
+        "framework",
+        "polytric",
+        "schema",
+        "realtime",
+        "sdk",
+        "code-generation"
+    ],
+    "author": "Polytric",
+    "license": "Apache-2.0",
+    "files": [
+        "dist",
+        "LICENSE",
+        "README.md"
+    ],
+    "scripts": {
+        "setup": "pnpm install",
+        "build": "tsup",
+        "build:watch": "tsup --watch src",
+        "build:test:decorator": "esbuild test/decorator.cjs --bundle --platform=node --outfile=test/decorator.compiled.cjs --target=node18 --format=cjs --packages=external",
+        "prepublishOnly": "pnpm build",
+        "test:fluent:ts": "tsx watch test/fluent.ts",
+        "test:fluent:cjs": "nodemon -w dist -w test/fluent.cjs test/fluent.cjs",
+        "test:class:ts": "tsx watch test/class.ts",
+        "test:class:cjs": "nodemon -w dist -w test/class.cjs test/class.cjs",
+        "test:decorator:ts": "tsx watch test/decorator.ts",
+        "test:decorator:cjs": "nodemon -w dist -w test/decorator.cjs --exec 'pnpm build:test:decorator && node test/decorator.compiled.cjs'"
+    },
+    "packageManager": "pnpm@10.26.1",
+    "dependencies": {
+        "@polytric/openws-spec": "workspace:*",
+        "ajv": "^8.17.1"
+    },
+    "devDependencies": {
+        "@pocketgems/schema": "^0.1.3",
+        "esbuild": "^0.24.2",
+        "nodemon": "^3.1.11",
+        "tsup": "^8.5.1",
+        "tsx": "^4.19.2"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}

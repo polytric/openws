@@ -1,5 +1,7 @@
-import { validate } from "../src/index"
-import spec from "./chat-spec.json"
+import { validate } from '../src/index'
+import type { Spec } from '../src/types'
 
-validate(spec)
+import spec from './chat-spec.json'
+
+validate(spec as unknown as Spec)
 console.log('spec is valid')

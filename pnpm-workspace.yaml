@@ -1,16 +1,18 @@
 packages:
-  - "spec"
-  - "integration/js/fastify/openws"
-  - "integration/js/fastify/openws-spec"
-  - "integration/js/polytric"
-  - "tooling/sdkgen/dotnet/runtime/io.polytric.openwssdk.core"
-  - "tooling/sdkgen/dotnet/runtime/io.polytric.openwssdk.unity"
-  - "tooling/sdkgen/dotnet/test/Testbed/Assets"
+    - 'spec'
+    - 'integration/js/fastify-openws'
+    - 'integration/js/fastify-openws-ui'
+    - 'integration/js/openws'
+    - 'integration/js/openws-ui'
+    - 'integration/csharp/io.polytric.openwssdk.core'
+    - 'integration/csharp/io.polytric.openwssdk.unity'
+    - 'tooling/sdkgen'
+    - 'tooling/sdkgen/dotnet/test/Testbed/Assets'
 
-  # Ignore Unity files
-  - "!**/Library/**"
-  - "!**/Temp/**"
-  - "!**/Obj/**"
-  - "!**/Build/**"
-  - "!**/PackageCache/**"
-  - "!**/dotnet/test/OpenWsTestBed/**"
+    # Ignore Unity files
+    - '!**/Library/**'
+    - '!**/Temp/**'
+    - '!**/Obj/**'
+    - '!**/Build/**'
+    - '!**/PackageCache/**'
+    - '!**/dotnet/test/OpenWsTestBed/**'

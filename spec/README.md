@@ -1,6 +1,6 @@
 # OpenWS Specification <!-- omit in toc -->
 
-OpenWS is a specification for describing **WebSocket-based systems** in the same way OpenAPI describes HTTP APIs. It models WebSocket communication as an **asymmetrical 2‑way request-response mesh**: multiple components exchange named messages, and “responses” are simply messages sent back through the same network.
+OpenWS is a specification for describing **WebSocket-based systems** in the same way OpenAPI describes HTTP APIs. It models WebSocket communication as an **asymmetrical 2-way request-response mesh**: multiple components exchange named messages, and "responses" are simply messages sent back through the same network.
 
 An OpenWS document describes:
 
@@ -23,21 +23,16 @@ This spec intentionally does **not** describe behavior or execution.
 - [Document Structure](#document-structure)
 - [Ecosystem](#ecosystem)
 - [Core Concepts](#core-concepts)
-  - [Networks](#networks)
-  - [Roles](#roles)
-  - [Messages](#messages)
-    - [Request/response modeling](#requestresponse-modeling)
-  - [Payload](#payload)
-  - [Metadata \& Connection Hints](#metadata--connection-hints)
-    - [Document metadata](#document-metadata)
-    - [Connection hints](#connection-hints)
-    - [Custom metadata and extensions](#custom-metadata-and-extensions)
-  - [Complete Example](#complete-example)
-- [Runtime Helpers](#runtime-helpers)
-  - [Installation](#installation)
-  - [Validation](#validation)
-  - [Fluent Builder](#fluent-builder)
-
+    - [Networks](#networks)
+    - [Roles](#roles)
+    - [Messages](#messages)
+        - [Request/response modeling](#requestresponse-modeling)
+    - [Payload](#payload)
+    - [Metadata \& Connection Hints](#metadata--connection-hints)
+        - [Document metadata](#document-metadata)
+        - [Connection hints](#connection-hints)
+        - [Custom metadata and extensions](#custom-metadata-and-extensions)
+    - [Complete Example](#complete-example)
 
 # Conventions
 
@@ -49,8 +44,7 @@ Unless otherwise noted:
 - Examples are written as valid JSON (no comments, no trailing commas).
 - `payload` schemas use **JSON Schema**. A specific JSON Schema dialect may be chosen by downstream tooling; OpenWS itself describes shapes rather than enforcing a single validator implementation.
 
-> Note: The OpenWS document describes *contracts*. Runtime details such as routing, correlation, authentication, and connection lifecycle are intentionally left to runtime layers.
-
+> Note: The OpenWS document describes _contracts_. Runtime details such as routing, correlation, authentication, and connection lifecycle are intentionally left to runtime layers.
 
 # Document Structure
 
@@ -72,42 +66,40 @@ Minimal skeleton:
 
 ```json
 {
-  "openws": "0.0.2",
-  "title": "My WebSocket System",
-  "version": "1.0.0",
-  "description": "Optional, human-readable description.",
-  "networks": {
-    "example": {
-      "roles": {
-        "server": {
-          "messages": {}
+    "openws": "0.0.2",
+    "title": "My WebSocket System",
+    "version": "1.0.0",
+    "description": "Optional, human-readable description.",
+    "networks": {
+        "example": {
+            "roles": {
+                "server": {
+                    "messages": {}
+                }
+            }
         }
-      }
     }
-  }
 }
 ```
-
 
 # Ecosystem
 
 OpenWS is designed as a **tooling ecosystem**, similar in spirit to OpenAPI: a spec, plus runtimes, adapters, generators, and framework integrations.
 
-This repository/spec is intended to support a full “fleet” of packages, including (but not limited to):
+This repository/spec is intended to support a full "fleet" of packages, including (but not limited to):
 
 - **Spec & validation**
-  - [`@polytric/openws-spec`](https://www.npmjs.com/package/@polytric/openws-spec) - This library
-  - [`@polytric/fastify-openws-spec`](https://www.npmjs.com/package/@polytric/fastify-openws-spec) — Fastify plugin to generate OpenWS spec from code 
+    - [`@polytric/openws-spec`](https://www.npmjs.com/package/@polytric/openws-spec) - This library
+    - [`@polytric/fastify-openws-spec`](https://www.npmjs.com/package/@polytric/fastify-openws-spec) -- Fastify plugin to generate OpenWS spec from code
 
 - **Runtime framework**
-  - [`@polytric/ws`](https://www.npmjs.com/package/@polytric/ws) — Polytric WS framework for JavaScript.
-  - [`@polytric/fastify-openws`](https://www.npmjs.com/package/@polytric/fastify-openws) — Fastify OpenWS SDK for JavaScript
+    - [`@polytric/ws`](https://www.npmjs.com/package/@polytric/ws) -- Polytric WS framework for JavaScript.
+    - [`@polytric/fastify-openws`](https://www.npmjs.com/package/@polytric/fastify-openws) -- Fastify OpenWS SDK for JavaScript
 
 - **SDK generation**
-  - [`@polytric/openws-sdkgen`](https://www.npmjs.com/package/@polytric/openws-sdkgen) — OpenWS code generation tool with multi-language support
+    - [`@polytric/openws-sdkgen`](https://www.npmjs.com/package/@polytric/openws-sdkgen) -- OpenWS code generation tool with multi-language support
 
 > The spec intentionally stays framework-agnostic; framework integrations and SDKs belong to the ecosystem layer.
-
 
 # Core Concepts
 
@@ -117,11 +109,11 @@ A network is a logical WebSocket system, with multiple participants on the netwo
 
 ```json
 {
-  "networks": {
-    "chat": { },
-    "tournament": { },
-    "chess": { }
-  }
+    "networks": {
+        "chat": {},
+        "tournament": {},
+        "chess": {}
+    }
 }
 ```
 
@@ -135,9 +127,9 @@ Chat service:
 
 ```json
 {
-  "networks": {
-    "chat": { }
-  }
+    "networks": {
+        "chat": {}
+    }
 }
 ```
 
@@ -145,9 +137,9 @@ Tournament service:
 
 ```json
 {
-  "networks": {
-    "tournament": { }
-  }
+    "networks": {
+        "tournament": {}
+    }
 }
 ```
 
@@ -155,9 +147,9 @@ Chess service:
 
 ```json
 {
-  "networks": {
-    "chess": { }
-  }
+    "networks": {
+        "chess": {}
+    }
 }
 ```
 
@@ -175,14 +167,14 @@ Multiple participants of the same role may exist on the same network. For exampl
 
 ```json
 {
-  "networks": {
-    "chat": {
-      "roles": {
-        "server": { },
-        "client": { }
-      }
+    "networks": {
+        "chat": {
+            "roles": {
+                "server": {},
+                "client": {}
+            }
+        }
     }
-  }
 }
 ```
 
@@ -190,13 +182,13 @@ It is common for different components of a system to expose different APIs and p
 
 ```json
 {
-  "roles": {
-    "adminServer": { },
-    "customerServer": { },
-    "mobile": { },
-    "portal": { },
-    "console": { }
-  }
+    "roles": {
+        "adminServer": {},
+        "customerServer": {},
+        "mobile": {},
+        "portal": {},
+        "console": {}
+    }
 }
 ```
 
@@ -223,20 +215,20 @@ For example, a chat server may accept `message`, `join`, `createRoom`, while the
 
 ```json
 {
-  "roles": {
-    "server": {
-      "messages": {
-        "message": { },
-        "join": { },
-        "createRoom": { }
-      }
-    },
-    "portal": {
-      "messages": {
-        "channelStats": { }
-      }
+    "roles": {
+        "server": {
+            "messages": {
+                "message": {},
+                "join": {},
+                "createRoom": {}
+            }
+        },
+        "portal": {
+            "messages": {
+                "channelStats": {}
+            }
+        }
     }
-  }
 }
 ```
 
@@ -257,13 +249,13 @@ Each message declares its payload shape using JSON Schema:
 
 ```json
 {
-  "message": {
-    "payload": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 2048
+    "message": {
+        "payload": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+        }
     }
-  }
 }
 ```
 
@@ -273,7 +265,7 @@ Payload schemas:
 - **SHOULD** be compatible with your chosen JSON Schema dialect across toolchains.
 - **MAY** use common JSON Schema keywords such as `type`, `properties`, `required`, `enum`, and `format`.
 
-A role’s handlers are the runtime functions that process incoming messages whose payloads match the message definitions in the spec.
+A role's handlers are the runtime functions that process incoming messages whose payloads match the message definitions in the spec.
 
 ## Metadata & Connection Hints
 
@@ -297,17 +289,17 @@ An endpoint is typically attached to a role definition:
 
 ```json
 {
-  "networks": {
-    "chat": {
-      "roles": {
-        "server": {
-          "endpoints": [
-             { "scheme": "wss", "host": "localhost", "port": 8082, "path": "/abc" }
-          ]
+    "networks": {
+        "chat": {
+            "roles": {
+                "server": {
+                    "endpoints": [
+                        { "scheme": "wss", "host": "localhost", "port": 8082, "path": "/abc" }
+                    ]
+                }
+            }
         }
-      }
     }
-  }
 }
 ```
 
@@ -324,7 +316,6 @@ Custom metadata fields **MAY** be added anywhere in the JSON structure. Implemen
 - **MUST** ignore fields they do not understand.
 - **SHOULD** encourage a consistent prefix such as `x-...` for extension fields to reduce the chance of collisions with future spec fields.
 
-
 ## Complete Example
 
 The following example is a minimal but complete OpenWS document modeling a chat system. It uses:
@@ -335,198 +326,128 @@ The following example is a minimal but complete OpenWS document modeling a chat 
 - connection hints via `endpoints`
 - one extension field (`x-routingNotes`) to document intended flows
 
-```json <!-- embed:./test/chat-spec.json:scope:{ -->
+```<!-- embed:./test/chat-spec.json:scope:{ -->
 {
-  "openws": "0.0.2",
-  "title": "Example Chat Service",
-  "version": "1.0.0",
-  "description": "A minimal OpenWS document modeling a chat network.",
-  "networks": {
-    "chat": {
-      "description": "Realtime chat network.",
-      "roles": {
-        "server": {
-          "description": "Backend that hosts rooms and broadcasts messages.",
-          "endpoints": [
-            {
-              "scheme": "wss",
-              "host": "chat.example.com",
-              "port": 443,
-              "path": "/ws/chat"
+    "openws": "0.0.2",
+    "title": "Example Chat Service",
+    "version": "1.0.0",
+    "description": "A minimal OpenWS document modeling a chat network.",
+    "networks": {
+      "chat": {
+        "description": "Realtime chat network.",
+        "roles": {
+          "server": {
+            "description": "Backend that hosts rooms and broadcasts messages.",
+            "endpoints": [
+              {
+                "scheme": "wss",
+                "host": "chat.example.com",
+                "port": 443,
+                "path": "/ws/chat"
+              }
+            ],
+            "messages": {
+              "join": {
+                "description": "Request to join a room.",
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["userId", "roomId"],
+                  "properties": {
+                    "userId": { "type": "string", "minLength": 1 },
+                    "roomId": { "type": "string", "minLength": 1 }
+                  }
+                }
+              },
+              "message": {
+                "description": "Send a chat message to a room.",
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["userId", "roomId", "text"],
+                  "properties": {
+                    "userId": { "type": "string", "minLength": 1 },
+                    "roomId": { "type": "string", "minLength": 1 },
+                    "text": { "type": "string", "minLength": 1, "maxLength": 2048 }
+                  }
+                }
+              },
+              "createRoom": {
+                "description": "Create a new room.",
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["userId", "name"],
+                  "properties": {
+                    "userId": { "type": "string", "minLength": 1 },
+                    "name": { "type": "string", "minLength": 1, "maxLength": 128 }
+                  }
+                }
+              },
+              "requestStats": {
+                "description": "Request channel statistics.",
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["roomId"],
+                  "properties": {
+                    "roomId": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
             }
-          ],
-          "messages": {
-            "join": {
-              "description": "Request to join a room.",
-              "payload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["userId", "roomId"],
-                "properties": {
-                  "userId": { "type": "string", "minLength": 1 },
-                  "roomId": { "type": "string", "minLength": 1 }
+          },
+          "client": {
+            "description": "End-user client that receives events from the server.",
+            "messages": {
+              "roomJoined": {
+                "description": "Emitted after a join succeeds.",
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["roomId"],
+                  "properties": {
+                    "roomId": { "type": "string", "minLength": 1 }
+                  }
+                }
+              },
+              "messageReceived": {
+                "description": "Broadcast of a message to participants in a room.",
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["roomId", "text", "senderId", "sentAt"],
+                  "properties": {
+                    "roomId": { "type": "string", "minLength": 1 },
+                    "text": { "type": "string", "minLength": 1, "maxLength": 2048 },
+                    "senderId": { "type": "string", "minLength": 1 },
+                    "sentAt": { "type": "integer" }
+                  }
                 }
               }
-            },
-            "message": {
-              "description": "Send a chat message to a room.",
-              "payload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["userId", "roomId", "text"],
-                "properties": {
-                  "userId": { "type": "string", "minLength": 1 },
-                  "roomId": { "type": "string", "minLength": 1 },
-                  "text": { "type": "string", "minLength": 1, "maxLength": 2048 }
-                }
-              }
-            },
-            "createRoom": {
-              "description": "Create a new room.",
-              "payload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["userId", "name"],
-                "properties": {
-                  "userId": { "type": "string", "minLength": 1 },
-                  "name": { "type": "string", "minLength": 1, "maxLength": 128 }
-                }
-              }
-            },
-            "requestStats": {
-              "description": "Request channel statistics.",
-              "payload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["roomId"],
-                "properties": {
-                  "roomId": { "type": "string", "minLength": 1 }
+            }
+          },
+          "portal": {
+            "description": "Internal web portal that receives aggregated stats.",
+            "messages": {
+              "channelStats": {
+                "description": "Room-level metrics snapshot.",
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["roomId", "members", "messagesLastMinute"],
+                  "properties": {
+                    "roomId": { "type": "string", "minLength": 1 },
+                    "members": { "type": "integer", "minimum": 0 },
+                    "messagesLastMinute": { "type": "integer", "minimum": 0 }
+                  }
                 }
               }
             }
           }
         },
-        "client": {
-          "description": "End-user client that receives events from the server.",
-          "messages": {
-            "roomJoined": {
-              "description": "Emitted after a join succeeds.",
-              "payload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["roomId"],
-                "properties": {
-                  "roomId": { "type": "string", "minLength": 1 }
-                }
-              }
-            },
-            "messageReceived": {
-              "description": "Broadcast of a message to participants in a room.",
-              "payload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["roomId", "text", "senderId", "sentAt"],
-                "properties": {
-                  "roomId": { "type": "string", "minLength": 1 },
-                  "text": { "type": "string", "minLength": 1, "maxLength": 2048 },
-                  "senderId": { "type": "string", "minLength": 1 },
-                  "sentAt": { "type": "integer" }
-                }
-              }
-            }
-          }
-        },
-        "portal": {
-          "description": "Internal web portal that receives aggregated stats.",
-          "messages": {
-            "channelStats": {
-              "description": "Room-level metrics snapshot.",
-              "payload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["roomId", "members", "messagesLastMinute"],
-                "properties": {
-                  "roomId": { "type": "string", "minLength": 1 },
-                  "members": { "type": "integer", "minimum": 0 },
-                  "messagesLastMinute": { "type": "integer", "minimum": 0 }
-                }
-              }
-            }
-          }
-        }
-      },
-      "x-routingNotes": "Clients send server.join/server.message. Server emits client.roomJoined/client.messageReceived and portal.channelStats."
+        "x-routingNotes": "Clients send server.join/server.message. Server emits client.roomJoined/client.messageReceived and portal.channelStats."
+      }
     }
   }
-}
 ```
-
-
-# Runtime Helpers
-
-This library provides helpers to `validate` an OpenWS JSON document, and a fluent API to build specs in code.
-
-`@polytric/openws-spec` is authored in **TypeScript** and publishes type declarations, so you get IntelliSense for the `WS` builder and helpers in both TS and JS editors.
-
-## Installation
-
-Run this command to install the library:
-
-```bash
-pnpm i @polytric/openws-spec
-```
-
-Then import the helpers like this:
-
-```js
-// cjs
-const { validate, WS } = require('@polytric/openws-spec')
-
-// esm
-import { validate, WS } from '@polytric/openws-spec'
-```
-
-> Note: some builds may also export `specSchema` (the raw JSON Schema) for custom validator compilation.
-
-## Validation
-
-You can validate a spec in two ways:
-
-- Call `validate(spec)`
-- Compile your own validator using `ajv` (or any other JSON Schema validator) against `specSchema` (if exported)
-
-## Fluent Builder
-
-The `WS` symbol exposes `spec`, `network`, `role`, `message` so you can build a spec fluently in code:
-
-```js
-const spec =
-  WS.spec('0.0.2')
-    .title('Example Spec')
-    .version('1.0.0')
-    .description('A long description')
-    .network(
-      WS.network('chat')
-        .description('Description for network')
-        .metadata('any-key', 'some value')
-        .role(
-          WS.role('server')
-            .message(WS.message('createRoom').payload(createRoomSchema))
-            .message(WS.message('joinRoom').payload(joinRoomSchema))
-            .message(WS.message('sendMessage').payload(sendMessageSchema))
-        )
-        .role(
-          WS.role('client')
-            .message(WS.message('messageReceived').payload(messageReceivedSchema))
-            .message(WS.message('roomJoined').payload(roomJoinedSchema))
-        )
-    )
-
-// to JSON spec
-const json = JSON.stringify(spec.toJson(), null, 2)
-
-// convert to classes from json spec
-const spec2 = WS.fromJson(json)
-```
-
-For more information about this API, use IntelliSense to explore the `WS` surface.

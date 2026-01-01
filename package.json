@@ -1,8 +1,21 @@
 {
-  "name": "openws",
-  "private": true,
-  "packageManager": "pnpm@10.26.1",
-  "scripts": {
-    "i": "pnpm -r install"
-  }
+    "name": "openws",
+    "private": true,
+    "type": "module",
+    "packageManager": "pnpm@10.26.1",
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "typecheck": "pnpm -r --parallel typecheck"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.17.0",
+        "eslint": "^9.17.0",
+        "eslint-plugin-import": "^2.31.0",
+        "globals": "^15.14.0",
+        "prettier": "^3.4.2",
+        "typescript-eslint": "^8.19.1"
+    }
 }

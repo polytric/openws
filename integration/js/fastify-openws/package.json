@@ -1,0 +1,66 @@
+{
+    "name": "@polytric/fastify-openws",
+    "version": "0.0.2",
+    "description": "Polytric OpenWS Runtime for Fastify",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "scripts": {
+        "build": "tsup",
+        "build:watch": "tsup --watch",
+        "prepublishOnly": "pnpm build",
+        "run:server": "tsx watch examples/server.ts",
+        "run:client-a": "nodemon -w src/index.js -w examples/client-a.js examples/client-a.js",
+        "run:client-b": "nodemon -w src/index.js -w examples/client-b.js examples/client-b.js",
+        "run:portal": "nodemon -w src/index.js -w examples/portal.js examples/portal.js",
+        "setup": "pnpm install",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "websocket",
+        "openws",
+        "runtime",
+        "fastify",
+        "ws",
+        "polytric",
+        "schema",
+        "realtime"
+    ],
+    "files": [
+        "dist",
+        "LICENSE",
+        "README.md"
+    ],
+    "author": "Polytric",
+    "license": "Apache-2.0",
+    "packageManager": "pnpm@10.26.1",
+    "dependencies": {
+        "@fastify/websocket": "^11.2.0",
+        "@polytric/openws": "workspace:*",
+        "@polytric/openws-spec": "workspace:*",
+        "ajv": "^8.17.1",
+        "fastify-plugin": "^5.1.0"
+    },
+    "peerDependencies": {
+        "fastify": "^5.6.2"
+    },
+    "devDependencies": {
+        "@pocketgems/schema": "^0.1.3",
+        "@types/ws": "^8.5.13",
+        "nodemon": "^3.1.11",
+        "tsup": "^8.5.1",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3",
+        "ws": "^8.18.3"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}

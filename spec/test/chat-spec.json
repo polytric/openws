@@ -4,121 +4,120 @@
     "version": "1.0.0",
     "description": "A minimal OpenWS document modeling a chat network.",
     "networks": {
-      "chat": {
-        "description": "Realtime chat network.",
-        "roles": {
-          "server": {
-            "description": "Backend that hosts rooms and broadcasts messages.",
-            "endpoints": [
-              {
-                "scheme": "wss",
-                "host": "chat.example.com",
-                "port": 443,
-                "path": "/ws/chat"
-              }
-            ],
-            "messages": {
-              "join": {
-                "description": "Request to join a room.",
-                "payload": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["userId", "roomId"],
-                  "properties": {
-                    "userId": { "type": "string", "minLength": 1 },
-                    "roomId": { "type": "string", "minLength": 1 }
-                  }
+        "chat": {
+            "description": "Realtime chat network.",
+            "roles": {
+                "server": {
+                    "description": "Backend that hosts rooms and broadcasts messages.",
+                    "endpoints": [
+                        {
+                            "scheme": "wss",
+                            "host": "chat.example.com",
+                            "port": 443,
+                            "path": "/ws/chat"
+                        }
+                    ],
+                    "messages": {
+                        "join": {
+                            "description": "Request to join a room.",
+                            "payload": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["userId", "roomId"],
+                                "properties": {
+                                    "userId": { "type": "string", "minLength": 1 },
+                                    "roomId": { "type": "string", "minLength": 1 }
+                                }
+                            }
+                        },
+                        "message": {
+                            "description": "Send a chat message to a room.",
+                            "payload": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["userId", "roomId", "text"],
+                                "properties": {
+                                    "userId": { "type": "string", "minLength": 1 },
+                                    "roomId": { "type": "string", "minLength": 1 },
+                                    "text": { "type": "string", "minLength": 1, "maxLength": 2048 }
+                                }
+                            }
+                        },
+                        "createRoom": {
+                            "description": "Create a new room.",
+                            "payload": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["userId", "name"],
+                                "properties": {
+                                    "userId": { "type": "string", "minLength": 1 },
+                                    "name": { "type": "string", "minLength": 1, "maxLength": 128 }
+                                }
+                            }
+                        },
+                        "requestStats": {
+                            "description": "Request channel statistics.",
+                            "payload": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["roomId"],
+                                "properties": {
+                                    "roomId": { "type": "string", "minLength": 1 }
+                                }
+                            }
+                        }
+                    }
+                },
+                "client": {
+                    "description": "End-user client that receives events from the server.",
+                    "messages": {
+                        "roomJoined": {
+                            "description": "Emitted after a join succeeds.",
+                            "payload": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["roomId"],
+                                "properties": {
+                                    "roomId": { "type": "string", "minLength": 1 }
+                                }
+                            }
+                        },
+                        "messageReceived": {
+                            "description": "Broadcast of a message to participants in a room.",
+                            "payload": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["roomId", "text", "senderId", "sentAt"],
+                                "properties": {
+                                    "roomId": { "type": "string", "minLength": 1 },
+                                    "text": { "type": "string", "minLength": 1, "maxLength": 2048 },
+                                    "senderId": { "type": "string", "minLength": 1 },
+                                    "sentAt": { "type": "integer" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "portal": {
+                    "description": "Internal web portal that receives aggregated stats.",
+                    "messages": {
+                        "channelStats": {
+                            "description": "Room-level metrics snapshot.",
+                            "payload": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["roomId", "members", "messagesLastMinute"],
+                                "properties": {
+                                    "roomId": { "type": "string", "minLength": 1 },
+                                    "members": { "type": "integer", "minimum": 0 },
+                                    "messagesLastMinute": { "type": "integer", "minimum": 0 }
+                                }
+                            }
+                        }
+                    }
                 }
-              },
-              "message": {
-                "description": "Send a chat message to a room.",
-                "payload": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["userId", "roomId", "text"],
-                  "properties": {
-                    "userId": { "type": "string", "minLength": 1 },
-                    "roomId": { "type": "string", "minLength": 1 },
-                    "text": { "type": "string", "minLength": 1, "maxLength": 2048 }
-                  }
-                }
-              },
-              "createRoom": {
-                "description": "Create a new room.",
-                "payload": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["userId", "name"],
-                  "properties": {
-                    "userId": { "type": "string", "minLength": 1 },
-                    "name": { "type": "string", "minLength": 1, "maxLength": 128 }
-                  }
-                }
-              },
-              "requestStats": {
-                "description": "Request channel statistics.",
-                "payload": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["roomId"],
-                  "properties": {
-                    "roomId": { "type": "string", "minLength": 1 }
-                  }
-                }
-              }
-            }
-          },
-          "client": {
-            "description": "End-user client that receives events from the server.",
-            "messages": {
-              "roomJoined": {
-                "description": "Emitted after a join succeeds.",
-                "payload": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["roomId"],
-                  "properties": {
-                    "roomId": { "type": "string", "minLength": 1 }
-                  }
-                }
-              },
-              "messageReceived": {
-                "description": "Broadcast of a message to participants in a room.",
-                "payload": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["roomId", "text", "senderId", "sentAt"],
-                  "properties": {
-                    "roomId": { "type": "string", "minLength": 1 },
-                    "text": { "type": "string", "minLength": 1, "maxLength": 2048 },
-                    "senderId": { "type": "string", "minLength": 1 },
-                    "sentAt": { "type": "integer" }
-                  }
-                }
-              }
-            }
-          },
-          "portal": {
-            "description": "Internal web portal that receives aggregated stats.",
-            "messages": {
-              "channelStats": {
-                "description": "Room-level metrics snapshot.",
-                "payload": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["roomId", "members", "messagesLastMinute"],
-                  "properties": {
-                    "roomId": { "type": "string", "minLength": 1 },
-                    "members": { "type": "integer", "minimum": 0 },
-                    "messagesLastMinute": { "type": "integer", "minimum": 0 }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-routingNotes": "Clients send server.join/server.message. Server emits client.roomJoined/client.messageReceived and portal.channelStats."
-      }
+            },
+            "x-routingNotes": "Clients send server.join/server.message. Server emits client.roomJoined/client.messageReceived and portal.channelStats."
+        }
     }
-  }
-  
+}
