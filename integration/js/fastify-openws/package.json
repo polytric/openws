@@ -12,35 +12,34 @@
             "require": "./dist/index.cjs"
         }
     },
-    "scripts": {
-        "build": "tsup",
-        "build:watch": "tsup --watch",
-        "prepublishOnly": "pnpm build",
-        "run:server": "tsx watch examples/server.ts",
-        "run:client-a": "nodemon -w src/index.js -w examples/client-a.js examples/client-a.js",
-        "run:client-b": "nodemon -w src/index.js -w examples/client-b.js examples/client-b.js",
-        "run:portal": "nodemon -w src/index.js -w examples/portal.js examples/portal.js",
-        "setup": "pnpm install",
-        "typecheck": "tsc --noEmit"
-    },
-    "keywords": [
-        "websocket",
-        "openws",
-        "runtime",
-        "fastify",
-        "ws",
-        "polytric",
-        "schema",
-        "realtime"
-    ],
     "files": [
         "dist",
         "LICENSE",
         "README.md"
     ],
+    "keywords": [
+        "fastify",
+        "openws",
+        "polytric",
+        "realtime",
+        "runtime",
+        "schema",
+        "websocket",
+        "ws"
+    ],
     "author": "Polytric",
     "license": "Apache-2.0",
-    "packageManager": "pnpm@10.26.1",
+    "scripts": {
+        "build": "tsup",
+        "build:watch": "tsup --watch",
+        "prepublishOnly": "pnpm build",
+        "run:client-a": "nodemon -w src/index.js -w examples/client-a.js examples/client-a.js",
+        "run:client-b": "nodemon -w src/index.js -w examples/client-b.js examples/client-b.js",
+        "run:portal": "nodemon -w src/index.js -w examples/portal.js examples/portal.js",
+        "run:server": "tsx watch examples/server.ts",
+        "setup": "pnpm install",
+        "typecheck": "tsc --noEmit"
+    },
     "dependencies": {
         "@fastify/websocket": "^11.2.0",
         "@polytric/openws": "workspace:*",
@@ -60,6 +59,7 @@
         "typescript": "^5.9.3",
         "ws": "^8.18.3"
     },
+    "packageManager": "pnpm@10.26.1",
     "publishConfig": {
         "access": "public"
     }
