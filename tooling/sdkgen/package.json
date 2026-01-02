@@ -1,8 +1,38 @@
 {
     "name": "@polytric/openws-sdkgen",
+    "version": "0.0.1",
+    "description": "OpenWS SDK generator CLI",
+    "license": "Apache-2.0",
+    "author": "Polytric",
     "packageManager": "pnpm@10.26.1",
+    "engines": {
+        "node": ">=18"
+    },
     "bin": {
-        "generator": "./src/main.js"
+        "openws-sdkgen": "./src/main.js"
+    },
+    "files": [
+        "src",
+        "dotnet/build-plan.js",
+        "dotnet/template",
+        "LICENSE",
+        "README.md"
+    ],
+    "keywords": [
+        "openws",
+        "sdk",
+        "codegen",
+        "websocket",
+        "unity",
+        "dotnet"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AgeOfLearning/openws.git",
+        "directory": "tooling/sdkgen"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "scripts": {},
     "dependencies": {
