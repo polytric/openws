@@ -2,7 +2,7 @@ const path = require('node:path')
 
 const planIndex = {
     csharp: {
-        unity: '../dotnet/build-plan.js',
+        unity: './dotnet/build-plan.js',
     },
 }
 

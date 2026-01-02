@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "displayName": "Polytric OpenWS Spec",
     "description": "Polytric OpenWS Specification for dotnet.",
-    "unity": "6000.0",
+    "unity": "2022.3",
     "keywords": [
         "openws",
         "websocket",
@@ -13,7 +13,5 @@
         "name": "Polytric"
     },
     "license": "Apache-2.0",
-    "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.2.1"
-    }
+    "dependencies": {}
 }

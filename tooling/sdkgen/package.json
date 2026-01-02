@@ -13,8 +13,6 @@
     },
     "files": [
         "src",
-        "dotnet/build-plan.js",
-        "dotnet/template",
         "LICENSE",
         "README.md"
     ],

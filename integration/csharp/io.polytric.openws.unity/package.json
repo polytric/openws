@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "displayName": "Polytric OpenWS Unity",
     "description": "Unity runtime for Polytric OpenWS SDK.",
-    "unity": "6000.0",
+    "unity": "2022.3",
     "keywords": [
         "openws",
         "websocket",
@@ -15,8 +15,5 @@
     },
     "license": "Apache-2.0",
     "dependencies": {
-        "io.polytric.openws.core": "0.0.1",
-        "io.polytric.openws.spec": "0.0.1",
-        "com.endel.nativewebsocket": "1.1.4"
     }
 }
