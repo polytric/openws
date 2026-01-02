@@ -25,13 +25,13 @@ const roleSchema = S.obj({
         .min(1)
         .optional()
         .desc(
-            'A role can declare an endpoint to accept connections from other roles, normally used by servers'
+            'A role can declare an endpoint to accept connections from remote roles, normally used by servers'
         ),
     messages: S.map
         .keyPattern(keyPattern)
         .value(messageSchema)
         .desc(
-            "A message accepted by the role and handled by the role, and roles can send messages other roles accepts. The OpenWS spec only defines the shape of the payload, and how things get encoded / decoded on the wire, it doesn't determine behavior (through through description the behavior can be documented)."
+            "A message accepted by the role and handled by the role, and roles can send messages to remote roles that accept them. The OpenWS spec only defines the shape of the payload, and how things get encoded / decoded on the wire, it doesn't determine behavior (though description can document the behavior)."
         ),
     description: S.str.optional(),
 })

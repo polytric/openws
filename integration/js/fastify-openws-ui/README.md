@@ -1,5 +1,8 @@
 # fastify-openws-ui
 
+[![npm](https://img.shields.io/npm/v/@polytric/fastify-openws-ui)](https://www.npmjs.com/package/@polytric/fastify-openws-ui)
+[![license](https://img.shields.io/npm/l/@polytric/fastify-openws-ui)](https://github.com/polytric/openws/blob/main/LICENSE)
+
 **`@polytric/fastify-openws-ui`** integrates **OpenWS UI** into a **Fastify** server.
 
 It:
@@ -172,4 +175,4 @@ app.ready(() => {
 
 ## License
 
-Licensed under the **Apache License 2.0**. See `LICENSE.md`.
+Licensed under the **Apache License 2.0**. See `LICENSE`.

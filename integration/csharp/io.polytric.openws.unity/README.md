@@ -1,5 +1,8 @@
 # Polytric OpenWS Unity
 
+[![npm](https://img.shields.io/npm/v/io.polytric.openws.unity)](https://www.npmjs.com/package/io.polytric.openws.unity)
+[![license](https://img.shields.io/npm/l/io.polytric.openws.unity)](https://github.com/polytric/openws/blob/main/LICENSE)
+
 `io.polytric.openws.unity` is the Unity transport layer for OpenWS. It provides a NativeWebSocket-backed session implementation, lifecycle helpers, and an editor window to generate OpenWS specs from annotated C# types.
 
 Key features:
@@ -67,7 +70,7 @@ await runtime.ConnectAsync<ClientRole>(new Endpoint
 
 ## Spec generator window
 
-Open **Window → OpenWS → Spec Gator** to generate an OpenWS JSON document from your annotated network and role classes.
+Open **Window → OpenWS → Spec Generator** to generate an OpenWS JSON document from your annotated network and role classes.
 
 ---
 

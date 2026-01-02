@@ -263,18 +263,18 @@ export class Network extends Base {
 
     assertValid(): boolean {
         const hostRoles: Role[] = []
-        const consumerRoles: Role[] = []
+        const remoteRoles: Role[] = []
         for (const role of Object.values(this.#roles)) {
             role.assertValid()
 
             if (role.isHost) {
                 hostRoles.push(role as Role)
             } else {
-                consumerRoles.push(role as Role)
+                remoteRoles.push(role as Role)
             }
         }
-        if (consumerRoles.length === 0) {
-            throw new Error('At least one consumer role must be defined')
+        if (remoteRoles.length === 0) {
+            throw new Error('At least one remote role must be defined')
         }
         const messages = new Set<string>()
         for (const role of Object.values(this.#roles)) {

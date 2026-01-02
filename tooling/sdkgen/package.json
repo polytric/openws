@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws-sdkgen",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "OpenWS SDK generator CLI",
     "license": "Apache-2.0",
     "author": "Polytric",

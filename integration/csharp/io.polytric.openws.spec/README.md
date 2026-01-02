@@ -1,5 +1,8 @@
 # Polytric OpenWS Spec
 
+[![npm](https://img.shields.io/npm/v/io.polytric.openws.spec)](https://www.npmjs.com/package/io.polytric.openws.spec)
+[![license](https://img.shields.io/npm/l/io.polytric.openws.spec)](https://github.com/polytric/openws/blob/main/LICENSE)
+
 `io.polytric.openws.spec` provides OpenWS specification tooling for C# and Unity. It includes attributes for describing networks/roles, serialization models, and generators for emitting OpenWS JSON.
 
 Core capabilities:
@@ -68,8 +71,8 @@ var spec = UnityOpenWsSpecGenerator.Generate(
 
 ## Related packages
 
-- `io.polytric.openws.core` - OpenWS runtime (roles, sessions, envelopes)
-- `io.polytric.openws.unity` - Unity transport and editor tooling
+- [`io.polytric.openws.core`](https://www.npmjs.com/package/io.polytric.openws.core) - OpenWS runtime (roles, sessions, envelopes)
+- [`io.polytric.openws.unity`](https://www.npmjs.com/package/io.polytric.openws.unity) - Unity transport and editor tooling
 
 ---
 

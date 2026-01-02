@@ -1,5 +1,8 @@
 # OpenWS Specification <!-- omit in toc -->
 
+[![npm](https://img.shields.io/npm/v/@polytric/openws-spec)](https://www.npmjs.com/package/@polytric/openws-spec)
+[![license](https://img.shields.io/npm/l/@polytric/openws-spec)](https://github.com/polytric/openws/blob/main/LICENSE)
+
 OpenWS is a specification for describing **WebSocket-based systems** in the same way OpenAPI describes HTTP APIs. It models WebSocket communication as an **asymmetrical 2-way request-response mesh**: multiple components exchange named messages, and "responses" are simply messages sent back through the same network.
 
 An OpenWS document describes:
@@ -23,16 +26,16 @@ This spec intentionally does **not** describe behavior or execution.
 - [Document Structure](#document-structure)
 - [Ecosystem](#ecosystem)
 - [Core Concepts](#core-concepts)
-    - [Networks](#networks)
-    - [Roles](#roles)
-    - [Messages](#messages)
-        - [Request/response modeling](#requestresponse-modeling)
-    - [Payload](#payload)
-    - [Metadata \& Connection Hints](#metadata--connection-hints)
-        - [Document metadata](#document-metadata)
-        - [Connection hints](#connection-hints)
-        - [Custom metadata and extensions](#custom-metadata-and-extensions)
-    - [Complete Example](#complete-example)
+  - [Networks](#networks)
+  - [Roles](#roles)
+  - [Messages](#messages)
+    - [Request/response modeling](#requestresponse-modeling)
+  - [Payload](#payload)
+  - [Metadata \& Connection Hints](#metadata--connection-hints)
+    - [Document metadata](#document-metadata)
+    - [Connection hints](#connection-hints)
+    - [Custom metadata and extensions](#custom-metadata-and-extensions)
+  - [Complete Example](#complete-example)
 
 # Conventions
 
@@ -90,14 +93,17 @@ This repository/spec is intended to support a full "fleet" of packages, includin
 
 - **Spec & validation**
     - [`@polytric/openws-spec`](https://www.npmjs.com/package/@polytric/openws-spec) - This library
-    - [`@polytric/fastify-openws-spec`](https://www.npmjs.com/package/@polytric/fastify-openws-spec) -- Fastify plugin to generate OpenWS spec from code
 
 - **Runtime framework**
-    - [`@polytric/ws`](https://www.npmjs.com/package/@polytric/ws) -- Polytric WS framework for JavaScript.
-    - [`@polytric/fastify-openws`](https://www.npmjs.com/package/@polytric/fastify-openws) -- Fastify OpenWS SDK for JavaScript
+    - [`@polytric/openws`](https://www.npmjs.com/package/@polytric/openws) - OpenWS framework for JavaScript/TypeScript
+    - [`@polytric/fastify-openws`](https://www.npmjs.com/package/@polytric/fastify-openws) - Fastify WebSocket integration
+
+- **UI & tooling**
+    - [`@polytric/openws-ui`](https://www.npmjs.com/package/@polytric/openws-ui) - Swagger-like spec explorer
+    - [`@polytric/fastify-openws-ui`](https://www.npmjs.com/package/@polytric/fastify-openws-ui) - Mount OpenWS UI in Fastify
 
 - **SDK generation**
-    - [`@polytric/openws-sdkgen`](https://www.npmjs.com/package/@polytric/openws-sdkgen) -- OpenWS code generation tool with multi-language support
+    - [`@polytric/openws-sdkgen`](https://www.npmjs.com/package/@polytric/openws-sdkgen) - CLI for generating typed SDKs
 
 > The spec intentionally stays framework-agnostic; framework integrations and SDKs belong to the ecosystem layer.
 
@@ -326,7 +332,7 @@ The following example is a minimal but complete OpenWS document modeling a chat 
 - connection hints via `endpoints`
 - one extension field (`x-routingNotes`) to document intended flows
 
-``` <!-- embed:./test/chat-spec.json:scope:{ -->
+```<!-- embed:./test/chat-spec.json:scope:{ -->
 {
     "openws": "0.0.2",
     "title": "Example Chat Service",

@@ -1,5 +1,8 @@
 # Polytric OpenWS Core
 
+[![npm](https://img.shields.io/npm/v/io.polytric.openws.core)](https://www.npmjs.com/package/io.polytric.openws.core)
+[![license](https://img.shields.io/npm/l/io.polytric.openws.core)](https://github.com/polytric/openws/blob/main/LICENSE)
+
 `io.polytric.openws.core` is the C# runtime for OpenWS sessions and roles. It provides the core abstractions used by OpenWS host/remote role implementations.
 
 Core responsibilities:
@@ -79,8 +82,8 @@ var remote = await runtime.ConnectAsync<ClientRole>(new Endpoint
 
 ## Related packages
 
-- `io.polytric.openws.spec` - OpenWS attributes, serialization, and spec generators
-- `io.polytric.openws.unity` - Unity transport and editor tooling
+- [`io.polytric.openws.spec`](https://www.npmjs.com/package/io.polytric.openws.spec) - OpenWS attributes, serialization, and spec generators
+- [`io.polytric.openws.unity`](https://www.npmjs.com/package/io.polytric.openws.unity) - Unity transport and editor tooling
 
 ---
 

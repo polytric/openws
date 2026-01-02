@@ -1,5 +1,8 @@
 # OpenWS SDK Generator
 
+[![npm](https://img.shields.io/npm/v/@polytric/openws-sdkgen)](https://www.npmjs.com/package/@polytric/openws-sdkgen)
+[![license](https://img.shields.io/npm/l/@polytric/openws-sdkgen)](https://github.com/polytric/openws/blob/main/LICENSE)
+
 `@polytric/openws-sdkgen` is the OpenWS SDK generator CLI. It takes an OpenWS spec JSON file and produces SDK source code for a target language/environment.
 
 The generator is pipeline-driven:

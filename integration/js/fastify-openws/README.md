@@ -1,6 +1,9 @@
 # OpenWS Fastify Plugin
 
-`@polytric/fastify-openws` is the Fastify adapter for the OpenWS framework (`@polytric/openws`).
+[![npm](https://img.shields.io/npm/v/@polytric/fastify-openws)](https://www.npmjs.com/package/@polytric/fastify-openws)
+[![license](https://img.shields.io/npm/l/@polytric/fastify-openws)](https://github.com/polytric/openws/blob/main/LICENSE)
+
+`@polytric/fastify-openws` is the Fastify adapter for the OpenWS framework ([`@polytric/openws`](https://www.npmjs.com/package/@polytric/openws)).
 
 This package is transport-focused:
 
@@ -140,10 +143,10 @@ This allows companion tooling (for example a spec emitter plugin) to discover re
 
 ## Related packages
 
-- `@polytric/openws` - OpenWS framework (bindings, runtime, sessions)
-- `@polytric/openws-spec` - specification builder and validation primitives
-- `@polytric/fastify-openws-spec` - emit OpenWS documents from Fastify-registered networks
-- `@polytric/openws-sdkgen` - generate SDKs from emitted OpenWS documents
+- [`@polytric/openws`](https://www.npmjs.com/package/@polytric/openws) - OpenWS framework (bindings, runtime, sessions)
+- [`@polytric/openws-spec`](https://www.npmjs.com/package/@polytric/openws-spec) - Specification builder and validation primitives
+- [`@polytric/fastify-openws-ui`](https://www.npmjs.com/package/@polytric/fastify-openws-ui) - Mount OpenWS UI in Fastify
+- [`@polytric/openws-sdkgen`](https://www.npmjs.com/package/@polytric/openws-sdkgen) - Generate SDKs from OpenWS specs
 
 ---
 

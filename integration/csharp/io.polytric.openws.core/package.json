@@ -1,6 +1,6 @@
 {
     "name": "io.polytric.openws.core",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "displayName": "Polytric OpenWS Core",
     "description": "Core runtime for Polytric OpenWS SDK.",
     "unity": "2022.3",

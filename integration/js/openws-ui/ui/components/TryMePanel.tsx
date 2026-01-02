@@ -104,7 +104,7 @@ export function TryMePanel() {
     const uiSchema: UiSchema = {
         'ui:submitButtonOptions': { norender: true },
     }
-    const consumerRoles = Object.values(spec?.networks[selectedNetwork].roles).filter(
+    const remoteRoles = Object.values(spec?.networks[selectedNetwork].roles).filter(
         role => !hosts.includes(role.name)
     )
 
@@ -133,7 +133,7 @@ export function TryMePanel() {
                     displayEmpty
                     sx={{ minWidth: 120 }}
                 >
-                    {consumerRoles.map(role => (
+                    {remoteRoles.map(role => (
                         <MenuItem key={role.name} value={role.name}>
                             {toPascalCase(role.name)}
                         </MenuItem>

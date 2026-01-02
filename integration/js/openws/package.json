@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Polytric OpenWS Runtime",
     "type": "module",
     "main": "./dist/index.js",

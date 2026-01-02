@@ -1,11 +1,14 @@
 # OpenWS UI
 
-**OpenWS UI** is a generic web UI for exploring and exercising **OpenWS specs** Ã¢Â€Ã¢Â€Â similar in spirit to Swagger UI, but for OpenWS/WebSocket-style message networks.
+[![npm](https://img.shields.io/npm/v/@polytric/openws-ui)](https://www.npmjs.com/package/@polytric/openws-ui)
+[![license](https://img.shields.io/npm/l/@polytric/openws-ui)](https://github.com/polytric/openws/blob/main/LICENSE)
+
+**OpenWS UI** is a generic web UI for exploring and exercising **OpenWS specs** - similar in spirit to Swagger UI, but for OpenWS/WebSocket-style message networks.
 
 It renders an OpenWS spec into:
 
-- a left navigation tree (networks Ã¢ÂÃ¢Â€Â™ roles Ã¢ÂÃ¢Â€Â™ messages)
-- message Ã¢Â€ÂsendÃ¢Â€Â forms generated from payload schemas
+- a left navigation tree (networks -> roles -> messages)
+- message "send" forms generated from payload schemas
 - a console view for sent/received traffic with filtering
 - a connect flow to select a host endpoint (when configured)
 
@@ -36,7 +39,7 @@ This package is intended to be used by server integrations (Fastify, Express, et
 At runtime, OpenWS UI needs two things:
 
 1. A **spec URL** it can fetch (your server should expose this JSON).
-2. An **index.html config injection** so the UI knows where the spec is and (optionally) which roles are Ã¢Â€ÂhostsÃ¢Â€Â for connection presets.
+2. An **index.html config injection** so the UI knows where the spec is and (optionally) which roles are "hosts" for connection presets.
 
 ### Runtime config format
 
@@ -55,7 +58,7 @@ OpenWS UI expects a JSON blob embedded in the page:
 
 - `specUrl` (string): where the UI fetches your OpenWS spec JSON.
 - `networkHosts` (record): `{ [networkName: string]: string[] }`, listing which roles are considered _hosts_ for that network.
-    - This is used to drive the Ã¢Â€ÂConnectÃ¢Â€Â dialog presets.
+    - This is used to drive the "Connect" dialog presets.
 
 ### Minimal server responsibilities
 
@@ -98,9 +101,9 @@ function renderIndexHtml({
 
 ## Notes
 
-- OpenWS UI is a **frontend**Ã¢Â€Ã¢Â€Âit does not implement server-side WebSocket logic.
+- OpenWS UI is a **frontend** - it does not implement server-side WebSocket logic.
 - The UI is driven entirely by the **OpenWS spec** you provide.
-- If youÃ¢Â€Â™re using Fastify, see `@polytric/fastify-openws-ui` for a ready-to-use integration.
+- If you're using Fastify, see `@polytric/fastify-openws-ui` for a ready-to-use integration.
 
 ---
 
