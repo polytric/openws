@@ -9,7 +9,7 @@ It:
 - automatically collects OpenWS networks from your Fastify routes (via an `onRoute` hook)
 - injects runtime config into the UI entry HTML so the UI knows:
     - where the spec is (`specUrl`)
-    - which roles are “host” roles per network (`networkHosts`), used for connect presets
+    - which roles are "host" roles per network (`networkHosts`), used for connect presets
 
 ---
 
@@ -25,7 +25,7 @@ You will typically also use this alongside:
 npm i @polytric/fastify-openws @polytric/openws @polytric/openws-spec @fastify/static
 ```
 
-> This plugin will register the OpenWS Fastify plugin automatically if it’s not already present on the Fastify instance.
+> This plugin will register the OpenWS Fastify plugin automatically if it's not already present on the Fastify instance.
 
 ---
 
@@ -60,7 +60,7 @@ This plugin watches routes as they are registered:
 - If a route has an attached `openWsNetwork` (a `Network` from `@polytric/openws-spec/builder`),
   it will:
     - add that network to the generated spec
-    - record “host roles” (roles where `role.isHost === true`) into `networkHosts[network.name]`
+    - record "host roles" (roles where `role.isHost === true`) into `networkHosts[network.name]`
 
 This enables OpenWS UI to show:
 

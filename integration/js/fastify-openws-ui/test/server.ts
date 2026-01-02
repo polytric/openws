@@ -113,7 +113,9 @@ const bindings = WS.bindings({
 
 async function main() {
     await app.register(openws)
-    await app.register(openwsUi)
+    await app.register(openwsUi, {
+        name: 'Chat',
+    })
 
     await app.openws({
         path: '/chat',

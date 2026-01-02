@@ -15,8 +15,8 @@ import openWsPlugin from '../../fastify-openws/dist'
 type JsonObject = Record<string, any>
 
 interface PluginOptions {
-    prefix: string
-    exportPath: string
+    prefix?: string
+    exportPath?: string
     name: string
 }
 
