@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws-spec",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Polytric OpenWS Specification",
     "type": "module",
     "main": "./dist/index.js",
@@ -43,10 +43,10 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
+        "@pocketgems/schema": "^0.1.3",
         "ajv": "^8.17.1"
     },
     "devDependencies": {
-        "@pocketgems/schema": "^0.1.3",
         "nodemon": "^3.1.11",
         "tsup": "^8.5.1",
         "tsx": "^4.21.0",

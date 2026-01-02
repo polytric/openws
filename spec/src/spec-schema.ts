@@ -53,7 +53,7 @@ networkSchema.additionalProperties = true
 
 const openWsSchema = S.obj({
     openws: S.str.enum('0.0.1', '0.0.2').desc('The OpenWS schema version'),
-    title: S.str.desc('A title for the overall system.').optional(),
+    name: S.str.desc('A title for the overall system.').optional(),
     description: S.str
         .desc(
             'A high level description of the overall system, including all networks and all roles'
