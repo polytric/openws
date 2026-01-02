@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws-ui",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Polytric OpenWS UI, a generic web UI for exploring and exercising OpenWS specs",
     "type": "module",
     "main": "./dist/index.js",

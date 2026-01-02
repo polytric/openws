@@ -52,7 +52,7 @@ export class WsClient {
             JSON.stringify({
                 fromRole: roleName,
                 messageName,
-                payload: JSON.stringify(payload),
+                payload,
             })
         )
     }
@@ -104,11 +104,7 @@ export class WsClient {
         ws.onmessage = event => {
             try {
                 const msg = JSON.parse(String(event.data))
-                const { fromRole, messageName, payload: rawPayload } = msg
-
-                // be tolerant: payload might already be object
-                const payload = JSON.parse(rawPayload)
-
+                const { fromRole, messageName, payload } = msg
                 this.msgListeners.forEach(fn => fn(fromRole, messageName, payload))
             } catch (_error) {
                 // swallow for now; you can add onError later

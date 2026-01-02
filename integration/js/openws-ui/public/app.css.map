@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../node_modules/.pnpm/@mui+x-data-grid@8.23.0_@emotion+react@11.14.0_@types+react@18.3.27_react@18.3.1__@emot_f1da1c150e3b4a1c9d41d6ba9a8afb37/node_modules/@mui/x-data-grid/esm/index.css"],
-  "sourcesContent": ["/* Placeholder file to ensure CSS imports are working */\n\n.MuiDataGrid {\n  display: block;\n}\n"],
-  "mappings": ";AAEA,CAAC;AACC,WAAS;AACX;",
-  "names": []
-}
