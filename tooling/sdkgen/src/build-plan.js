@@ -1,9 +1,9 @@
 const path = require('node:path')
 
 const planIndex = {
-    'csharp': {
-        'unity': '../dotnet/build-plan.js',
-    }
+    csharp: {
+        unity: '../dotnet/build-plan.js',
+    },
 }
 
 module.exports = function dispatchBuildPlan(ctx) {

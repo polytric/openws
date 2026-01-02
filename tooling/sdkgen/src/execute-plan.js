@@ -1,5 +1,6 @@
 const fs = require('node:fs')
 const path = require('node:path')
+
 const ejs = require('ejs')
 
 const rendererCache = {}
@@ -21,12 +22,14 @@ function executePlan(ctx) {
             case 'copy':
                 fs.cpSync(step.input, step.output, { recursive: true })
                 break
-            case 'render':
+            case 'render': {
                 const { getData, template, output } = step
                 const data = getData()
+                console.log(data)
                 fs.mkdirSync(path.dirname(output), { recursive: true, force: true })
                 fs.writeFileSync(output, renderTemplate(template, { ctx: data }))
                 break
+            }
         }
     }
     return ctx

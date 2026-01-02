@@ -1,0 +1,34 @@
+using Polytric.OpenWs.Core;
+using Polytric.OpenWs.Spec.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+<% for (const modelImport of ctx.modelImports) { %>
+using <%= modelImport %>;
+<% } %>
+
+namespace <%= ctx.namespace %>
+{
+    public partial class <%= ctx.className %> : <%= ctx.baseClassName %>
+    {
+        public override string Name { get; set; } = "<%= ctx.roleName %>";
+        public override string Description { get; set; } = "<%= ctx.description ?? '' %>";
+<% if (ctx.endpoints && ctx.endpoints.length > 0) { -%>
+        public override IReadOnlyList<Endpoint> Endpoints { get; set; } = new List<Endpoint>
+        {
+<% for (const ep of ctx.endpoints) { -%>
+            new Endpoint { Scheme = "<%= ep.scheme %>", Host = "<%= ep.host %>", Port = <%= ep.port %>, Path = "<%= ep.path %>" },
+<% } -%>
+        };
+<% } -%>
+
+<% for (const message of ctx.messages) { -%>
+        public async Task <%= message.methodName %>Async(string fromRole, <%= message.modelClassName %> message)
+        {
+            await SendMessageAsync(fromRole, "<%= message.messageName %>", message).ConfigureAwait(false);
+        }
+
+<% } -%>
+    }
+}
+

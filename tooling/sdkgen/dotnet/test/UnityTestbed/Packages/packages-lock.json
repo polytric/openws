@@ -149,6 +149,24 @@
       },
       "url": "https://packages.unity.com"
     },
+    "io.polytric.openws.core": {
+      "version": "file:../node_modules/io.polytric.openws.core",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "io.polytric.openws.spec": {
+      "version": "file:../node_modules/io.polytric.openws.spec",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "io.polytric.openws.unity": {
+      "version": "file:../node_modules/io.polytric.openws.unity",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,

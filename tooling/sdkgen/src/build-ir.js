@@ -7,55 +7,72 @@ const validateIr = S.obj({
         description: S.str.optional(),
         version: S.str.optional(),
     }),
-    networks: S.arr(S.obj({
-        name: S.str,
-        description: S.str.optional(),
-        version: S.str.optional(),
-        handlers: S.arr(S.obj({
-            participantName: S.str,
-            handlerName: S.str,
+    networks: S.arr(
+        S.obj({
+            name: S.str,
             description: S.str.optional(),
-        })),
-        messages: S.arr(S.obj({
-            participantName: S.str,
-            handlerName: S.str,
-            description: S.str.optional(),
-        })),
-        endpoints: S.arr(S.obj({
-            participantName: S.str,
-            endpoints: S.arr(S.obj({
-                host: S.str,
-                port: S.int.min(0).max(65535),
-                path: S.str,
-            })),
-        })),
-        models: S.arr(S.obj({
-            scopeName: S.str,
-            modelName: S.str,
-            type: S.str,
-            description: S.str.optional(),
-            properties: S.arr(S.obj({
-                type: S.str,
-                scopeName: S.str,
-                modelName: S.str,
-                description: S.str.optional(),
-                required: S.bool.optional(),
-                items: S.obj({
-                    type: S.str,
+            version: S.str.optional(),
+            roles: S.arr(
+                S.obj({
+                    name: S.str,
+                    description: S.str.optional(),
+                    isHost: S.bool,
+                    endpoints: S.arr(
+                        S.obj({
+                            scheme: S.str.enum('ws', 'wss'),
+                            host: S.str,
+                            port: S.int.min(0).max(65535),
+                            path: S.str,
+                        })
+                    ),
+                })
+            ),
+            handlers: S.arr(
+                S.obj({
+                    roleName: S.str,
+                    handlerName: S.str,
+                    description: S.str.optional(),
+                })
+            ),
+            messages: S.arr(
+                S.obj({
+                    roleName: S.str,
+                    handlerName: S.str,
+                    description: S.str.optional(),
+                })
+            ),
+            models: S.arr(
+                S.obj({
                     scopeName: S.str,
                     modelName: S.str,
+                    type: S.str,
                     description: S.str.optional(),
-                }).optional(),    
-            })).optional(),
-        })),    
-    })).desc('An array of network definitions'),
+                    properties: S.arr(
+                        S.obj({
+                            type: S.str,
+                            scopeName: S.str,
+                            modelName: S.str,
+                            description: S.str.optional(),
+                            required: S.bool.optional(),
+                            items: S.obj({
+                                type: S.str,
+                                scopeName: S.str,
+                                modelName: S.str,
+                                description: S.str.optional(),
+                            }).optional(),
+                        })
+                    ).optional(),
+                })
+            ),
+        })
+    ).desc('An array of network definitions'),
 }).compile('IrValidator')
 
 function buildIrModels(scopeName, modelName, schema) {
     const type = schema.type
     const model = {
         type,
-        scopeName, 
+        scopeName,
         modelName,
         description: schema.description,
     }
@@ -102,13 +119,13 @@ function buildIrModels(scopeName, modelName, schema) {
 
 module.exports = function buildIr(ctx) {
     const { request, spec } = ctx
-    const { hostRole } = request
-    
+    const { hostRoles } = request
+
     const irPackage = {
         project: request.project,
-        service: request.service,
-        description: spec.info.description,
-        version: spec.info.version,
+        service: spec.name,
+        description: spec.description,
+        version: spec.version,
     }
     const irNetworks = []
     const ir = {
@@ -117,51 +134,79 @@ module.exports = function buildIr(ctx) {
     }
 
     for (const [networkName, networkSpec] of Object.entries(spec.networks)) {
-        const hostParticipantSpec = networkSpec.participants[hostRole]
-        const otherParticipantSpecs = {}
-        for (const [participantName, participantSpec] of Object.entries(networkSpec.participants)) {
-            if (participantName !== hostRole) {
-                otherParticipantSpecs[participantName] = participantSpec
+        const hostRoleSpecs = hostRoles.map(hostRole => networkSpec.roles[hostRole])
+        const otherRoleSpecs = {}
+        for (const [roleName, roleSpec] of Object.entries(networkSpec.roles)) {
+            if (!hostRoles.includes(roleName)) {
+                otherRoleSpecs[roleName] = roleSpec
             }
         }
-    
+
+        const requiredRoles = new Set()
+        for (const hostRoleSpec of hostRoleSpecs) {
+            for (const handlerSpec of Object.values(hostRoleSpec.messages)) {
+                if (handlerSpec.from) {
+                    for (const fromRoleName of handlerSpec.from) {
+                        requiredRoles.add(fromRoleName)
+                    }
+                } else {
+                    requiredRoles.add(...Object.keys(otherRoleSpecs))
+                    break
+                }
+            }
+        }
+
+        const irRoles = []
         const irHandlers = []
         const irMessages = []
-        const irEndpoints = []
         const irModels = []
-        for (const [handlerName, handlerSpec] of Object.entries(hostParticipantSpec.handlers)) {
-            irHandlers.push({
-                participantName: hostRole,
-                handlerName,
-                description: handlerSpec.description,
+
+        // Add host roles
+        for (const hostRoleSpec of hostRoleSpecs) {
+            irRoles.push({
+                name: hostRoleSpec.name,
+                description: hostRoleSpec.description,
+                isHost: true,
+                endpoints: hostRoleSpec.endpoints || [],
             })
-            irModels.push(...buildIrModels(hostRole, handlerName, handlerSpec.payload))
-        }
-    
-        for (const [participantName, participantSpec] of Object.entries(otherParticipantSpecs)) {
-            if (participantSpec.endpoints) {
-                irEndpoints.push({
-                    participantName,
-                    endpoints: participantSpec.endpoints,
-                })
-            }
-            for (const [handlerName, handlerSpec] of Object.entries(participantSpec.handlers)) {
-                irMessages.push({
-                    participantName,
+            for (const [handlerName, handlerSpec] of Object.entries(hostRoleSpec.messages)) {
+                irHandlers.push({
+                    roleName: hostRoleSpec.name,
                     handlerName,
                     description: handlerSpec.description,
                 })
-                irModels.push(...buildIrModels(participantName, handlerName, handlerSpec.payload))
+                irModels.push(...buildIrModels(hostRoleSpec.name, handlerName, handlerSpec.payload))
             }
         }
-    
+
+        // Add remote roles
+        for (const [roleName, roleSpec] of Object.entries(otherRoleSpecs)) {
+            if (!requiredRoles.has(roleName)) {
+                continue
+            }
+            irRoles.push({
+                name: roleName,
+                description: roleSpec.description,
+                isHost: false,
+                endpoints: roleSpec.endpoints || [],
+            })
+            for (const [handlerName, handlerSpec] of Object.entries(roleSpec.messages)) {
+                irMessages.push({
+                    roleName,
+                    handlerName,
+                    description: handlerSpec.description,
+                })
+                irModels.push(...buildIrModels(roleName, handlerName, handlerSpec.payload))
+            }
+        }
+
         const irNetwork = {
             name: networkName,
             description: networkSpec.description,
             version: networkSpec.version,
+            roles: irRoles,
             handlers: irHandlers,
             messages: irMessages,
-            endpoints: irEndpoints,
             models: irModels,
         }
         irNetworks.push(irNetwork)

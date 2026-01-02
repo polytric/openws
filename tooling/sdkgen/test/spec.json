@@ -1,1 +1,162 @@
-{"openws":"0.0.1","info":{"title":"Chat Example","description":"A simple chat server with one client using WS.","version":"1.0.0"},"networks":{"ChatServer":{"participants":{"server":{"endpoints":[{"host":"localhost","port":8082,"path":"/chat"}],"handlers":{"message":{"payload":{"type":"object","properties":{"content":{"type":"string"},"sender":{"type":"string"},"mentions":{"type":"array","items":{"type":"string"}}},"required":["content","sender","mentions"],"description":"A message sent by a user","additionalProperties":false,"$schema":"http://json-schema.org/draft-07/schema#"}}}},"unityClient":{"handlers":{"broadcastMessage":{"payload":{"type":"object","properties":{"content":{"type":"string"},"sender":{"type":"string"},"mentions":{"type":"array","items":{"type":"string"}},"timestamp":{"type":"integer"}},"required":["content","sender","mentions","timestamp"],"description":"A message sent by a user","additionalProperties":false,"$schema":"http://json-schema.org/draft-07/schema#"}}}}}}}}
+{
+    "openws": "0.0.2",
+    "name": "Chat",
+    "description": "A chat service",
+    "version": "1.0.0",
+    "networks": {
+        "core": {
+            "name": "core",
+            "description": "A chat network",
+            "roles": {
+                "server": {
+                    "name": "server",
+                    "messages": {
+                        "createRoom": {
+                            "name": "createRoom",
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "userId": {
+                                        "type": "string"
+                                    },
+                                    "roomId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["userId", "roomId"],
+                                "additionalProperties": false,
+                                "$schema": "http://json-schema.org/draft-07/schema#"
+                            },
+                            "from": ["client"]
+                        },
+                        "joinRoom": {
+                            "name": "joinRoom",
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "userId": {
+                                        "type": "string"
+                                    },
+                                    "roomId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["userId", "roomId"],
+                                "additionalProperties": false,
+                                "$schema": "http://json-schema.org/draft-07/schema#"
+                            },
+                            "from": ["client"]
+                        },
+                        "sendMessage": {
+                            "name": "sendMessage",
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "userId": {
+                                        "type": "string"
+                                    },
+                                    "roomId": {
+                                        "type": "string"
+                                    },
+                                    "text": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["userId", "roomId", "text"],
+                                "additionalProperties": false,
+                                "$schema": "http://json-schema.org/draft-07/schema#"
+                            },
+                            "from": ["client", "portal"]
+                        },
+                        "requestRoomStats": {
+                            "name": "requestRoomStats",
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "roomId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["roomId"],
+                                "additionalProperties": false,
+                                "$schema": "http://json-schema.org/draft-07/schema#"
+                            },
+                            "from": ["portal"]
+                        }
+                    },
+                    "endpoints": [
+                        {
+                            "scheme": "ws",
+                            "host": "localhost",
+                            "port": 8082,
+                            "path": "/chat"
+                        }
+                    ]
+                },
+                "client": {
+                    "name": "client",
+                    "messages": {
+                        "joinedRoom": {
+                            "name": "joinedRoom",
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "joinerId": {
+                                        "type": "string"
+                                    },
+                                    "roomId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["joinerId", "roomId"],
+                                "additionalProperties": false,
+                                "$schema": "http://json-schema.org/draft-07/schema#"
+                            },
+                            "from": ["server"]
+                        },
+                        "receivedMessage": {
+                            "name": "receivedMessage",
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "senderId": {
+                                        "type": "string"
+                                    },
+                                    "roomId": {
+                                        "type": "string"
+                                    },
+                                    "text": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["senderId", "roomId", "text"],
+                                "additionalProperties": false,
+                                "$schema": "http://json-schema.org/draft-07/schema#"
+                            },
+                            "from": ["server"]
+                        }
+                    }
+                },
+                "portal": {
+                    "name": "portal",
+                    "messages": {
+                        "receivedRoomStats": {
+                            "name": "receivedRoomStats",
+                            "payload": {
+                                "type": "object",
+                                "properties": {
+                                    "roomId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["roomId"],
+                                "additionalProperties": false,
+                                "$schema": "http://json-schema.org/draft-07/schema#"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

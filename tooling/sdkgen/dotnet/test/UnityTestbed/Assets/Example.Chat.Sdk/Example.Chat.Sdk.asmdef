@@ -1,5 +1,5 @@
 {
-    "name": "<%= ctx.assemblyName %>",
+    "name": "Example.Chat.Sdk",
     "rootNamespace": "",
     "references": [
         "Polytric.OpenWs.Core.Runtime",

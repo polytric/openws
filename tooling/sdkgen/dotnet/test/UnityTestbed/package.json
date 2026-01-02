@@ -1,0 +1,10 @@
+{
+    "name": "io.polytric.openws.testbed",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "io.polytric.openws.core": "workspace:*",
+        "io.polytric.openws.unity": "workspace:*",
+        "io.polytric.openws.spec": "workspace:*"
+    }
+}

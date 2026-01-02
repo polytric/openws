@@ -1,0 +1,29 @@
+using System.Threading.Tasks;
+using Polytric.OpenWs.Core;
+<% for (const modelImport of ctx.modelImports) { -%>
+using <%= modelImport %>;
+<% } %>
+namespace <%= ctx.namespace %>
+{
+    public partial class <%= ctx.className %>
+    {
+<% for (const remoteRole of ctx.remoteRoles) { -%>
+        private partial Task HandleOpenAsync(<%= remoteRole.className %> <%= remoteRole.varName %>)
+        {
+            // TODO: Implement connection handling for <%= remoteRole.className %>
+            return Task.CompletedTask;
+        }
+
+<% } -%>
+<% for (const handler of ctx.handlers) { -%>
+<% for (const remoteRole of ctx.remoteRoles) { -%>
+        private partial Task HandleMessageAsync(<%= handler.modelClassName %> payload, <%= remoteRole.className %> <%= remoteRole.varName %>)
+        {
+            // TODO: Handle <%= handler.messageName %> from <%= remoteRole.className %>
+            return Task.CompletedTask;
+        }
+
+<% } -%>
+<% } -%>
+    }
+}
