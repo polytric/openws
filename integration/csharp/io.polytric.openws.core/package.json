@@ -1,8 +1,9 @@
 {
     "name": "io.polytric.openws.core",
-    "version": "0.0.2",
+    "version": "0.0.1",
     "displayName": "Polytric OpenWS Core",
     "description": "Core runtime for Polytric OpenWS SDK.",
+    "unity": "6000.0",
     "keywords": [
         "openws",
         "websocket",
@@ -12,10 +13,7 @@
         "name": "Polytric"
     },
     "license": "Apache-2.0",
-    "files": [
-        "LICENSE",
-        "README.md",
-        "Runtime"
-    ],
-    "dependencies": {}
+    "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+    }
 }
