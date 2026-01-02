@@ -85,39 +85,39 @@ const binder = WS.bindings({
 })
 const runtime = WS.runtime(binder)
 
-const session1 = runtime.newSession(async (fromRole, messageName, rawPayload) => {
-    console.log('session1', fromRole, messageName, rawPayload)
+const session1 = runtime.newSession(async (fromRole, messageName, payload) => {
+    console.log('session1', fromRole, messageName, payload)
 })
-const session2 = runtime.newSession(async (fromRole, messageName, rawPayload) => {
-    console.log('session2', fromRole, messageName, rawPayload)
+const session2 = runtime.newSession(async (fromRole, messageName, payload) => {
+    console.log('session2', fromRole, messageName, payload)
 })
 
 async function main() {
     await session1.open('client')
     await session2.open('client')
-    await session1.handleMessage('client', 'createRoom', '{"userId": "1", "roomId": "1"}')
-    await session2.handleMessage('client', 'joinRoom', '{"userId": "2", "roomId": "1"}')
-    await session1.handleMessage(
-        'client',
-        'sendMessage',
-        '{"userId": "1", "roomId": "1", "text": "Hello"}'
-    )
-    await session2.handleMessage(
-        'client',
-        'sendMessage',
-        '{"userId": "2", "roomId": "1", "text": "Hello"}'
-    )
+    await session1.handleMessage('client', 'createRoom', { userId: '1', roomId: '1' })
+    await session2.handleMessage('client', 'joinRoom', { userId: '2', roomId: '1' })
+    await session1.handleMessage('client', 'sendMessage', {
+        userId: '1',
+        roomId: '1',
+        text: 'Hello',
+    })
+    await session2.handleMessage('client', 'sendMessage', {
+        userId: '2',
+        roomId: '1',
+        text: 'Hello',
+    })
 
-    const session3 = runtime.newSession(async (fromRole, messageName, rawPayload) => {
-        console.log('session3', fromRole, messageName, rawPayload)
+    const session3 = runtime.newSession(async (fromRole, messageName, payload) => {
+        console.log('session3', fromRole, messageName, payload)
     })
     await session3.open('portal')
-    await session3.handleMessage('portal', 'requestRoomStats', '{"roomId": "1"}')
-    await session3.handleMessage(
-        'portal',
-        'sendMessage',
-        '{"userId": "Admin", "roomId": "1", "text": "Hello"}'
-    )
+    await session3.handleMessage('portal', 'requestRoomStats', { roomId: '1' })
+    await session3.handleMessage('portal', 'sendMessage', {
+        userId: 'Admin',
+        roomId: '1',
+        text: 'Hello',
+    })
 }
 
 main().catch(console.error)

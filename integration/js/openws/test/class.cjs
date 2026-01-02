@@ -91,29 +91,29 @@ const binder = WS.bindings({
 
 const runtime = WS.runtime(binder)
 
-const session1 = runtime.newSession(async (fromRole, messageName, rawPayload) => {
-    console.log(fromRole, messageName, rawPayload)
+const session1 = runtime.newSession(async (fromRole, messageName, payload) => {
+    console.log(fromRole, messageName, payload)
 })
-const session2 = runtime.newSession(async (fromRole, messageName, rawPayload) => {
-    console.log(fromRole, messageName, rawPayload)
+const session2 = runtime.newSession(async (fromRole, messageName, payload) => {
+    console.log(fromRole, messageName, payload)
 })
 
 async function main() {
     await session1.open('client')
     await session2.open('client')
 
-    await session1.handleMessage('client', 'createRoom', '{"userId": "userA", "roomId": "room1"}')
-    await session2.handleMessage('client', 'joinRoom', '{"userId": "userB", "roomId": "room1"}')
-    await session1.handleMessage(
-        'client',
-        'sendMessage',
-        '{"userId": "userA", "roomId": "room1", "text": "Hello, world!"}'
-    )
-    await session2.handleMessage(
-        'client',
-        'sendMessage',
-        '{"userId": "userB", "roomId": "room1", "text": "Hello, world!"}'
-    )
+    await session1.handleMessage('client', 'createRoom', { userId: 'userA', roomId: 'room1' })
+    await session2.handleMessage('client', 'joinRoom', { userId: 'userB', roomId: 'room1' })
+    await session1.handleMessage('client', 'sendMessage', {
+        userId: 'userA',
+        roomId: 'room1',
+        text: 'Hello, world!',
+    })
+    await session2.handleMessage('client', 'sendMessage', {
+        userId: 'userB',
+        roomId: 'room1',
+        text: 'Hello, world!',
+    })
 }
 
 main().catch(console.error)

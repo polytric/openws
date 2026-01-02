@@ -31,15 +31,11 @@ export class Session {
         await this.binder.fromRoles[this.fromRole].handleError?.(this.fromRole, error)
     }
 
-    handleMessage: SendFn = async (fromRole, messageName, rawPayload) => {
+    handleMessage: SendFn = async (fromRole, messageName, payload) => {
         if (!this.api) {
             throw new Error('Session not opened')
         }
-        await this.binder.fromRoles[fromRole].handleMessage(
-            messageName,
-            JSON.parse(rawPayload),
-            this.api
-        )
+        await this.binder.fromRoles[fromRole].handleMessage(messageName, payload, this.api)
     }
 }
 

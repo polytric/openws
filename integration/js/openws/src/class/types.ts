@@ -50,7 +50,7 @@ export type DispatchEntry = {
     handlerName: string
     fromAllowed?: Set<string>
     validator: ValidateFunction
-    invoke: (fromRole: string, rawPayload: string, api: any) => Promise<void>
+    invoke: (fromRole: string, payload: any, api: any) => Promise<void>
 }
 
 export class Role {

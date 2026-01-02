@@ -15,7 +15,7 @@ type HandlerBinder = {
     handler: (payload: any, api: ApiProto) => Promise<void>
 }
 
-export type SendFn = (fromRole: string, messageName: string, rawPayload: string) => Promise<void>
+export type SendFn = (fromRole: string, messageName: string, payload: any) => Promise<void>
 
 export type ApiProto = {
     rawSend: SendFn
@@ -47,7 +47,7 @@ export class ClientRoleBinder {
                         cause: validate.errors,
                     })
                 }
-                return this.rawSend(role.name, message.name, JSON.stringify(payload))
+                return this.rawSend(role.name, message.name, payload)
             }
         }
     }
