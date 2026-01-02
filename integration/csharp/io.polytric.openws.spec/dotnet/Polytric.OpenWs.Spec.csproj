@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Polytric.OpenWs.Spec</RootNamespace>
+    <AssemblyName>Polytric.OpenWs.Spec</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Runtime/Attributes/**/*.cs" />
+    <Compile Include="../Runtime/Serialization/**/*.cs" />
+  </ItemGroup>
+
+</Project>
+

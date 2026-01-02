@@ -1,0 +1,20 @@
+{
+    "name": "Polytric.OpenWs.Unity.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Polytric.OpenWs.Unity.Runtime",
+        "Polytric.OpenWs.Spec",
+        "Polytric.OpenWs.Spec.Reflection"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

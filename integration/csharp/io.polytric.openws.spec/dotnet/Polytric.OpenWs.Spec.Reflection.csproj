@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Polytric.OpenWs.Spec.Generators</RootNamespace>
+    <AssemblyName>Polytric.OpenWs.Spec.Reflection</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Runtime/Generators/Reflection/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Polytric.OpenWs.Spec.csproj" />
+  </ItemGroup>
+
+</Project>
+

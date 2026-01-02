@@ -1,0 +1,8 @@
+is_global = true
+build_property.RootNamespace = Polytric.OpenWs.Spec
+build_property.ProjectDir = /Users/yuguan/polytric/openws/integration/csharp/io.polytric.openws.spec/dotnet/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.EffectiveAnalysisLevelStyle = 
+build_property.EnableCodeStyleSeverity = 

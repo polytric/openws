@@ -1,0 +1,17 @@
+{
+    "name": "Polytric.OpenWs.Core.Runtime",
+    "rootNamespace": "",
+    "references": [
+        "endel.nativewebsocket",
+        "Polytric.OpenWs.Spec"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

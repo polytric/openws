@@ -1,0 +1,21 @@
+{
+    "name": "io.polytric.openws.spec",
+    "version": "0.0.2",
+    "displayName": "Polytric OpenWS Spec",
+    "description": "Polytric OpenWS Specification for dotnet",
+    "keywords": [
+        "openws",
+        "websocket",
+        "sdk"
+    ],
+    "author": {
+        "name": "Polytric"
+    },
+    "license": "Apache-2.0",
+    "files": [
+        "LICENSE",
+        "README.md",
+        "Runtime"
+    ],
+    "dependencies": {}
+}

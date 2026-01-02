@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Polytric.OpenWs.Spec.Roslyn</RootNamespace>
+    <AssemblyName>Polytric.OpenWs.Spec.Roslyn</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Future: Roslyn-based source generator for ASP.NET -->
+  <!-- NOT referenced by any Unity asmdef -->
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Polytric.OpenWs.Spec.csproj" />
+  </ItemGroup>
+
+</Project>
+

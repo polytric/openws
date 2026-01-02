@@ -1,0 +1,9 @@
+node_modules/
+node_modules.meta
+package-lock.json
+pnpm-lock.yaml
+
+# .NET projects (not for Unity)
+dotnet/
+*.csproj
+*.sln
