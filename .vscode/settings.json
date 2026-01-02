@@ -13,5 +13,31 @@
         "*.mjs": "javascript",
         "*.json": "jsonc"
     },
-    "cSpell.words": ["openws", "pocketgems", "RJSF"]
+    "cSpell.words": ["openws", "pocketgems", "RJSF"],
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/.hg/store/**": true,
+        "**/.svn/**": true,
+        "**/CVS/**": true,
+        "**/.DS_Store": true,
+        "**/*.code-search-diagnostics": true
+    },
+    "files.exclude": {
+        "**/Library": true,
+        "**/Temp": true,
+        "**/Logs": true,
+        "**/obj": true,
+        "**/UnityTestbed/*.csproj": true,
+        "**/UnityTestbed/*.sln": true
+    },
+    "[csharp]": {
+        "editor.defaultFormatter": "anysphere.csharp",
+        "editor.formatOnSave": true
+    },
+    "dotnet.defaultSolution": "OpenWs.sln",
+    "omnisharp.enableEditorConfigSupport": true,
+    "workbench.colorCustomizations": {
+        "gitDecoration.ignoredResourceForeground": "#595959"
+    }
 }

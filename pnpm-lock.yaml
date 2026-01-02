@@ -27,13 +27,11 @@ importers:
         specifier: ^8.19.1
         version: 8.50.1(eslint@9.39.2)(typescript@5.9.3)
 
-  integration/csharp/io.polytric.openwssdk.core: {}
+  integration/csharp/io.polytric.openws.core: {}
 
-  integration/csharp/io.polytric.openwssdk.unity:
-    dependencies:
-      io.polytric.openwssdk.core:
-        specifier: workspace:*
-        version: link:../io.polytric.openwssdk.core
+  integration/csharp/io.polytric.openws.spec: {}
+
+  integration/csharp/io.polytric.openws.unity: {}
 
   integration/js/fastify-openws:
     dependencies:
@@ -49,6 +47,9 @@ importers:
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
+      fastify:
+        specifier: ^5.6.2
+        version: 5.6.2
       fastify-plugin:
         specifier: ^5.1.0
         version: 5.1.0
@@ -59,9 +60,6 @@ importers:
       '@types/ws':
         specifier: ^8.5.13
         version: 8.18.1
-      fastify:
-        specifier: ^5.6.2
-        version: 5.6.2
       nodemon:
         specifier: ^3.1.11
         version: 3.1.11
@@ -95,6 +93,9 @@ importers:
       '@polytric/openws-ui':
         specifier: workspace:*
         version: link:../openws-ui
+      fastify:
+        specifier: ^5.6.2
+        version: 5.6.2
       fastify-plugin:
         specifier: ^5.1.0
         version: 5.1.0
@@ -105,9 +106,6 @@ importers:
       '@polytric/openws':
         specifier: workspace:*
         version: link:../openws
-      fastify:
-        specifier: ^5.6.2
-        version: 5.6.2
       nodemon:
         specifier: ^3.1.11
         version: 3.1.11
@@ -218,10 +216,10 @@ importers:
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
+    devDependencies:
       nodemon:
         specifier: ^3.1.11
         version: 3.1.11
-    devDependencies:
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(tsx@4.21.0)(typescript@5.9.3)
@@ -243,6 +241,18 @@ importers:
       yargs:
         specifier: ^18.0.0
         version: 18.0.0
+
+  tooling/sdkgen/dotnet/test/UnityTestbed:
+    dependencies:
+      io.polytric.openws.core:
+        specifier: workspace:*
+        version: link:../../../../../integration/csharp/io.polytric.openws.core
+      io.polytric.openws.spec:
+        specifier: workspace:*
+        version: link:../../../../../integration/csharp/io.polytric.openws.spec
+      io.polytric.openws.unity:
+        specifier: workspace:*
+        version: link:../../../../../integration/csharp/io.polytric.openws.unity
 
 packages:
 

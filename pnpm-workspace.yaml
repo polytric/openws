@@ -4,10 +4,11 @@ packages:
     - 'integration/js/fastify-openws-ui'
     - 'integration/js/openws'
     - 'integration/js/openws-ui'
-    - 'integration/csharp/io.polytric.openwssdk.core'
-    - 'integration/csharp/io.polytric.openwssdk.unity'
+    - 'integration/csharp/io.polytric.openws.spec'
+    - 'integration/csharp/io.polytric.openws.core'
+    - 'integration/csharp/io.polytric.openws.unity'
     - 'tooling/sdkgen'
-    - 'tooling/sdkgen/dotnet/test/Testbed/Assets'
+    - 'tooling/sdkgen/dotnet/test/UnityTestbed'
 
     # Ignore Unity files
     - '!**/Library/**'
