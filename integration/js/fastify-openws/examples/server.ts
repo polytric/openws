@@ -92,7 +92,7 @@ class Server {
     }
 
     async requestRoomStats({ roomId }: { roomId: string }, api: WS.Api<typeof Portal>) {
-        await api.receivedRoomStats({ roomId, members: this.rooms[roomId].members })
+        await api.receivedRoomStats({ roomId })
     }
 }
 

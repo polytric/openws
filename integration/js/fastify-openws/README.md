@@ -109,12 +109,12 @@ Notes:
 
 - `fromRole` is the sender role name (string).
 - `messageName` is the message name (string).
-- `payload` is a JSON-encoded string (not a JSON object). It is forwarded into the OpenWS session as-is.
+- `payload` an object that matches the payload's JSON schema.
 
 This is consistent for both directions:
 
-- Inbound: the plugin parses the outer envelope JSON, then passes `payload` (a string) to `session.handleMessage(...)`.
-- Outbound: the OpenWS runtime provides `rawPayload` (a string) to the plugin's transport callback, and the plugin places it into the envelope as `payload`.
+- Inbound: the plugin parses the outer envelope JSON, then passes `payload` to `session.handleMessage(...)`.
+- Outbound: the OpenWS runtime provides `payload` to the plugin's transport callback.
 
 If you are hand-rolling a client, you must JSON-encode your payload before placing it in the envelope.
 

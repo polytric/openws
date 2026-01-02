@@ -8,8 +8,8 @@ ws.on('open', () => {
 
 ws.on('message', data => {
     try {
-        const { fromRole, messageName, payload: rawPayload } = JSON.parse(data.toString())
-        console.info(`Got: portal -> ${fromRole} ${messageName} ${rawPayload}`)
+        const { fromRole, messageName, payload } = JSON.parse(data.toString())
+        console.info(`Got: portal -> ${fromRole} ${messageName} ${JSON.stringify(payload)}`)
     } catch (e) {
         console.error('error in onMessage handler:', e)
     }
@@ -28,7 +28,7 @@ setTimeout(() => {
         JSON.stringify({
             fromRole: 'portal',
             messageName: 'requestRoomStats',
-            payload: JSON.stringify({ roomId: 'chat-room' }),
+            payload: { roomId: 'chat-room' },
         })
     )
 }, 1000)

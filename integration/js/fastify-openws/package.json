@@ -1,6 +1,6 @@
 {
     "name": "@polytric/fastify-openws",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Polytric OpenWS Runtime for Fastify",
     "type": "module",
     "main": "./dist/index.js",
@@ -33,9 +33,9 @@
         "build": "tsup",
         "build:watch": "tsup --watch",
         "prepublishOnly": "pnpm build",
-        "run:client-a": "nodemon -w src/index.js -w examples/client-a.js examples/client-a.js",
-        "run:client-b": "nodemon -w src/index.js -w examples/client-b.js examples/client-b.js",
-        "run:portal": "nodemon -w src/index.js -w examples/portal.js examples/portal.js",
+        "run:client-a": "nodemon -w src/index.cjs -w examples/client-a.cjs examples/client-a.cjs",
+        "run:client-b": "nodemon -w src/index.cjs -w examples/client-b.cjs examples/client-b.cjs",
+        "run:portal": "nodemon -w src/index.cjs -w examples/portal.cjs examples/portal.cjs",
         "run:server": "tsx watch examples/server.ts",
         "setup": "pnpm install",
         "typecheck": "tsc --noEmit"

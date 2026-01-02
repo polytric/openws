@@ -8,9 +8,8 @@ ws.on('open', () => {
 
 ws.on('message', data => {
     try {
-        const { fromRole, messageName, payload: rawPayload } = JSON.parse(data.toString())
-        const payload = JSON.parse(rawPayload)
-        console.info(`Got: client-b -> ${fromRole} ${messageName} ${rawPayload}`)
+        const { fromRole, messageName, payload } = JSON.parse(data.toString())
+        console.info(`Got: client-b -> ${fromRole} ${messageName} ${JSON.stringify(payload)}`)
 
         switch (messageName) {
             case 'joinedRoom':
@@ -21,11 +20,11 @@ ws.on('message', data => {
                     JSON.stringify({
                         fromRole: 'client',
                         messageName: 'sendMessage',
-                        payload: JSON.stringify({
+                        payload: {
                             text: 'Hello from client-b!',
                             roomId: payload.roomId,
                             userId: 'test-b',
-                        }),
+                        },
                     })
                 )
                 break
@@ -48,7 +47,7 @@ setTimeout(() => {
         JSON.stringify({
             fromRole: 'client',
             messageName: 'joinRoom',
-            payload: JSON.stringify({ userId: 'test-b', roomId: 'chat-room' }),
+            payload: { userId: 'test-b', roomId: 'chat-room' },
         })
     )
 }, 2000)
