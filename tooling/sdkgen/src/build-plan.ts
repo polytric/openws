@@ -1,13 +1,14 @@
-import dotnetPlan from './dotnet/build-plan.js'
 import type { PipelineContext } from './types.js'
 
-const planIndex: Record<string, Record<string, typeof dotnetPlan>> = {
+type Plan = (ctx: PipelineContext) => PipelineContext
+
+const planIndex: Record<string, Record<string, string>> = {
     csharp: {
-        unity: dotnetPlan,
+        unity: './plans/dotnet.js',
     },
 }
 
-export default function dispatchBuildPlan(ctx: PipelineContext): PipelineContext {
+export default async function dispatchBuildPlan(ctx: PipelineContext): Promise<PipelineContext> {
     const { request } = ctx
     if (!request) throw new Error('request is required')
 
@@ -16,8 +17,10 @@ export default function dispatchBuildPlan(ctx: PipelineContext): PipelineContext
     if (!targetConfig) throw new Error(`No target config for language: ${language}`)
 
     const environment = targetConfig.environment
-    const plan = planIndex[language]?.[environment]
-    if (!plan) throw new Error(`No plan for ${language}/${environment}`)
+    const planPath = planIndex[language]?.[environment]
+    if (!planPath) throw new Error(`No plan for ${language}/${environment}`)
 
+    // Dynamic import keeps plans as separate bundles with correct __dirname
+    const { default: plan } = (await import(planPath)) as { default: Plan }
     return plan(ctx)
 }

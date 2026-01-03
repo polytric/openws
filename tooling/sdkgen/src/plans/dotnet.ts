@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import type { IR, IRProperty, PipelineContext, PlanStep } from '../types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// From src/plans/ -> ../templates/dotnet
+// From dist/plans/ -> ../templates/dotnet (same relative path!)
+const TEMPLATE_DIR = path.join(__dirname, '../templates/dotnet')
 
 function pascalCase(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1)
@@ -35,14 +38,14 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             name: 'assembly definition',
             command: 'render',
             getData: () => ir,
-            template: path.join(__dirname, 'template', 'Service.asmdef.ejs'),
+            template: path.join(TEMPLATE_DIR, 'Service.asmdef.ejs'),
             output: path.join(request.outputPath, assemblyName, `${assemblyName}.asmdef`),
         },
         {
             name: 'user assembly reference',
             command: 'render',
             getData: () => ir,
-            template: path.join(__dirname, 'template', 'UserService.asmref.ejs'),
+            template: path.join(TEMPLATE_DIR, 'UserService.asmref.ejs'),
             output: path.join(
                 request.outputPath,
                 `${assemblyName}.User`,
@@ -102,7 +105,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 version: networkIr.version,
                 allRoles,
             }),
-            template: path.join(__dirname, 'template', 'Network.cs.ejs'),
+            template: path.join(TEMPLATE_DIR, 'Network.cs.ejs'),
             output: path.join(networkOutputPath, `${networkClassName}.cs`),
         })
 
@@ -147,7 +150,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     modelImports,
                     ...hostRole,
                 }),
-                template: path.join(__dirname, 'template', 'HostRole.cs.ejs'),
+                template: path.join(TEMPLATE_DIR, 'HostRole.cs.ejs'),
                 output: path.join(networkOutputPath, 'Roles', `${hostRole.className}.cs`),
             })
 
@@ -162,7 +165,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     modelImports: allModelImports,
                     ...hostRole,
                 }),
-                template: path.join(__dirname, 'template', 'UserHostRole.cs.ejs'),
+                template: path.join(TEMPLATE_DIR, 'UserHostRole.cs.ejs'),
                 output: path.join(userNetworkOutputPath, 'Roles', `${hostRole.className}.cs`),
             })
         }
@@ -181,7 +184,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     modelImports,
                     ...remoteRole,
                 }),
-                template: path.join(__dirname, 'template', 'RemoteRole.cs.ejs'),
+                template: path.join(TEMPLATE_DIR, 'RemoteRole.cs.ejs'),
                 output: path.join(networkOutputPath, 'Roles', `${remoteRole.className}.cs`),
             })
         }
@@ -193,7 +196,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 name: `model ${modelIr.className}`,
                 command: 'render',
                 getData: () => modelIr,
-                template: path.join(__dirname, 'template', 'Model.cs.ejs'),
+                template: path.join(TEMPLATE_DIR, 'Model.cs.ejs'),
                 output: path.join(
                     networkOutputPath,
                     'Models',

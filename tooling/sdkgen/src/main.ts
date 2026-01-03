@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import buildIr from './build-ir.js'
 import dispatchBuildPlan from './build-plan.js'
 import buildRequest from './build-request.js'
@@ -17,8 +18,19 @@ const Pipeline: PipelineStep[] = [
     executePlan,
 ]
 
-function main(): PipelineContext {
-    return Pipeline.reduce<PipelineContext>((acc, step) => step(acc), { argv: process.argv })
+async function main(): Promise<PipelineContext> {
+    let ctx: PipelineContext = { argv: process.argv }
+    for (const step of Pipeline) {
+        ctx = await step(ctx)
+    }
+    return ctx
 }
 
-console.log(JSON.stringify(main(), null, 2))
+main()
+    .then(result => {
+        console.log(JSON.stringify(result, null, 2))
+    })
+    .catch(err => {
+        console.error(err)
+        process.exit(1)
+    })

@@ -163,4 +163,4 @@ export interface PlanStep {
     getData?: () => unknown
 }
 
-export type PipelineStep = (ctx: PipelineContext) => PipelineContext
+export type PipelineStep = (ctx: PipelineContext) => PipelineContext | Promise<PipelineContext>
