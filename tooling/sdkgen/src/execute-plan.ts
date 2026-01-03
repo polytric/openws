@@ -1,11 +1,13 @@
-const fs = require('node:fs')
-const path = require('node:path')
+import fs from 'node:fs'
+import path from 'node:path'
 
-const ejs = require('ejs')
+import ejs from 'ejs'
 
-const rendererCache = {}
+import type { PipelineContext } from './types.js'
 
-function renderTemplate(templatePath, data) {
+const rendererCache: Record<string, ejs.TemplateFunction> = {}
+
+function renderTemplate(templatePath: string, data: ejs.Data): string {
     if (rendererCache[templatePath]) {
         return rendererCache[templatePath](data)
     }
@@ -15,24 +17,29 @@ function renderTemplate(templatePath, data) {
     return renderer(data)
 }
 
-function executePlan(ctx) {
+export default function executePlan(ctx: PipelineContext): PipelineContext {
     const { plan } = ctx
+    if (!plan) throw new Error('plan is required')
+
     for (const step of plan) {
         switch (step.command) {
             case 'copy':
-                fs.cpSync(step.input, step.output, { recursive: true })
+                if (step.input) {
+                    fs.cpSync(step.input, step.output, { recursive: true })
+                }
                 break
             case 'render': {
                 const { getData, template, output } = step
+                if (!getData || !template) continue
+
                 const data = getData()
                 console.log(data)
-                fs.mkdirSync(path.dirname(output), { recursive: true, force: true })
+                fs.mkdirSync(path.dirname(output), { recursive: true })
                 fs.writeFileSync(output, renderTemplate(template, { ctx: data }))
                 break
             }
         }
     }
+
     return ctx
 }
-
-module.exports = executePlan

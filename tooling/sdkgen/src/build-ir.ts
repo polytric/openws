@@ -1,4 +1,6 @@
-const S = require('@pocketgems/schema')
+import S from '@pocketgems/schema'
+
+import type { IR, IRModel, IRProperty, JsonSchema, PipelineContext } from './types.js'
 
 const validateIr = S.obj({
     package: S.obj({
@@ -68,14 +70,15 @@ const validateIr = S.obj({
     ).desc('An array of network definitions'),
 }).compile('IrValidator')
 
-function buildIrModels(scopeName, modelName, schema) {
+function buildIrModels(scopeName: string, modelName: string, schema: JsonSchema): IRModel[] {
     const type = schema.type
-    const model = {
+    const model: IRModel = {
         type,
         scopeName,
         modelName,
         description: schema.description,
     }
+
     switch (type) {
         case 'string':
         case 'number':
@@ -84,65 +87,77 @@ function buildIrModels(scopeName, modelName, schema) {
         case 'null':
             return []
         case 'array': {
+            if (!schema.items) return []
             return buildIrModels(scopeName, modelName, schema.items)
         }
         case 'object': {
-            const properties = []
+            const properties: IRProperty[] = []
             model.properties = properties
-            const models = []
+            const models: IRModel[] = []
+
+            if (!schema.properties) return [model]
+
             for (const [subName, subSchema] of Object.entries(schema.properties)) {
                 const subModels = buildIrModels(scopeName, subName, subSchema)
                 const mainModel = subModels.find(m => m.modelName === subName) ?? subSchema
-                const property = {
+
+                const property: IRProperty = {
                     type: mainModel.type,
                     description: mainModel.description,
-                    scopeName: mainModel.scopeName ?? scopeName,
-                    modelName: mainModel.modelName ?? subName,
+                    scopeName: (mainModel as IRModel).scopeName ?? scopeName,
+                    modelName: (mainModel as IRModel).modelName ?? subName,
                     required: schema.required?.includes(subName),
                 }
 
-                if (mainModel.items) {
+                const itemsSource =
+                    (mainModel as IRModel).properties?.[0]?.items ?? (mainModel as JsonSchema).items
+                if (itemsSource) {
                     property.items = {
-                        type: mainModel.items.type,
-                        description: mainModel.items.description,
-                        scopeName: mainModel.items.scopeName ?? scopeName,
-                        modelName: mainModel.items.modelName ?? subName,
+                        type: itemsSource.type,
+                        description: itemsSource.description,
+                        scopeName: (itemsSource as IRProperty['items'])?.scopeName ?? scopeName,
+                        modelName: (itemsSource as IRProperty['items'])?.modelName ?? subName,
                     }
                 }
+
                 properties.push(property)
                 models.push(...subModels)
             }
             return [model, ...models]
         }
+        default:
+            return []
     }
 }
 
-module.exports = function buildIr(ctx) {
+export default function buildIr(ctx: PipelineContext): PipelineContext {
     const { request, spec } = ctx
+    if (!request) throw new Error('request is required')
+    if (!spec) throw new Error('spec is required')
+
     const { hostRoles } = request
 
-    const irPackage = {
-        project: request.project,
-        service: spec.name,
-        description: spec.description,
-        version: spec.version,
-    }
-    const irNetworks = []
-    const ir = {
-        package: irPackage,
-        networks: irNetworks,
+    const ir: IR = {
+        package: {
+            project: request.project,
+            service: spec.name,
+            description: spec.description,
+            version: spec.version,
+        },
+        networks: [],
     }
 
     for (const [networkName, networkSpec] of Object.entries(spec.networks)) {
         const hostRoleSpecs = hostRoles.map(hostRole => networkSpec.roles[hostRole])
-        const otherRoleSpecs = {}
+        const otherRoleSpecs: Record<string, (typeof networkSpec.roles)[string]> = {}
+
         for (const [roleName, roleSpec] of Object.entries(networkSpec.roles)) {
             if (!hostRoles.includes(roleName)) {
                 otherRoleSpecs[roleName] = roleSpec
             }
         }
 
-        const requiredRoles = new Set()
+        const requiredRoles = new Set<string>()
         for (const hostRoleSpec of hostRoleSpecs) {
             for (const handlerSpec of Object.values(hostRoleSpec.messages)) {
                 if (handlerSpec.from) {
@@ -150,53 +165,11 @@ module.exports = function buildIr(ctx) {
                         requiredRoles.add(fromRoleName)
                     }
                 } else {
-                    requiredRoles.add(...Object.keys(otherRoleSpecs))
+                    for (const key of Object.keys(otherRoleSpecs)) {
+                        requiredRoles.add(key)
+                    }
                     break
                 }
-            }
-        }
-
-        const irRoles = []
-        const irHandlers = []
-        const irMessages = []
-        const irModels = []
-
-        // Add host roles
-        for (const hostRoleSpec of hostRoleSpecs) {
-            irRoles.push({
-                name: hostRoleSpec.name,
-                description: hostRoleSpec.description,
-                isHost: true,
-                endpoints: hostRoleSpec.endpoints || [],
-            })
-            for (const [handlerName, handlerSpec] of Object.entries(hostRoleSpec.messages)) {
-                irHandlers.push({
-                    roleName: hostRoleSpec.name,
-                    handlerName,
-                    description: handlerSpec.description,
-                })
-                irModels.push(...buildIrModels(hostRoleSpec.name, handlerName, handlerSpec.payload))
-            }
-        }
-
-        // Add remote roles
-        for (const [roleName, roleSpec] of Object.entries(otherRoleSpecs)) {
-            if (!requiredRoles.has(roleName)) {
-                continue
-            }
-            irRoles.push({
-                name: roleName,
-                description: roleSpec.description,
-                isHost: false,
-                endpoints: roleSpec.endpoints || [],
-            })
-            for (const [handlerName, handlerSpec] of Object.entries(roleSpec.messages)) {
-                irMessages.push({
-                    roleName,
-                    handlerName,
-                    description: handlerSpec.description,
-                })
-                irModels.push(...buildIrModels(roleName, handlerName, handlerSpec.payload))
             }
         }
 
@@ -204,15 +177,59 @@ module.exports = function buildIr(ctx) {
             name: networkName,
             description: networkSpec.description,
             version: networkSpec.version,
-            roles: irRoles,
-            handlers: irHandlers,
-            messages: irMessages,
-            models: irModels,
+            roles: [] as IR['networks'][0]['roles'],
+            handlers: [] as IR['networks'][0]['handlers'],
+            messages: [] as IR['networks'][0]['messages'],
+            models: [] as IR['networks'][0]['models'],
         }
-        irNetworks.push(irNetwork)
+
+        // Add host roles
+        for (const hostRoleSpec of hostRoleSpecs) {
+            irNetwork.roles.push({
+                name: hostRoleSpec.name,
+                description: hostRoleSpec.description,
+                isHost: true,
+                endpoints: hostRoleSpec.endpoints || [],
+            })
+
+            for (const [handlerName, handlerSpec] of Object.entries(hostRoleSpec.messages)) {
+                irNetwork.handlers.push({
+                    roleName: hostRoleSpec.name,
+                    handlerName,
+                    description: handlerSpec.description,
+                })
+                irNetwork.models.push(
+                    ...buildIrModels(hostRoleSpec.name, handlerName, handlerSpec.payload)
+                )
+            }
+        }
+
+        // Add remote roles
+        for (const [roleName, roleSpec] of Object.entries(otherRoleSpecs)) {
+            if (!requiredRoles.has(roleName)) continue
+
+            irNetwork.roles.push({
+                name: roleName,
+                description: roleSpec.description,
+                isHost: false,
+                endpoints: roleSpec.endpoints || [],
+            })
+
+            for (const [handlerName, handlerSpec] of Object.entries(roleSpec.messages)) {
+                irNetwork.messages.push({
+                    roleName,
+                    handlerName,
+                    description: handlerSpec.description,
+                })
+                irNetwork.models.push(...buildIrModels(roleName, handlerName, handlerSpec.payload))
+            }
+        }
+
+        ir.networks.push(irNetwork)
     }
 
     validateIr(ir)
+
     return {
         ...ctx,
         ir,

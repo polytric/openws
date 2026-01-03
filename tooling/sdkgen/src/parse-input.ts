@@ -1,49 +1,57 @@
-const yargs = require('yargs')
-const { hideBin } = require('yargs/helpers')
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
-module.exports = function parseInput(ctx) {
+import type { PipelineContext, RawInput } from './types.js'
+
+export default function parseInput(ctx: PipelineContext): PipelineContext {
     const args = yargs(hideBin(ctx.argv))
-        .scriptName('sdkgen')
+        .scriptName('openws-sdkgen')
         .version(false)
         .option('spec', {
             type: 'string',
             description: 'The path to the OpenWS spec file',
+            demandOption: true,
         })
         .option('out', {
             type: 'string',
             description: 'The path to the output directory',
+            demandOption: true,
         })
         .option('project', {
             type: 'string',
-            description: 'The path to the project directory',
+            description: 'The project name',
+            demandOption: true,
         })
         .option('hostRole', {
             type: 'array',
+            string: true,
             description: 'The target participant roles that use the generated code',
+            demandOption: true,
         })
         .option('language', {
             type: 'string',
             description: 'The language to generate code for',
-            choices: ['csharp', 'javascript'],
-            default: 'csharp',
+            choices: ['csharp', 'javascript'] as const,
+            default: 'csharp' as const,
         })
         .option('environment', {
             type: 'string',
-            description: 'The environments to generate code for',
-            choices: ['unity', 'node', 'browser'],
-            default: ['unity'],
+            description: 'The environment to generate code for',
+            choices: ['unity', 'node', 'browser'] as const,
+            default: 'unity' as const,
         })
         .option('frameworks', {
             type: 'array',
+            string: true,
             description: 'The frameworks to generate code for',
             choices: ['fastify', 'newtonsoft'],
         })
         .strict()
         .help()
-        .parse()
+        .parseSync()
 
     return {
         ...ctx,
-        rawInput: args,
+        rawInput: args as unknown as RawInput,
     }
 }

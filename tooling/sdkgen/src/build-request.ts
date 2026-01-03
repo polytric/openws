@@ -1,7 +1,9 @@
-const path = require('node:path')
-const { cwd } = require('node:process')
+import path from 'node:path'
+import process from 'node:process'
 
-const S = require('@pocketgems/schema')
+import S from '@pocketgems/schema'
+
+import type { BuildRequest, PipelineContext } from './types.js'
 
 const validateBuildRequest = S.obj({
     specPath: S.str,
@@ -10,11 +12,11 @@ const validateBuildRequest = S.obj({
     hostRoles: S.arr(S.str),
     target: S.obj({
         csharp: S.obj({
-            environment: S.str.enum('unity'), // aspnet
+            environment: S.str.enum('unity'),
             frameworks: S.arr(S.str.enum('newtonsoft')).optional(),
         }).optional(),
         javascript: S.obj({
-            environment: S.str.enum('node'), // browser
+            environment: S.str.enum('node', 'browser'),
             frameworks: S.arr(S.str.enum('fastify')).optional(),
         }).optional(),
     })
@@ -23,14 +25,17 @@ const validateBuildRequest = S.obj({
         .desc('The target platform to generate code for'),
 }).compile('BuildRequestValidator')
 
-module.exports = function buildRequest(ctx) {
+export default function buildRequest(ctx: PipelineContext): PipelineContext {
     const { rawInput } = ctx
-    console.log(rawInput.hostRole)
-    const request = {
+    if (!rawInput) throw new Error('rawInput is required')
+
+    console.log('Host roles:', rawInput.hostRole)
+
+    const request: BuildRequest = {
         specPath: path.join(process.cwd(), rawInput.spec),
         outputPath: path.join(process.cwd(), rawInput.out),
         project: rawInput.project,
-        hostRoles: rawInput.hostRole, // naming oddity from cli --hostRole serverA --hostRole serverB is readable as singular hostRole
+        hostRoles: rawInput.hostRole,
         target: {
             [rawInput.language]: {
                 environment: rawInput.environment,
@@ -38,7 +43,9 @@ module.exports = function buildRequest(ctx) {
             },
         },
     }
+
     validateBuildRequest(request)
+
     return {
         ...ctx,
         request,

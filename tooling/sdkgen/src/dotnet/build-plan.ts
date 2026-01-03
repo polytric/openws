@@ -1,33 +1,50 @@
-const path = require('node:path')
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-function pascalCase(str) {
+import type { IR, IRProperty, PipelineContext, PlanStep } from '../types.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+function pascalCase(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
-function camelCase(str) {
+function camelCase(str: string): string {
     return str.charAt(0).toLowerCase() + str.slice(1)
 }
 
-function createPlan(ctx) {
+interface RoleInfo {
+    roleName: string
+    className: string
+    varName: string
+    description: string
+    baseClassName: 'HostRole' | 'RemoteRole'
+    endpoints: IR['networks'][0]['roles'][0]['endpoints']
+}
+
+export default function createPlan(ctx: PipelineContext): PipelineContext {
     const { ir, request } = ctx
+    if (!ir) throw new Error('ir is required')
+    if (!request) throw new Error('request is required')
+
     const assemblyName = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.Sdk`
     ir.assemblyName = assemblyName
 
-    const plan = [
+    const plan: PlanStep[] = [
         {
             name: 'assembly definition',
             command: 'render',
-            getData: () => ctx.ir,
+            getData: () => ir,
             template: path.join(__dirname, 'template', 'Service.asmdef.ejs'),
-            output: path.join(ctx.request.outputPath, assemblyName, `${assemblyName}.asmdef`),
+            output: path.join(request.outputPath, assemblyName, `${assemblyName}.asmdef`),
         },
         {
             name: 'user assembly reference',
             command: 'render',
-            getData: () => ctx.ir,
+            getData: () => ir,
             template: path.join(__dirname, 'template', 'UserService.asmref.ejs'),
             output: path.join(
-                ctx.request.outputPath,
+                request.outputPath,
                 `${assemblyName}.User`,
                 `${assemblyName}.User.asmref`
             ),
@@ -38,22 +55,22 @@ function createPlan(ctx) {
         const networkNamespace = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.${pascalCase(networkIr.name)}`
         const networkClassName = `${pascalCase(networkIr.name)}Network`
         const networkOutputPath = path.join(
-            ctx.request.outputPath,
+            request.outputPath,
             assemblyName,
             pascalCase(networkIr.name)
         )
         const userNetworkOutputPath = path.join(
-            ctx.request.outputPath,
+            request.outputPath,
             `${assemblyName}.User`,
             pascalCase(networkIr.name)
         )
 
         // Build role info from IR
-        const hostRoles = []
-        const remoteRoles = []
+        const hostRoles: RoleInfo[] = []
+        const remoteRoles: RoleInfo[] = []
 
         for (const role of networkIr.roles) {
-            const roleInfo = {
+            const roleInfo: RoleInfo = {
                 roleName: role.name,
                 className: pascalCase(role.name),
                 varName: camelCase(role.name),
@@ -193,7 +210,7 @@ function createPlan(ctx) {
     }
 }
 
-function mapType(property) {
+function mapType(property: IRProperty): string {
     switch (property.type) {
         case 'string':
             return 'string'
@@ -204,12 +221,11 @@ function mapType(property) {
         case 'boolean':
             return 'bool'
         case 'array':
-            return `List<${mapType(property.items)}>`
+            if (!property.items) return 'List<object>'
+            return `List<${mapType(property.items as IRProperty)}>`
         case 'object':
             return pascalCase(property.modelName)
         default:
             return 'object'
     }
 }
-
-module.exports = createPlan

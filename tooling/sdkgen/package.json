@@ -1,18 +1,14 @@
 {
     "name": "@polytric/openws-sdkgen",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "OpenWS SDK generator CLI",
-    "license": "Apache-2.0",
-    "author": "Polytric",
-    "packageManager": "pnpm@10.26.1",
-    "engines": {
-        "node": ">=18"
-    },
+    "type": "module",
     "bin": {
-        "openws-sdkgen": "./src/main.js"
+        "openws-sdkgen": "./dist/main.cjs"
     },
     "files": [
-        "src",
+        "dist",
+        "src/dotnet/template",
         "LICENSE",
         "README.md"
     ],
@@ -24,6 +20,11 @@
         "unity",
         "dotnet"
     ],
+    "author": "Polytric",
+    "license": "Apache-2.0",
+    "engines": {
+        "node": ">=20"
+    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/AgeOfLearning/openws.git",
@@ -32,10 +33,25 @@
     "publishConfig": {
         "access": "public"
     },
-    "scripts": {},
+    "scripts": {
+        "build": "tsup",
+        "prepublishOnly": "pnpm build",
+        "typecheck": "tsc --noEmit",
+        "generate": "tsx src/main.ts",
+        "test:csharp:unity": "tsx src/main.ts --spec ./test/spec.json --out ./generated/dotnet/unity --project Example --hostRole client --language csharp --environment unity"
+    },
     "dependencies": {
         "@pocketgems/schema": "^0.1.3",
         "ejs": "^3.1.10",
         "yargs": "^18.0.0"
-    }
+    },
+    "devDependencies": {
+        "@types/ejs": "^3.1.5",
+        "@types/node": "^22.15.29",
+        "@types/yargs": "^17.0.33",
+        "tsup": "^8.5.1",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3"
+    },
+    "packageManager": "pnpm@10.26.1"
 }
