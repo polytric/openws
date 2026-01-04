@@ -9,15 +9,21 @@ namespace Polytric.OpenWs.Core
     {
         public virtual string Name { get; set; }
         public virtual string Description { get; set; }
-        public virtual IReadOnlyList<Endpoint> Endpoints { get; set; } = new List<Endpoint>();
 
         internal Func<string, string, JToken, Task> RawSendAsync { get; set; }
+        internal Action<string, string, JToken> RawSend { get; set; }
 
         // Subclasses call this to send messages to the remote role.
-        public async Task SendMessageAsync<T>(string fromRole, string messageName, T payload)
+        protected async Task InternalSendMessageAsync<T>(string fromRole, string messageName, T payload)
         {
             if (RawSendAsync == null) throw new InvalidOperationException("RawSendAsync is not set");
             await RawSendAsync(fromRole, messageName, JToken.FromObject(payload)).ConfigureAwait(false);
+        }
+
+        protected void InternalQueueMessage<T>(string fromRole, string messageName, T payload)
+        {
+            if (RawSend == null) throw new InvalidOperationException("RawSend is not set");
+            RawSend(fromRole, messageName, JToken.FromObject(payload));
         }
     }
 }

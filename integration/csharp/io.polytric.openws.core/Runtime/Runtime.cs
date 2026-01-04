@@ -15,6 +15,7 @@ namespace Polytric.OpenWs.Core
         private ISerializer _serializer;
         private ISessionFactory _sessionFactory;
         private List<HostRole> _hostRoles;
+        private List<RemoteRole> _remoteRoles;
 
         public Runtime(Network network, ISerializer serializer, ISessionFactory sessionFactory)
         {
@@ -29,6 +30,7 @@ namespace Polytric.OpenWs.Core
                 }
                 return null;
             }).Where(r => r != null).ToList();
+            _remoteRoles = new();
         }
 
         public T GetHostRole<T>() where T : HostRole, new()
@@ -38,8 +40,7 @@ namespace Polytric.OpenWs.Core
 
         public async Task<RemoteRoleType> ConnectAsync<RemoteRoleType>(Endpoint endpoint) where RemoteRoleType : RemoteRole, new()
         {
-            Debug.Log("Connecting to endpoint: " + endpoint.ToString());
-            var session = _sessionFactory.CreateSession(endpoint);
+            var session = _sessionFactory.CreateSession();
             var remoteRole = new RemoteRoleType();
             remoteRole.RawSendAsync = async (fromRole, messageName, payload) =>
             {
@@ -47,46 +48,47 @@ namespace Polytric.OpenWs.Core
                 var serialized = _serializer.Serialize(envelope);
                 await session.SendMessageAsync(serialized).ConfigureAwait(false);
             };
-
-            session.OnOpen += async () =>
+            remoteRole.RawSend = (fromRole, messageName, payload) =>
             {
-                Debug.Log("Session opened, host roles: " + _hostRoles.Count);
+                var envelope = new Envelope { FromRole = fromRole, MessageName = messageName, Payload = payload };
+                var serialized = _serializer.Serialize(envelope);
+                session.QueueMessage(serialized);
+            };
+            _remoteRoles.Add(remoteRole);
+
+            session.OnOpen += () =>
+            {
                 foreach (var hostRole in _hostRoles)
                 {
-                    Debug.Log("Host role: " + hostRole.Name);
-                    Debug.Log("Remote role: " + remoteRole.Name);
-                    await hostRole.HandleOpenAsync(remoteRole).ConfigureAwait(false);
+                    hostRole.HandleOpen(remoteRole);
                 }
             };
 
-            session.OnMessage += async (message) =>
+            session.OnMessage += (message) =>
             {
-                Debug.Log("Session message: " + message);
                 foreach (var hostRole in _hostRoles)
                 {
                     var envelope = _serializer.Deserialize<Envelope>(message);
                     if (hostRole.RespondsToMessage(envelope.MessageName))
                     {
-                        await hostRole.HandleMessageAsync(envelope.MessageName, envelope.Payload, remoteRole).ConfigureAwait(false);
+                        hostRole.HandleMessage(envelope.MessageName, envelope.Payload, remoteRole);
                     }
                 }
             };
 
-            session.OnClose += async (reason) =>
+            session.OnClose += (reason) =>
             {
-                Debug.Log("Session closed: " + reason);
                 foreach (var hostRole in _hostRoles)
                 {
-                    await hostRole.HandleCloseAsync(reason, remoteRole).ConfigureAwait(false);
+                    hostRole.HandleClose(reason, remoteRole);
                 }
             };
 
-            session.OnError += async (error) =>
+            session.OnError += (error) =>
             {
-                Debug.Log("Session error: " + error);
                 foreach (var hostRole in _hostRoles)
                 {
-                    await hostRole.HandleErrorAsync(error, remoteRole).ConfigureAwait(false);
+                    hostRole.HandleError(error, remoteRole);
                 }
             };
 

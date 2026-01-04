@@ -12,28 +12,24 @@ namespace Polytric.OpenWs.Core
         public virtual string Description { get; set; }
         public virtual IReadOnlyList<Endpoint> Endpoints { get; set; } = new List<Endpoint>();
 
-        public virtual Task HandleOpenAsync(RemoteRole remoteRole)
+        public virtual void HandleOpen(RemoteRole remoteRole)
         {
             // Override in subclass
-            return Task.CompletedTask;
         }
 
-        public virtual Task HandleMessageAsync(string messageName, JToken payload, RemoteRole remoteRole)
+        public virtual void HandleMessage(string messageName, JToken payload, RemoteRole remoteRole)
         {
             // Override in subclass to implement dispatch   
-            return Task.CompletedTask;
         }
 
-        public virtual Task HandleCloseAsync(string reason, RemoteRole remoteRole)
+        public virtual void HandleClose(string reason, RemoteRole remoteRole)
         {
             // Override in subclass
-            return Task.CompletedTask;
         }
 
-        public virtual Task HandleErrorAsync(string error, RemoteRole remoteRole)
+        public virtual void HandleError(string error, RemoteRole remoteRole)
         {
             // Override in subclass
-            return Task.CompletedTask;
         }
 
         public virtual bool RespondsToMessage(string messageName)

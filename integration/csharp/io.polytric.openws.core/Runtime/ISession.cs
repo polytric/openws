@@ -9,10 +9,11 @@ namespace Polytric.OpenWs.Core
         Task ConnectAsync(Endpoint endpoint);
         Task CloseAsync();
         Task SendMessageAsync(string message);
+        void QueueMessage(string message);
 
-        event Func<Task> OnOpen;
-        event Func<string, Task> OnError;
-        event Func<string, Task> OnClose;
-        event Func<string, Task> OnMessage;
+        event Action OnOpen;
+        event Action<string> OnError;
+        event Action<string> OnClose;
+        event Action<string> OnMessage;
     }
 }
