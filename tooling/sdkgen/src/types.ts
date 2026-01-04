@@ -1,9 +1,15 @@
+import { Endpoint, Spec } from '@polytric/openws-spec/types'
+
+export type * from '@polytric/openws-spec/types'
+
+export type JsonSchema = import('ajv').SchemaObject
+
 // Pipeline context types
 export interface PipelineContext {
     argv: string[]
     rawInput?: RawInput
     request?: BuildRequest
-    spec?: OpenWsSpec
+    spec?: Spec
     ir?: IR
     plan?: PlanStep[]
 }
@@ -33,49 +39,6 @@ export interface BuildRequest {
             frameworks?: string[]
         }
     }
-}
-
-// OpenWS Spec types
-export interface OpenWsSpec {
-    name: string
-    description?: string
-    version?: string
-    networks: Record<string, NetworkSpec>
-}
-
-export interface NetworkSpec {
-    name: string
-    description?: string
-    version?: string
-    roles: Record<string, RoleSpec>
-}
-
-export interface RoleSpec {
-    name: string
-    description?: string
-    endpoints?: Endpoint[]
-    messages: Record<string, MessageSpec>
-}
-
-export interface Endpoint {
-    scheme: 'ws' | 'wss'
-    host: string
-    port: number
-    path: string
-}
-
-export interface MessageSpec {
-    description?: string
-    from?: string[]
-    payload: JsonSchema
-}
-
-export interface JsonSchema {
-    type: string
-    description?: string
-    properties?: Record<string, JsonSchema>
-    items?: JsonSchema
-    required?: string[]
 }
 
 // IR types

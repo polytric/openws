@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Example.Chat.Core.Models.Client
 {
-    public class ReceivedMessage
+    public partial class ReceivedMessagePayload
     {
         [JsonProperty("senderId")]
         public string SenderId;

@@ -4,6 +4,7 @@ import process from 'node:process'
 import S from '@pocketgems/schema'
 
 import type { BuildRequest, PipelineContext } from './types.js'
+import { toCamelCase } from './utils.js'
 
 const validateBuildRequest = S.obj({
     specPath: S.str,
@@ -29,13 +30,11 @@ export default function buildRequest(ctx: PipelineContext): PipelineContext {
     const { rawInput } = ctx
     if (!rawInput) throw new Error('rawInput is required')
 
-    console.log('Host roles:', rawInput.hostRole)
-
     const request: BuildRequest = {
         specPath: path.join(process.cwd(), rawInput.spec),
         outputPath: path.join(process.cwd(), rawInput.out),
         project: rawInput.project,
-        hostRoles: rawInput.hostRole,
+        hostRoles: rawInput.hostRole.map(r => toCamelCase(r)),
         target: {
             [rawInput.language]: {
                 environment: rawInput.environment,

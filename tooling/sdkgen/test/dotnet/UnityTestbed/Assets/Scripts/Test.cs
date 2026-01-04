@@ -21,10 +21,12 @@ class Test : MonoBehaviour, ISessionFactory
         Debug.Log("Connecting...");
         _server = await _runtime.ConnectAsync<Server>(new Endpoint { Host = "localhost", Port = 8082, Path = "/chat" });
         Debug.Log("Connected!");
+        _server.CreateRoom(_client.Name, new CreateRoomPayload { UserId = "123", RoomId = "123" });
     }
 
-    public ISession CreateSession(Endpoint endpoint)
+    public ISession CreateSession()
     {
         return new NativeWebSocketSession();
     }
+
 }

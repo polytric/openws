@@ -2,11 +2,8 @@ using Newtonsoft.Json;
 
 namespace Example.Chat.Core.Models.Server
 {
-    public class CreateRoom
+    public partial class RequestRoomStatsPayload
     {
-        [JsonProperty("userId")]
-        public string UserId;
-
         [JsonProperty("roomId")]
         public string RoomId;
 

@@ -1,27 +1,76 @@
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using Polytric.OpenWs.Core;
 using Example.Chat.Core.Models.Client;
 using Example.Chat.Core.Models.Server;
+using Newtonsoft.Json;
+using UnityEngine;
 
 namespace Example.Chat.Core.Roles
 {
     public partial class Client
     {
-        private partial async Task HandleOpenAsync(Server server)
+        partial void HandleOpen(Server server)
         {
-            await server.CreateRoomAsync(Name, new CreateRoom { UserId = "1", RoomId = "1" }).ConfigureAwait(false);
+            // TODO: Implement connection handling for Server
         }
 
-        private partial Task HandleMessageAsync(JoinedRoom payload, Server server)
+        partial void HandleJoinedRoom(JToken payload)
+        {
+            // TODO: Handle joinedRoom
+            // Or implement the concrete payload method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+            Debug.Log("Joined room: " + payload.ToString());
+        }
+
+        partial void HandleJoinedRoom(JoinedRoomPayload payload)
+        {
+            // TODO: Handle joinedRoom
+            // Or implement the JToken method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+            Debug.Log("Joined room: " + JsonConvert.SerializeObject(payload));
+        }
+
+        partial void HandleMessage(JoinedRoomPayload payload, Server server)
         {
             // TODO: Handle joinedRoom from Server
-            return Task.CompletedTask;
+            // Or implement the JToken method below. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
         }
 
-        private partial Task HandleMessageAsync(ReceivedMessage payload, Server server)
+        partial void HandleJoinedRoom(JToken payload, Server server)
+        {
+            // TODO: Handle joinedRoom from Server
+            // Or implement the concrete payload method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+        }
+
+        partial void HandleReceivedMessage(JToken payload)
+        {
+            // TODO: Handle receivedMessage
+            // Or implement the concrete payload method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+        }
+
+        partial void HandleReceivedMessage(ReceivedMessagePayload payload)
+        {
+            // TODO: Handle receivedMessage
+            // Or implement the JToken method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+        }
+
+        partial void HandleMessage(ReceivedMessagePayload payload, Server server)
         {
             // TODO: Handle receivedMessage from Server
-            return Task.CompletedTask;
+            // Or implement the JToken method below. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+        }
+
+        partial void HandleReceivedMessage(JToken payload, Server server)
+        {
+            // TODO: Handle receivedMessage from Server
+            // Or implement the concrete payload method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
         }
 
     }

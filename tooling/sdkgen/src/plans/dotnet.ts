@@ -123,14 +123,14 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
 
         // Process handlers (incoming messages for host roles)
         for (const handlerIr of networkIr.handlers) {
-            handlerIr.modelClassName = pascalCase(handlerIr.handlerName)
+            handlerIr.modelClassName = pascalCase(handlerIr.handlerName) + 'Payload'
             handlerIr.messageName = handlerIr.handlerName
             handlerIr.methodName = pascalCase(handlerIr.handlerName)
         }
 
         // Process messages (outgoing messages to remote roles)
         for (const messageIr of networkIr.messages) {
-            messageIr.modelClassName = pascalCase(messageIr.handlerName)
+            messageIr.modelClassName = pascalCase(messageIr.handlerName) + 'Payload'
             messageIr.messageName = messageIr.handlerName
             messageIr.methodName = pascalCase(messageIr.handlerName)
         }

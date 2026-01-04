@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Polytric.OpenWs.Core;
@@ -7,44 +8,72 @@ namespace Example.Chat.Core.Roles
 {
     public partial class Client : HostRole
     {
-        public override string Name { get; set; } = "client";
-        public override string Description { get; set; } = "";
+        public string Name => "client";
+        public string Description => "";
 
-        public override async Task HandleOpenAsync(RemoteRole remoteRole)
+        public override void HandleOpen(RemoteRole remoteRole)
         {
 
             if (remoteRole is Server server)
             {
-                await HandleOpenAsync(server).ConfigureAwait(false);
+                HandleOpen(server);
             }
         }
 
-        private partial Task HandleOpenAsync(Server server);
+        partial void HandleOpen(Server server);
 
-        public override async Task HandleMessageAsync(string messageName, JToken payload, RemoteRole remoteRole)
+        public override void HandleMessage(string messageName, JToken payload, RemoteRole remoteRole)
         {
             switch (messageName)
             {
 
                 case "joinedRoom":
                     {
-                        var message = payload.ToObject<JoinedRoom>();
+                        var message = payload.ToObject<JoinedRoomPayload>();
+                        HandleJoinedRoom(payload);
+                        HandleJoinedRoom(message);
+                        OnJoinedRoom?.Invoke(message);
 
-                        await HandleMessageAsync(message, remoteRole as Server).ConfigureAwait(false);
+
+                        HandleJoinedRoom(payload, remoteRole as Server);
+                        HandleMessage(message, remoteRole as Server);
+                        OnJoinedRoomFromServer?.Invoke(message, remoteRole as Server);
+
                         break;
                     }
 
                 case "receivedMessage":
                     {
-                        var message = payload.ToObject<ReceivedMessage>();
+                        var message = payload.ToObject<ReceivedMessagePayload>();
+                        HandleReceivedMessage(payload);
+                        HandleReceivedMessage(message);
+                        OnReceivedMessage?.Invoke(message);
 
-                        await HandleMessageAsync(message, remoteRole as Server).ConfigureAwait(false);
+
+                        HandleReceivedMessage(payload, remoteRole as Server);
+                        HandleMessage(message, remoteRole as Server);
+                        OnReceivedMessageFromServer?.Invoke(message, remoteRole as Server);
+
                         break;
                     }
             }
         }
 
-        private partial Task HandleMessageAsync(JoinedRoom payload, Server server);
-        private partial Task HandleMessageAsync(ReceivedMessage payload, Server server);
+        public event Action<JoinedRoomPayload> OnJoinedRoom;
+        partial void HandleJoinedRoom(JToken payload);
+        partial void HandleJoinedRoom(JoinedRoomPayload payload);
+
+        public event Action<JoinedRoomPayload, Server> OnJoinedRoomFromServer;
+        partial void HandleJoinedRoom(JToken payload, Server server);
+        partial void HandleMessage(JoinedRoomPayload payload, Server server);
+        
+        public event Action<ReceivedMessagePayload> OnReceivedMessage;
+        partial void HandleReceivedMessage(JToken payload);
+        partial void HandleReceivedMessage(ReceivedMessagePayload payload);
+
+        public event Action<ReceivedMessagePayload, Server> OnReceivedMessageFromServer;
+        partial void HandleReceivedMessage(JToken payload, Server server);
+        partial void HandleMessage(ReceivedMessagePayload payload, Server server);
+        
     }
 }

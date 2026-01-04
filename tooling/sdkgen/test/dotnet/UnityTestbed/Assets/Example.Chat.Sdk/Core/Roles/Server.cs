@@ -13,29 +13,49 @@ namespace Example.Chat.Core.Roles
     {
         public override string Name { get; set; } = "server";
         public override string Description { get; set; } = "";
-        public override IReadOnlyList<Endpoint> Endpoints { get; set; } = new List<Endpoint>
+        public static IReadOnlyList<Endpoint> Endpoints => new List<Endpoint>
         {
             new Endpoint { Scheme = "ws", Host = "localhost", Port = 8082, Path = "/chat" },
         };
 
-        public async Task CreateRoomAsync(string fromRole, CreateRoom message)
+        public async Task CreateRoomAsync(string fromRole, CreateRoomPayload message)
         {
-            await SendMessageAsync(fromRole, "createRoom", message).ConfigureAwait(false);
+            await InternalSendMessageAsync(fromRole, "createRoom", message).ConfigureAwait(false);
         }
 
-        public async Task JoinRoomAsync(string fromRole, JoinRoom message)
+        public void CreateRoom(string fromRole, CreateRoomPayload message)
         {
-            await SendMessageAsync(fromRole, "joinRoom", message).ConfigureAwait(false);
+            InternalQueueMessage(fromRole, "createRoom", message);
         }
 
-        public async Task SendMessageAsync(string fromRole, SendMessage message)
+        public async Task JoinRoomAsync(string fromRole, JoinRoomPayload message)
         {
-            await SendMessageAsync(fromRole, "sendMessage", message).ConfigureAwait(false);
+            await InternalSendMessageAsync(fromRole, "joinRoom", message).ConfigureAwait(false);
         }
 
-        public async Task RequestRoomStatsAsync(string fromRole, RequestRoomStats message)
+        public void JoinRoom(string fromRole, JoinRoomPayload message)
         {
-            await SendMessageAsync(fromRole, "requestRoomStats", message).ConfigureAwait(false);
+            InternalQueueMessage(fromRole, "joinRoom", message);
+        }
+
+        public async Task SendMessageAsync(string fromRole, SendMessagePayload message)
+        {
+            await InternalSendMessageAsync(fromRole, "sendMessage", message).ConfigureAwait(false);
+        }
+
+        public void SendMessage(string fromRole, SendMessagePayload message)
+        {
+            InternalQueueMessage(fromRole, "sendMessage", message);
+        }
+
+        public async Task RequestRoomStatsAsync(string fromRole, RequestRoomStatsPayload message)
+        {
+            await InternalSendMessageAsync(fromRole, "requestRoomStats", message).ConfigureAwait(false);
+        }
+
+        public void RequestRoomStats(string fromRole, RequestRoomStatsPayload message)
+        {
+            InternalQueueMessage(fromRole, "requestRoomStats", message);
         }
 
     }

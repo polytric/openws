@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using Polytric.OpenWs.Core;
 <% for (const modelImport of ctx.modelImports) { -%>
 using <%= modelImport %>;
@@ -8,19 +9,40 @@ namespace <%= ctx.namespace %>
     public partial class <%= ctx.className %>
     {
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-        private partial Task HandleOpenAsync(<%= remoteRole.className %> <%= remoteRole.varName %>)
+        partial void HandleOpen(<%= remoteRole.className %> <%= remoteRole.varName %>)
         {
             // TODO: Implement connection handling for <%= remoteRole.className %>
-            return Task.CompletedTask;
         }
 
 <% } -%>
 <% for (const handler of ctx.handlers) { -%>
+        partial void Handle<%= handler.methodName %>(JToken payload)
+        {
+            // TODO: Handle <%= handler.messageName %>
+            // Or implement the concrete payload method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+        }
+
+        partial void Handle<%= handler.methodName %>(<%= handler.modelClassName %> payload)
+        {
+            // TODO: Handle <%= handler.messageName %>
+            // Or implement the JToken method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+        }
+
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-        private partial Task HandleMessageAsync(<%= handler.modelClassName %> payload, <%= remoteRole.className %> <%= remoteRole.varName %>)
+        partial void HandleMessage(<%= handler.modelClassName %> payload, <%= remoteRole.className %> <%= remoteRole.varName %>)
         {
             // TODO: Handle <%= handler.messageName %> from <%= remoteRole.className %>
-            return Task.CompletedTask;
+            // Or implement the JToken method below. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
+        }
+
+        partial void Handle<%= handler.methodName %>(JToken payload, <%= remoteRole.className %> <%= remoteRole.varName %>)
+        {
+            // TODO: Handle <%= handler.messageName %> from <%= remoteRole.className %>
+            // Or implement the concrete payload method above. You only need to implement one.
+            // Removing this partial method will instruct the compiler to eliminate the call to save performance.
         }
 
 <% } -%>

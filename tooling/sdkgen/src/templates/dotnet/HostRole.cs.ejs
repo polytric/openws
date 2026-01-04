@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Polytric.OpenWs.Core;
@@ -9,24 +10,24 @@ namespace <%= ctx.namespace %>
 {
     public partial class <%= ctx.className %> : <%= ctx.baseClassName %>
     {
-        public override string Name { get; set; } = "<%= ctx.roleName %>";
-        public override string Description { get; set; } = "<%= ctx.description ?? '' %>";
+        public string Name => "<%= ctx.roleName %>";
+        public string Description => "<%= ctx.description ?? '' %>";
 
-        public override async Task HandleOpenAsync(RemoteRole remoteRole)
+        public override void HandleOpen(RemoteRole remoteRole)
         {
 <% for (const remoteRole of ctx.remoteRoles) { %>
             if (remoteRole is <%= remoteRole.className %> <%= remoteRole.varName %>)
             {
-                await HandleOpenAsync(<%= remoteRole.varName %>).ConfigureAwait(false);
+                HandleOpen(<%= remoteRole.varName %>);
             }
 <% } -%>
         }
 
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-        private partial Task HandleOpenAsync(<%= remoteRole.className %> <%= remoteRole.varName %>);
+        partial void HandleOpen(<%= remoteRole.className %> <%= remoteRole.varName %>);
 <% } -%>
 
-        public override async Task HandleMessageAsync(string messageName, JToken payload, RemoteRole remoteRole)
+        public override void HandleMessage(string messageName, JToken payload, RemoteRole remoteRole)
         {
             switch (messageName)
             {
@@ -34,8 +35,15 @@ namespace <%= ctx.namespace %>
                 case "<%= handler.messageName %>":
                     {
                         var message = payload.ToObject<<%= handler.modelClassName %>>();
+                        Handle<%= handler.methodName %>(payload);
+                        Handle<%= handler.methodName %>(message);
+                        On<%= handler.methodName %>?.Invoke(message);
+
 <% for (const remoteRole of ctx.remoteRoles) { %>
-                        await HandleMessageAsync(message, remoteRole as <%= remoteRole.className %>).ConfigureAwait(false);
+                        Handle<%= handler.methodName %>(payload, remoteRole as <%= remoteRole.className %>);
+                        HandleMessage(message, remoteRole as <%= remoteRole.className %>);
+                        On<%= handler.methodName %>From<%= remoteRole.className %>?.Invoke(message, remoteRole as <%= remoteRole.className %>);
+
 <% } -%>
                         break;
                     }
@@ -44,8 +52,15 @@ namespace <%= ctx.namespace %>
         }
 
 <% for (const handler of ctx.handlers) { -%>
+        public event Action<<%= handler.modelClassName -%>> On<%= handler.methodName -%>;
+        partial void Handle<%= handler.methodName %>(JToken payload);
+        partial void Handle<%= handler.methodName %>(<%= handler.modelClassName -%> payload);
+
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-        private partial Task HandleMessageAsync(<%= handler.modelClassName %> payload, <%= remoteRole.className %> <%= remoteRole.varName %>);
+        public event Action<<%= handler.modelClassName -%>, <%= remoteRole.className -%>> On<%= handler.methodName -%>From<%= remoteRole.className -%>;
+        partial void Handle<%= handler.methodName %>(JToken payload, <%= remoteRole.className -%> <%= remoteRole.varName -%>);
+        partial void HandleMessage(<%= handler.modelClassName -%> payload, <%= remoteRole.className -%> <%= remoteRole.varName -%>);
+        
 <% } -%>
 <% } -%>
     }

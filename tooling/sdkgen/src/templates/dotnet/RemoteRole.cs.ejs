@@ -14,7 +14,7 @@ namespace <%= ctx.namespace %>
         public override string Name { get; set; } = "<%= ctx.roleName %>";
         public override string Description { get; set; } = "<%= ctx.description ?? '' %>";
 <% if (ctx.endpoints && ctx.endpoints.length > 0) { -%>
-        public override IReadOnlyList<Endpoint> Endpoints { get; set; } = new List<Endpoint>
+        public static IReadOnlyList<Endpoint> Endpoints => new List<Endpoint>
         {
 <% for (const ep of ctx.endpoints) { -%>
             new Endpoint { Scheme = "<%= ep.scheme %>", Host = "<%= ep.host %>", Port = <%= ep.port %>, Path = "<%= ep.path %>" },
@@ -25,7 +25,12 @@ namespace <%= ctx.namespace %>
 <% for (const message of ctx.messages) { -%>
         public async Task <%= message.methodName %>Async(string fromRole, <%= message.modelClassName %> message)
         {
-            await SendMessageAsync(fromRole, "<%= message.messageName %>", message).ConfigureAwait(false);
+            await InternalSendMessageAsync(fromRole, "<%= message.messageName %>", message).ConfigureAwait(false);
+        }
+
+        public void <%= message.methodName %>(string fromRole, <%= message.modelClassName %> message)
+        {
+            InternalQueueMessage(fromRole, "<%= message.messageName %>", message);
         }
 
 <% } -%>

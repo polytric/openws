@@ -97,9 +97,13 @@ function buildIrModels(scopeName: string, modelName: string, schema: JsonSchema)
 
             if (!schema.properties) return [model]
 
-            for (const [subName, subSchema] of Object.entries(schema.properties)) {
+            for (const [subName, subSchema] of Object.entries(schema.properties) as [
+                string,
+                JsonSchema,
+            ][]) {
                 const subModels = buildIrModels(scopeName, subName, subSchema)
-                const mainModel = subModels.find(m => m.modelName === subName) ?? subSchema
+                const mainModel: IRModel | JsonSchema =
+                    subModels.find(m => m.modelName === subName) ?? subSchema
 
                 const property: IRProperty = {
                     type: mainModel.type,
@@ -199,7 +203,11 @@ export default function buildIr(ctx: PipelineContext): PipelineContext {
                     description: handlerSpec.description,
                 })
                 irNetwork.models.push(
-                    ...buildIrModels(hostRoleSpec.name, handlerName, handlerSpec.payload)
+                    ...buildIrModels(
+                        hostRoleSpec.name,
+                        handlerName + 'Payload',
+                        handlerSpec.payload
+                    )
                 )
             }
         }
@@ -221,7 +229,9 @@ export default function buildIr(ctx: PipelineContext): PipelineContext {
                     handlerName,
                     description: handlerSpec.description,
                 })
-                irNetwork.models.push(...buildIrModels(roleName, handlerName, handlerSpec.payload))
+                irNetwork.models.push(
+                    ...buildIrModels(roleName, handlerName + 'Payload', handlerSpec.payload)
+                )
             }
         }
 
