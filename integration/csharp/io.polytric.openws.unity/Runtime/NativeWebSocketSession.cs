@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NativeWebSocket;
 using Polytric.OpenWs.Core;
@@ -10,6 +11,7 @@ namespace Polytric.OpenWs.Unity
     public class NativeWebSocketSession : ISession
     {
         private WebSocket _webSocket;
+        private Task _messageQueue = Task.CompletedTask;
 
         ~NativeWebSocketSession()
         {
@@ -17,21 +19,20 @@ namespace Polytric.OpenWs.Unity
             {
                 OpenWsRunner.RemoveWebSocket(_webSocket);
             }
-            Debug.Log("NativeWebSocketSession destroyed");
         }
 
-        public async Task ConnectAsync(Endpoint endpoint)
+        public Task ConnectAsync(Endpoint endpoint)
         {
             var url = $"{endpoint.Scheme}://{endpoint.Host}:{endpoint.Port}{endpoint.Path}";
-            Debug.Log("Opening NativeWebSocketTransport to " + url);
             _webSocket = new WebSocket(url);
             OpenWsRunner.AddWebSocket(_webSocket);
-            Debug.Log("NativeWebSocketSession created");
-            _webSocket.OnOpen += () => OnOpen?.Invoke();
-            _webSocket.OnError += (errorMessage) => OnError?.Invoke(errorMessage);
-            _webSocket.OnClose += (closeCode) => OnClose?.Invoke(closeCode.ToString());
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _webSocket.OnOpen += () => { OnOpen?.Invoke(); tcs.SetResult(true); };
+            _webSocket.OnError += (errorMessage) => { OnError?.Invoke(errorMessage); tcs.SetException(new Exception(errorMessage)); };
+            _webSocket.OnClose += (closeCode) => { OnClose?.Invoke(closeCode.ToString()); tcs.SetResult(true); };
             _webSocket.OnMessage += (message) => OnMessage?.Invoke(System.Text.Encoding.UTF8.GetString(message));
-            await _webSocket.Connect().ConfigureAwait(false);
+            _webSocket.Connect();
+            return tcs.Task.ContinueWith(task => task.Result);
         }
 
         public async Task CloseAsync()
@@ -43,7 +44,22 @@ namespace Polytric.OpenWs.Unity
 
         public async Task SendMessageAsync(string message)
         {
-            await _webSocket.SendText(message).ConfigureAwait(false);
+            QueueMessage(message);
+            await _messageQueue.ConfigureAwait(false);
+        }
+
+        public void QueueMessage(string message)
+        {
+            _messageQueue = _messageQueue.ContinueWith(
+                async (task) =>
+                {
+                    if (task.IsFaulted) Debug.LogError(task.Exception);
+                    return _webSocket.SendText(message).ConfigureAwait(false);
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.None,
+                TaskScheduler.Default
+            ).Unwrap();
         }
 
         public void Update()
@@ -53,9 +69,9 @@ namespace Polytric.OpenWs.Unity
 #endif
         }
 
-        public event Func<Task> OnOpen;
-        public event Func<string, Task> OnError;
-        public event Func<string, Task> OnClose;
-        public event Func<string, Task> OnMessage;
+        public event Action OnOpen;
+        public event Action<string> OnError;
+        public event Action<string> OnClose;
+        public event Action<string> OnMessage;
     }
 }

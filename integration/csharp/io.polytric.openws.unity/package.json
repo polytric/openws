@@ -1,6 +1,6 @@
 {
     "name": "io.polytric.openws.unity",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "displayName": "Polytric OpenWS Unity",
     "description": "Unity runtime for Polytric OpenWS SDK.",
     "unity": "2022.3",
