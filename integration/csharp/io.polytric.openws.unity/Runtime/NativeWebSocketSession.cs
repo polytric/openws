@@ -17,22 +17,20 @@ namespace Polytric.OpenWs.Unity
         {
             if (_webSocket != null)
             {
-                OpenWsRunner.RemoveWebSocket(_webSocket);
+                OpenWsRunner.RemoveSession(this);
             }
         }
 
-        public Task ConnectAsync(Endpoint endpoint)
+        public async Task ConnectAsync(Endpoint endpoint)
         {
             var url = $"{endpoint.Scheme}://{endpoint.Host}:{endpoint.Port}{endpoint.Path}";
             _webSocket = new WebSocket(url);
-            OpenWsRunner.AddWebSocket(_webSocket);
-            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _webSocket.OnOpen += () => { OnOpen?.Invoke(); tcs.SetResult(true); };
-            _webSocket.OnError += (errorMessage) => { OnError?.Invoke(errorMessage); tcs.SetException(new Exception(errorMessage)); };
-            _webSocket.OnClose += (closeCode) => { OnClose?.Invoke(closeCode.ToString()); tcs.SetResult(true); };
-            _webSocket.OnMessage += (message) => OnMessage?.Invoke(System.Text.Encoding.UTF8.GetString(message));
-            _webSocket.Connect();
-            return tcs.Task.ContinueWith(task => task.Result);
+            OpenWsRunner.AddSession(this);
+            _webSocket.OnOpen += () => { OnOpen?.Invoke(); };
+            _webSocket.OnError += (errorMessage) => { OnError?.Invoke(errorMessage); };
+            _webSocket.OnClose += (closeCode) => { OnClose?.Invoke(closeCode.ToString()); };
+            _webSocket.OnMessage += (message) => { OnMessage?.Invoke(System.Text.Encoding.UTF8.GetString(message)); };
+            await _webSocket.Connect().ConfigureAwait(false);
         }
 
         public async Task CloseAsync()
@@ -40,6 +38,7 @@ namespace Polytric.OpenWs.Unity
             var webSocket = _webSocket;
             _webSocket = null;
             await webSocket.Close().ConfigureAwait(false);
+            OpenWsRunner.RemoveSession(this);
         }
 
         public async Task SendMessageAsync(string message)
@@ -50,15 +49,16 @@ namespace Polytric.OpenWs.Unity
 
         public void QueueMessage(string message)
         {
+            var scheduler = TaskScheduler.FromCurrentSynchronizationContext();
             _messageQueue = _messageQueue.ContinueWith(
                 async (task) =>
                 {
                     if (task.IsFaulted) Debug.LogError(task.Exception);
-                    return _webSocket.SendText(message).ConfigureAwait(false);
+                    await _webSocket.SendText(message).ConfigureAwait(false);
                 },
                 CancellationToken.None,
                 TaskContinuationOptions.None,
-                TaskScheduler.Default
+                scheduler
             ).Unwrap();
         }
 

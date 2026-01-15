@@ -1,3 +1,5 @@
+import swagger from '@fastify/swagger'
+import swaggerUi from '@fastify/swagger-ui'
 import S from '@pocketgems/schema'
 import fastify from 'fastify'
 
@@ -112,6 +114,18 @@ const bindings = WS.bindings({
 })
 
 async function main() {
+    await app.register(swagger, {
+        openapi: {
+            info: {
+                title: 'Chat API',
+                version: '1.0.0',
+            },
+        },
+    })
+    await app.register(swaggerUi, {
+        routePrefix: '/docs',
+    })
+
     await app.register(openws)
     await app.register(openwsUi, {
         name: 'Chat',

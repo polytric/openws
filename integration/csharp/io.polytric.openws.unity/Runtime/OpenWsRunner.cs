@@ -7,7 +7,7 @@ namespace Polytric.OpenWs.Unity
 {
     public class OpenWsRunner : MonoBehaviour
     {
-        public List<WebSocket> webSockets = new List<WebSocket>();
+        public List<ISession> sessions = new List<ISession>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Init()
@@ -19,30 +19,28 @@ namespace Polytric.OpenWs.Unity
 
         void Update()
         {
-            foreach (var webSocket in webSockets)
+            foreach (var session in sessions)
             {
-                webSocket.DispatchMessageQueue();
+                session.Update();
             }
         }
 
         void OnDestroy()
         {
-            foreach (var webSocket in webSockets)
+            foreach (var session in sessions)
             {
-                webSocket.Close();
+                session.CloseAsync();
             }
         }
 
-        public static void AddWebSocket(WebSocket ws)
+        public static void AddSession(ISession session)
         {
-            Debug.Log("Adding webSocket " + ws.ToString());
-            FindObjectOfType<OpenWsRunner>().webSockets.Add(ws);
+            FindObjectOfType<OpenWsRunner>().sessions.Add(session);
         }
 
-        public static void RemoveWebSocket(WebSocket ws)
+        public static void RemoveSession(ISession session)
         {
-            Debug.Log("Removing webSocket " + ws.ToString());
-            FindObjectOfType<OpenWsRunner>().webSockets.Remove(ws);
+            FindObjectOfType<OpenWsRunner>().sessions.Remove(session);
         }
     }
 }

@@ -26,6 +26,9 @@ declare module 'fastify' {
     }
 }
 
+// Hide from @fastify/swagger if present
+const hiddenSchema = { schema: { hide: true } as object }
+
 async function openwsDocPlugin(fastify: FastifyInstance, options: PluginOptions) {
     if (!fastify.hasDecorator('openws')) {
         await fastify.register(openWsPlugin)
@@ -70,11 +73,11 @@ async function openwsDocPlugin(fastify: FastifyInstance, options: PluginOptions)
     fastify.decorate('openwsUi', {
         getSpec,
     })
-    fastify.get(`${prefix}${exportPath}`, async (_req, reply) =>
+    fastify.get(`${prefix}${exportPath}`, hiddenSchema, async (_req, reply) =>
         reply.type('application/json').send(getSpec())
     )
 
-    fastify.get(prefix, async (_req, reply) => reply.redirect(`${prefix}/`))
+    fastify.get(prefix, hiddenSchema, async (_req, reply) => reply.redirect(`${prefix}/`))
 
     fastify.register(staticPlugin, {
         root: openwsUiRoot,
@@ -84,7 +87,7 @@ async function openwsDocPlugin(fastify: FastifyInstance, options: PluginOptions)
     })
 
     const indexTemplate = fs.readFileSync(path.join(openwsUiRoot, 'index.html'), 'utf8')
-    fastify.get(`${prefix}/`, async (_req, reply) => {
+    fastify.get(`${prefix}/`, hiddenSchema, async (_req, reply) => {
         const runtimeConfig = {
             specUrl: `${prefix}${exportPath}`,
             networkHosts,
