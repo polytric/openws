@@ -22,7 +22,7 @@ export type ApiProto = {
     [messageName: string]: (...args: any[]) => Promise<void>
 }
 
-export class ClientRoleBinder {
+export class RemoteRoleBinder {
     private readonly hostMessages: { [messageName: string]: Builder.Message } = {}
     private readonly handlers: {
         [messageName: string]: HandlerBinder
@@ -30,7 +30,7 @@ export class ClientRoleBinder {
     private readonly apiProto: { [key: string]: any } = {}
 
     constructor(
-        private readonly role: Builder.Role,
+        public readonly role: Builder.Role,
         hostMessages: Builder.Message[]
     ) {
         for (const message of hostMessages) {
@@ -106,7 +106,7 @@ export class ClientRoleBinder {
 }
 
 export class NetworkBinder {
-    fromRoles: { [clientRoleName: string]: ClientRoleBinder } = {}
+    fromRoles: { [fromRoleName: string]: RemoteRoleBinder } = {}
 
     #network: Builder.Network
     get network() {
@@ -116,23 +116,19 @@ export class NetworkBinder {
     constructor(network: Builder.Network) {
         this.#network = network
         const hostMessages: Builder.Message[] = []
-        const clientMessages: Builder.Message[] = []
-        const clientRoles: Builder.Role[] = []
+        const remoteRoles: Builder.Role[] = []
         for (const role of Object.values(network.roles)) {
             if (role.isHost) {
                 for (const message of Object.values(role.messages)) {
                     hostMessages.push(message)
                 }
             } else {
-                clientRoles.push(role)
-                for (const message of Object.values(role.messages)) {
-                    clientMessages.push(message)
-                }
+                remoteRoles.push(role)
             }
         }
 
-        for (const clientRole of clientRoles) {
-            this.fromRoles[clientRole.name] = new ClientRoleBinder(clientRole, hostMessages)
+        for (const remoteRole of remoteRoles) {
+            this.fromRoles[remoteRole.name] = new RemoteRoleBinder(remoteRole, hostMessages)
         }
     }
 }

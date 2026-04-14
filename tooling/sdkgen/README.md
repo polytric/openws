@@ -42,7 +42,7 @@ The CLI exposes the following options:
 - `--project` (string): Project/namespace prefix for generated code.
 - `--service` (string): Service name (default: `MyService`).
 - `--hostRole` (string): Participant role name that represents the host side.
-- `--language` (string): Target language (`csharp` or `javascript`).
+- `--language` (string): Target language (`csharp`, `javascript`, or `typescript`).
 - `--environment` (string|array): Target environment (`unity`, `node`, `browser`).
 
 ---
@@ -53,7 +53,7 @@ The generator is wired for:
 
 - C# (Unity) with `newtonsoft` serialization templates.
 
-Additional targets are configured through build plans in `tooling/sdkgen/dotnet` and can be expanded as needed.
+Additional targets are configured through build plans in `tooling/sdkgen/src/plans` and can be expanded as needed.
 
 ---
 

@@ -19,7 +19,7 @@ export interface RawInput {
     out: string
     project: string
     hostRole: string[]
-    language: 'csharp' | 'javascript'
+    language: 'csharp' | 'javascript' | 'typescript'
     environment: 'unity' | 'node' | 'browser'
     frameworks?: string[]
 }
@@ -35,6 +35,10 @@ export interface BuildRequest {
             frameworks?: string[]
         }
         javascript?: {
+            environment: 'node' | 'browser'
+            frameworks?: string[]
+        }
+        typescript?: {
             environment: 'node' | 'browser'
             frameworks?: string[]
         }

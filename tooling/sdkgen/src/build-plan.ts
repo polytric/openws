@@ -6,6 +6,14 @@ const planIndex: Record<string, Record<string, string>> = {
     csharp: {
         unity: './plans/dotnet.js',
     },
+    javascript: {
+        node: './plans/typescript.js',
+        browser: './plans/typescript.js',
+    },
+    typescript: {
+        node: './plans/typescript.js',
+        browser: './plans/typescript.js',
+    },
 }
 
 export default async function dispatchBuildPlan(ctx: PipelineContext): Promise<PipelineContext> {

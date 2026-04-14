@@ -6,6 +6,7 @@ export default defineConfig({
     entry: {
         main: 'src/main.ts',
         'plans/dotnet': 'src/plans/dotnet.ts',
+        'plans/typescript': 'src/plans/typescript.ts',
     },
     format: ['cjs', 'esm'],
     outDir: 'dist',

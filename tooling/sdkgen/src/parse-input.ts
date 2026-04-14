@@ -31,7 +31,7 @@ export default function parseInput(ctx: PipelineContext): PipelineContext {
         .option('language', {
             type: 'string',
             description: 'The language to generate code for',
-            choices: ['csharp', 'javascript'] as const,
+            choices: ['csharp', 'javascript', 'typescript'] as const,
             default: 'csharp' as const,
         })
         .option('environment', {

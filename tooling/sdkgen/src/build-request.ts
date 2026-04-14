@@ -20,6 +20,10 @@ const validateBuildRequest = S.obj({
             environment: S.str.enum('node', 'browser'),
             frameworks: S.arr(S.str.enum('fastify')).optional(),
         }).optional(),
+        typescript: S.obj({
+            environment: S.str.enum('node', 'browser'),
+            frameworks: S.arr(S.str.enum('fastify')).optional(),
+        }).optional(),
     })
         .min(1)
         .max(1)

@@ -3,6 +3,7 @@ import type { ApiProto, NetworkBinder, SendFn } from './bindings'
 export class Session {
     private api?: ApiProto
     private fromRole?: string
+    public remoteApis: { [role: string]: ApiProto } = {}
 
     constructor(
         private readonly binder: NetworkBinder,
@@ -41,6 +42,10 @@ export class Session {
 
 export class Runtime {
     constructor(private readonly binder: NetworkBinder) {}
+
+    createApi(remoteRole: string, rawSend: SendFn) {
+        return this.binder.fromRoles[remoteRole].createApi(rawSend)
+    }
 
     newSession(rawSend: SendFn) {
         return new Session(this.binder, rawSend)

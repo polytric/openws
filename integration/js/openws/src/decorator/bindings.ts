@@ -8,12 +8,12 @@ export function bindings(config: NetworkConfig): Fluent.NetworkBinder {
     const network = WS.network(config)
     const binder = Fluent.bindings(network)
 
-    const clientRoles: { [roleName: string]: any } = {}
+    const remoteRoles: { [roleName: string]: any } = {}
     for (const [roleName, role] of Object.entries(network.roles)) {
         if (role.isHost) {
             continue
         }
-        clientRoles[roleName] = role
+        remoteRoles[roleName] = role
     }
 
     for (const roleCtor of config.roles) {
@@ -34,7 +34,7 @@ export function bindings(config: NetworkConfig): Fluent.NetworkBinder {
                 continue
             }
 
-            const from = messageConfig.from ?? Object.keys(clientRoles)
+            const from = messageConfig.from ?? Object.keys(remoteRoles)
             for (const fromRoleName of from) {
                 console.log('on', fromRoleName, messageConfig.name, descriptor.value.name)
                 binder.fromRoles[fromRoleName].on(messageConfig.name, (payload, api) =>
