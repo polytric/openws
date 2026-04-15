@@ -1,0 +1,41 @@
+{
+    "name": <%- JSON.stringify(ctx.packageName) %>,
+    "version": <%- JSON.stringify(ctx.version) %>,
+    "description": <%- JSON.stringify(ctx.description ?? '') %>,
+    "type": "module",
+<% if (ctx.isTypeScript) { -%>
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "dependencies": {
+        "@polytric/openws": "^0.0.4"
+    },
+    "scripts": {
+        "build": "tsup",
+        "typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3"
+    }
+<% } else { -%>
+    "main": "./src/index.js",
+    "exports": {
+        ".": "./src/index.js"
+    },
+    "files": [
+        "src"
+    ],
+    "dependencies": {
+        "@polytric/openws": "^0.0.4"
+    }
+<% } -%>
+}

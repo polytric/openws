@@ -1,0 +1,4 @@
+<% for (const network of ctx.networkExports) { -%>
+export * as <%= network.exportName %> from './<%= network.fileName %><%= ctx.isTypeScript ? '' : '/index.js' %>'
+<% } -%>
+export * as sdk from './sdk<%= ctx.isTypeScript ? '' : '/index.js' %>'

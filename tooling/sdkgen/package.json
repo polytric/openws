@@ -37,7 +37,9 @@
         "prepublishOnly": "pnpm build",
         "typecheck": "tsc --noEmit",
         "test:csharp:unity": "node dist/main.cjs --spec ./test/spec.json --out ./generated/dotnet/unity --project Example --hostRole client --language csharp --environment unity",
-        "test:typescript:node": "node dist/main.cjs --spec ./test/spec.json --out ./generated/typescript/node --project Example --hostRole client --language typescript --environment node"
+        "test:typescript:node": "node dist/main.cjs --spec ./test/spec.json --out ./generated/typescript/node --project Example --hostRole client --language typescript --environment node",
+        "test:typescript:server": "tsx ./test/typescript/server.ts",
+        "test:typescript:client": "tsx ./test/typescript/client.ts"
     },
     "dependencies": {
         "@pocketgems/schema": "^0.1.3",
@@ -50,10 +52,13 @@
         "@polytric/openws": "workspace:*",
         "@types/ejs": "^3.1.5",
         "@types/node": "^22.15.29",
+        "@types/ws": "^8.18.1",
         "@types/yargs": "^17.0.33",
+        "fastify": "^5.6.2",
         "tsup": "^8.5.1",
         "tsx": "^4.21.0",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "ws": "^8.18.3"
     },
     "packageManager": "pnpm@10.26.1"
 }

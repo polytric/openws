@@ -1,0 +1,28 @@
+{
+    "name": "@example/chat-openws-sdk",
+    "version": "1.0.0",
+    "description": "A chat service",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "dependencies": {
+        "@polytric/openws": "^0.0.4"
+    },
+    "scripts": {
+        "build": "tsup",
+        "typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3"
+    }
+}

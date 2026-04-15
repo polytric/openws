@@ -1,0 +1,41 @@
+<% if (ctx.isTypeScript) { -%>
+<% for (const modelImport of ctx.imports) { -%>
+import type { <%= modelImport.className %> } from './<%= modelImport.fileName %>'
+<% } -%>
+<% if (ctx.imports.length > 0) { -%>
+
+<% } -%>
+export interface <%= ctx.className %>Init {
+<% for (const property of ctx.properties) { -%>
+    <%= property.name %><%= property.optional ? '?' : '' %>: <%= property.typeName %>
+<% } -%>
+}
+
+export class <%= ctx.className %> implements <%= ctx.className %>Init {
+<% for (const property of ctx.properties) { -%>
+    readonly <%= property.name %><%= property.optional ? '?' : '' %>: <%= property.typeName %>
+<% } -%>
+
+    constructor({
+<% for (const property of ctx.properties) { -%>
+        <%= property.name %>,
+<% } -%>
+    }: <%= ctx.className %>Init = {} as <%= ctx.className %>Init) {
+<% for (const property of ctx.properties) { -%>
+        this.<%= property.name %> = <%= property.name %>
+<% } -%>
+    }
+}
+<% } else { -%>
+export class <%= ctx.className %> {
+    constructor({
+<% for (const property of ctx.properties) { -%>
+        <%= property.name %>,
+<% } -%>
+    } = {}) {
+<% for (const property of ctx.properties) { -%>
+        this.<%= property.name %> = <%= property.name %>
+<% } -%>
+    }
+}
+<% } -%>

@@ -1,12 +1,23 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { IR, IRProperty, PipelineContext, PlanStep } from '../types.js'
+import type {
+    IR,
+    IRModel,
+    IRProperty,
+    JsonSchema,
+    PipelineContext,
+    PlanStep,
+    Spec,
+} from '../types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-// From src/plans/ -> ../templates/dotnet
-// From dist/plans/ -> ../templates/dotnet (same relative path!)
-const TEMPLATE_DIR = path.join(__dirname, '../templates/dotnet')
+const TEMPLATE_DIR = path.join(__dirname, '../templates/typescript')
+const SRC_TEMPLATE_DIR = path.join(TEMPLATE_DIR, 'src')
+const CORE_TEMPLATE_DIR = path.join(SRC_TEMPLATE_DIR, 'core')
+const ROLES_TEMPLATE_DIR = path.join(CORE_TEMPLATE_DIR, 'roles')
+const MODELS_TEMPLATE_DIR = path.join(CORE_TEMPLATE_DIR, 'models')
+const SDK_TEMPLATE_DIR = path.join(SRC_TEMPLATE_DIR, 'sdk')
 
 function pascalCase(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1)
@@ -16,196 +27,309 @@ function camelCase(str: string): string {
     return str.charAt(0).toLowerCase() + str.slice(1)
 }
 
+function kebabCase(str: string): string {
+    return str
+        .replace(/([a-z])([A-Z])/g, '$1-$2')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase()
+}
+
 interface RoleInfo {
     roleName: string
     className: string
+    roleClassName: string
+    hostRoleClassName: string
+    apiName: string
     varName: string
+    apiVarName: string
+    fileName: string
+    roleFileName: string
     description: string
-    baseClassName: 'HostRole' | 'RemoteRole'
     endpoints: IR['networks'][0]['roles'][0]['endpoints']
 }
 
+interface ScopedRoleInfo extends RoleInfo {
+    scopedApiName: string
+    allowedMethodNames: string[]
+}
+
+interface MessageInfo {
+    methodName: string
+    messageName: string
+    payloadType: string
+    payloadFileName: string
+    schema: JsonValue
+    fromRoles?: RoleInfo[]
+    bindFromRoles?: RoleInfo[]
+}
+
+interface ModelScope {
+    scopeName: string
+    className: string
+    varName: string
+    fileName: string
+    models: ModelInfo[]
+}
+
+interface ModelInfo {
+    scopeName: string
+    className: string
+    fileName: string
+    schema: JsonValue
+    properties: Array<{
+        name: string
+        optional: boolean
+        typeName: string
+    }>
+    imports: Array<{
+        className: string
+        fileName: string
+    }>
+}
+
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+type JsonObject = { [key: string]: JsonValue }
+type SpecNetwork = Spec['networks'][string]
+type SpecRole = SpecNetwork['roles'][string]
+type SpecMessage = SpecRole['messages'][string]
+
 export default function createPlan(ctx: PipelineContext): PipelineContext {
-    const { ir, request } = ctx
+    const { ir, request, spec } = ctx
     if (!ir) throw new Error('ir is required')
     if (!request) throw new Error('request is required')
+    if (!spec) throw new Error('spec is required')
 
-    const assemblyName = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.Sdk`
-    ir.assemblyName = assemblyName
+    const language = Object.keys(request.target)[0] as 'javascript' | 'typescript'
+    const isTypeScript = language === 'typescript'
+    const extension = isTypeScript ? 'ts' : 'js'
+    const packageName = `@${kebabCase(ir.package.project)}/${kebabCase(ir.package.service)}-openws-sdk`
 
     const plan: PlanStep[] = [
         {
-            name: 'assembly definition',
+            name: `${language} package manifest`,
             command: 'render',
-            getData: () => ir,
-            template: path.join(TEMPLATE_DIR, 'Service.asmdef.ejs'),
-            output: path.join(request.outputPath, assemblyName, `${assemblyName}.asmdef`),
-        },
-        {
-            name: 'user assembly reference',
-            command: 'render',
-            getData: () => ir,
-            template: path.join(TEMPLATE_DIR, 'UserService.asmref.ejs'),
-            output: path.join(
-                request.outputPath,
-                `${assemblyName}.User`,
-                `${assemblyName}.User.asmref`
-            ),
+            getData: () => ({
+                isTypeScript,
+                packageName,
+                description: ir.package.description,
+                version: ir.package.version ?? '0.0.0',
+                extension,
+            }),
+            template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
+            output: path.join(request.outputPath, 'package.json'),
         },
     ]
 
-    for (const networkIr of ir.networks) {
-        const networkNamespace = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.${pascalCase(networkIr.name)}`
-        const networkClassName = `${pascalCase(networkIr.name)}Network`
-        const networkOutputPath = path.join(
-            request.outputPath,
-            assemblyName,
-            pascalCase(networkIr.name)
-        )
-        const userNetworkOutputPath = path.join(
-            request.outputPath,
-            `${assemblyName}.User`,
-            pascalCase(networkIr.name)
-        )
-
-        // Build role info from IR
-        const hostRoles: RoleInfo[] = []
-        const remoteRoles: RoleInfo[] = []
-
-        for (const role of networkIr.roles) {
-            const roleInfo: RoleInfo = {
-                roleName: role.name,
-                className: pascalCase(role.name),
-                varName: camelCase(role.name),
-                description: role.description || '',
-                baseClassName: role.isHost ? 'HostRole' : 'RemoteRole',
-                endpoints: role.endpoints || [],
+    if (isTypeScript) {
+        plan.push(
+            {
+                name: `${language} tsconfig`,
+                command: 'render',
+                getData: () => ({}),
+                template: path.join(TEMPLATE_DIR, 'tsconfig.json.ejs'),
+                output: path.join(request.outputPath, 'tsconfig.json'),
+            },
+            {
+                name: `${language} tsup config`,
+                command: 'render',
+                getData: () => ({}),
+                template: path.join(TEMPLATE_DIR, 'tsup.config.ts.ejs'),
+                output: path.join(request.outputPath, 'tsup.config.ts'),
             }
-            if (role.isHost) {
-                hostRoles.push(roleInfo)
-            } else {
-                remoteRoles.push(roleInfo)
-            }
-        }
+        )
+    }
 
-        const allRoles = [...hostRoles, ...remoteRoles]
+    const networkExports: Array<{ exportName: string; fileName: string }> = []
 
-        // Build all model imports for user templates
-        const allModelImports = allRoles.map(role => `${networkNamespace}.Models.${role.className}`)
+    for (const [networkName, networkSpec] of Object.entries(spec.networks)) {
+        const networkFileName = kebabCase(networkName)
+        const networkOutputPath = path.join(request.outputPath, 'src', networkFileName)
+        const sdkOutputPath = path.join(request.outputPath, 'src', 'sdk')
+        const allRoles = Object.values(networkSpec.roles).map(toRoleInfo)
+        const rolesByName = new Map(allRoles.map(role => [role.roleName, role]))
+        const hostRoles = allRoles
+        const modelScopes = buildModelScopes(buildSpecModels(networkSpec))
 
-        // Generate Network.cs
-        plan.push({
-            name: `network ${networkIr.name}`,
-            command: 'render',
-            getData: () => ({
-                namespace: networkNamespace,
-                networkClassName,
-                networkName: networkIr.name,
-                description: networkIr.description,
-                version: networkIr.version,
-                allRoles,
-            }),
-            template: path.join(TEMPLATE_DIR, 'Network.cs.ejs'),
-            output: path.join(networkOutputPath, `${networkClassName}.cs`),
+        networkExports.push({
+            exportName: camelCase(networkName),
+            fileName: networkFileName,
         })
 
-        // Process models
-        for (const modelIr of networkIr.models) {
-            modelIr.namespace = `${networkNamespace}.Models.${pascalCase(modelIr.scopeName)}`
-            modelIr.className = pascalCase(modelIr.modelName)
-            if (modelIr.properties) {
-                for (const propertyIr of modelIr.properties) {
-                    propertyIr.propertyName = pascalCase(propertyIr.modelName)
-                    propertyIr.typeName = mapType(propertyIr)
-                }
+        plan.push({
+            name: `${language} network ${networkName}`,
+            command: 'render',
+            getData: () => ({
+                isTypeScript,
+                networkName,
+                networkClassName: `${pascalCase(networkName)}Network`,
+                description: networkSpec.description,
+                version: networkSpec.version,
+                hostRoles,
+                allRoles,
+                extension,
+            }),
+            template: path.join(CORE_TEMPLATE_DIR, 'network.ts.ejs'),
+            output: path.join(networkOutputPath, `network.${extension}`),
+        })
+
+        plan.push({
+            name: `${language} network exports ${networkName}`,
+            command: 'render',
+            getData: () => ({
+                isTypeScript,
+                extension,
+                modelScopes,
+            }),
+            template: path.join(CORE_TEMPLATE_DIR, 'index.ts.ejs'),
+            output: path.join(networkOutputPath, `index.${extension}`),
+        })
+
+        const roleMessagesByName = new Map<string, MessageInfo[]>()
+        for (const role of allRoles) {
+            const roleSpec = networkSpec.roles[role.roleName]
+            const messages = Object.entries(roleSpec.messages).map(([messageName, messageSpec]) =>
+                toMessageInfo(messageName, messageSpec, rolesByName)
+            )
+            roleMessagesByName.set(role.roleName, messages)
+        }
+
+        const rolesWithMessages = allRoles.map(role => ({
+            ...role,
+            messages: roleMessagesByName.get(role.roleName) ?? [],
+        }))
+
+        for (const role of rolesWithMessages) {
+            plan.push({
+                name: `${language} core role ${role.className}`,
+                command: 'render',
+                getData: () => ({
+                    isTypeScript,
+                    extension,
+                    peerRoles: allRoles.filter(peerRole => peerRole.roleName !== role.roleName),
+                    ...role,
+                }),
+                template: path.join(ROLES_TEMPLATE_DIR, 'role.ts.ejs'),
+                output: path.join(networkOutputPath, 'roles', `${role.fileName}.${extension}`),
+            })
+        }
+
+        plan.push({
+            name: `${language} core role exports ${networkName}`,
+            command: 'render',
+            getData: () => ({
+                isTypeScript,
+                extension,
+                roles: allRoles,
+            }),
+            template: path.join(ROLES_TEMPLATE_DIR, 'index.ts.ejs'),
+            output: path.join(networkOutputPath, 'roles', `index.${extension}`),
+        })
+
+        for (const modelScope of modelScopes) {
+            plan.push({
+                name: `${language} model exports ${modelScope.scopeName}`,
+                command: 'render',
+                getData: () => ({
+                    isTypeScript,
+                    extension,
+                    ...modelScope,
+                }),
+                template: path.join(MODELS_TEMPLATE_DIR, 'index.ts.ejs'),
+                output: path.join(
+                    networkOutputPath,
+                    'models',
+                    modelScope.fileName,
+                    `index.${extension}`
+                ),
+            })
+
+            for (const model of modelScope.models) {
+                plan.push({
+                    name: `${language} model ${model.className}`,
+                    command: 'render',
+                    getData: () => ({
+                        isTypeScript,
+                        ...model,
+                    }),
+                    template: path.join(MODELS_TEMPLATE_DIR, 'model.ts.ejs'),
+                    output: path.join(
+                        networkOutputPath,
+                        'models',
+                        modelScope.fileName,
+                        `${model.fileName}.${extension}`
+                    ),
+                })
             }
         }
 
-        // Process handlers (incoming messages for host roles)
-        for (const handlerIr of networkIr.handlers) {
-            handlerIr.modelClassName = pascalCase(handlerIr.handlerName) + 'Payload'
-            handlerIr.messageName = handlerIr.handlerName
-            handlerIr.methodName = pascalCase(handlerIr.handlerName)
-        }
-
-        // Process messages (outgoing messages to remote roles)
-        for (const messageIr of networkIr.messages) {
-            messageIr.modelClassName = pascalCase(messageIr.handlerName) + 'Payload'
-            messageIr.messageName = messageIr.handlerName
-            messageIr.methodName = pascalCase(messageIr.handlerName)
-        }
-
-        // Generate HostRole classes
         for (const hostRole of hostRoles) {
-            const roleHandlers = networkIr.handlers.filter(h => h.roleName === hostRole.roleName)
-            const modelImports = [`${networkNamespace}.Models.${hostRole.className}`]
+            const remoteRoles = getPeerRoles(networkSpec, rolesByName, hostRole.roleName).map(
+                remoteRole =>
+                    ({
+                        ...remoteRole,
+                        scopedApiName: `${hostRole.className}${remoteRole.className}Api`,
+                        allowedMethodNames: getAllowedMessageMethodNames(
+                            networkSpec,
+                            remoteRole.roleName,
+                            hostRole.roleName
+                        ),
+                    }) satisfies ScopedRoleInfo
+            )
+            const roleSpec = networkSpec.roles[hostRole.roleName]
+            const roleHandlers = Object.entries(roleSpec.messages).map(
+                ([messageName, messageSpec]) =>
+                    toHandlerInfo(
+                        messageName,
+                        messageSpec,
+                        rolesByName,
+                        hostRole.roleName,
+                        allRoles
+                    )
+            )
 
             plan.push({
-                name: `host role ${hostRole.className}`,
+                name: `${language} sdk role ${hostRole.className}`,
                 command: 'render',
                 getData: () => ({
-                    namespace: `${networkNamespace}.Roles`,
+                    isTypeScript,
+                    extension,
                     handlers: roleHandlers,
+                    networkName,
+                    networkDescription: networkSpec.description,
+                    networkVersion: networkSpec.version,
                     remoteRoles,
-                    modelImports,
                     ...hostRole,
                 }),
-                template: path.join(TEMPLATE_DIR, 'HostRole.cs.ejs'),
-                output: path.join(networkOutputPath, 'Roles', `${hostRole.className}.cs`),
-            })
-
-            // Generate User stub for HostRole
-            plan.push({
-                name: `user host role ${hostRole.className}`,
-                command: 'render',
-                getData: () => ({
-                    namespace: `${networkNamespace}.Roles`,
-                    handlers: roleHandlers,
-                    remoteRoles,
-                    modelImports: allModelImports,
-                    ...hostRole,
-                }),
-                template: path.join(TEMPLATE_DIR, 'UserHostRole.cs.ejs'),
-                output: path.join(userNetworkOutputPath, 'Roles', `${hostRole.className}.cs`),
+                template: path.join(SDK_TEMPLATE_DIR, 'role.ts.ejs'),
+                output: path.join(sdkOutputPath, `${hostRole.fileName}.${extension}`),
             })
         }
 
-        // Generate RemoteRole classes
-        for (const remoteRole of remoteRoles) {
-            const roleMessages = networkIr.messages.filter(m => m.roleName === remoteRole.roleName)
-            const modelImports = [`${networkNamespace}.Models.${remoteRole.className}`]
-
-            plan.push({
-                name: `remote role ${remoteRole.className}`,
-                command: 'render',
-                getData: () => ({
-                    namespace: `${networkNamespace}.Roles`,
-                    messages: roleMessages,
-                    modelImports,
-                    ...remoteRole,
-                }),
-                template: path.join(TEMPLATE_DIR, 'RemoteRole.cs.ejs'),
-                output: path.join(networkOutputPath, 'Roles', `${remoteRole.className}.cs`),
-            })
-        }
-
-        // Generate Models
-        for (const modelIr of networkIr.models) {
-            if (modelIr.type !== 'object') continue
-            plan.push({
-                name: `model ${modelIr.className}`,
-                command: 'render',
-                getData: () => modelIr,
-                template: path.join(TEMPLATE_DIR, 'Model.cs.ejs'),
-                output: path.join(
-                    networkOutputPath,
-                    'Models',
-                    pascalCase(modelIr.scopeName),
-                    `${modelIr.className}.cs`
-                ),
-            })
-        }
+        plan.push({
+            name: `${language} sdk exports ${networkName}`,
+            command: 'render',
+            getData: () => ({
+                isTypeScript,
+                extension,
+                roles: hostRoles,
+            }),
+            template: path.join(SDK_TEMPLATE_DIR, 'index.ts.ejs'),
+            output: path.join(sdkOutputPath, `index.${extension}`),
+        })
     }
+
+    plan.push({
+        name: `${language} package exports`,
+        command: 'render',
+        getData: () => ({
+            isTypeScript,
+            extension,
+            networkExports,
+        }),
+        template: path.join(SRC_TEMPLATE_DIR, 'index.ts.ejs'),
+        output: path.join(request.outputPath, 'src', `index.${extension}`),
+    })
 
     return {
         ...ctx,
@@ -213,22 +337,386 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     }
 }
 
+function buildModelScopes(models: IRModel[]): ModelScope[] {
+    const scopes = new Map<string, ModelScope>()
+    const objectModels = models.filter(model => model.type === 'object')
+
+    for (const model of objectModels) {
+        const scopeName = model.scopeName
+        const scope =
+            scopes.get(scopeName) ??
+            ({
+                scopeName,
+                className: pascalCase(scopeName),
+                varName: camelCase(scopeName),
+                fileName: kebabCase(scopeName),
+                models: [],
+            } satisfies ModelScope)
+
+        scope.models.push({
+            scopeName,
+            className: pascalCase(model.modelName),
+            fileName: kebabCase(model.modelName),
+            schema: buildModelSchema(model, objectModels),
+            properties: (model.properties ?? []).map(property => ({
+                name: property.modelName,
+                optional: !property.required,
+                typeName: mapType(property),
+            })),
+            imports: buildModelImports(model),
+        })
+        scopes.set(scopeName, scope)
+    }
+
+    return [...scopes.values()]
+}
+
+function toRoleInfo(role: SpecRole): RoleInfo {
+    const className = pascalCase(role.name)
+    const fileName = kebabCase(role.name)
+    return {
+        roleName: role.name,
+        className,
+        roleClassName: className,
+        hostRoleClassName: `${className}Host`,
+        apiName: `${className}Api`,
+        varName: camelCase(role.name),
+        apiVarName: `${camelCase(role.name)}Api`,
+        fileName,
+        roleFileName: `${fileName}-role`,
+        description: role.description || '',
+        endpoints: role.endpoints || [],
+    }
+}
+
+function getMessageFromRoles(
+    message: SpecMessage,
+    rolesByName: Map<string, RoleInfo>,
+    currentRoleName: string,
+    allRoles: RoleInfo[]
+): RoleInfo[] {
+    const fromRoleNames = getMessageFromRoleNames(
+        message,
+        currentRoleName,
+        allRoles.map(role => role.roleName)
+    )
+    return fromRoleNames
+        .map(roleName => rolesByName.get(roleName))
+        .filter((role): role is RoleInfo => Boolean(role))
+}
+
+function getExplicitMessageFromRoles(
+    message: SpecMessage,
+    rolesByName: Map<string, RoleInfo>
+): RoleInfo[] | undefined {
+    if (!message.from) return undefined
+    return message.from
+        .map(roleName => rolesByName.get(roleName))
+        .filter((role): role is RoleInfo => Boolean(role))
+}
+
+function getPeerRoles(
+    network: SpecNetwork,
+    rolesByName: Map<string, RoleInfo>,
+    hostRoleName: string
+): RoleInfo[] {
+    const peers = new Set<string>()
+    const hostRole = network.roles[hostRoleName]
+    const allRoleNames = Object.keys(network.roles)
+
+    for (const message of Object.values(hostRole.messages)) {
+        for (const roleName of getMessageFromRoleNames(message, hostRoleName, allRoleNames)) {
+            peers.add(roleName)
+        }
+    }
+
+    for (const [roleName, role] of Object.entries(network.roles)) {
+        if (roleName === hostRoleName) continue
+        for (const message of Object.values(role.messages)) {
+            if (getMessageFromRoleNames(message, roleName, allRoleNames).includes(hostRoleName)) {
+                peers.add(roleName)
+            }
+        }
+    }
+
+    return [...peers]
+        .map(roleName => rolesByName.get(roleName))
+        .filter((role): role is RoleInfo => Boolean(role))
+}
+
+function getMessageFromRoleNames(
+    message: SpecMessage,
+    targetRoleName: string,
+    allRoleNames: string[]
+): string[] {
+    return message.from ?? allRoleNames.filter(roleName => roleName !== targetRoleName)
+}
+
+function getAllowedMessageMethodNames(
+    network: SpecNetwork,
+    targetRoleName: string,
+    fromRoleName: string
+): string[] {
+    const targetRole = network.roles[targetRoleName]
+    const allRoleNames = Object.keys(network.roles)
+
+    return Object.entries(targetRole.messages)
+        .filter(([, message]) =>
+            getMessageFromRoleNames(message, targetRoleName, allRoleNames).includes(fromRoleName)
+        )
+        .map(([messageName]) => camelCase(messageName))
+}
+
+function buildSpecModels(network: SpecNetwork): IRModel[] {
+    const models: IRModel[] = []
+    for (const role of Object.values(network.roles)) {
+        for (const [messageName, message] of Object.entries(role.messages)) {
+            models.push(...buildIrModels(role.name, `${messageName}Payload`, message.payload))
+        }
+    }
+    return models
+}
+
+function buildIrModels(scopeName: string, modelName: string, schema: JsonSchema): IRModel[] {
+    const type = schema.type as string
+    const model: IRModel = {
+        type,
+        scopeName,
+        modelName,
+        description: schema.description,
+    }
+
+    switch (type) {
+        case 'string':
+        case 'number':
+        case 'integer':
+        case 'boolean':
+        case 'null':
+            return []
+        case 'array': {
+            const items = schema.items as JsonSchema | undefined
+            if (!items) return []
+            return buildIrModels(scopeName, modelName, items)
+        }
+        case 'object': {
+            const properties: IRProperty[] = []
+            model.properties = properties
+            const models: IRModel[] = []
+            const schemaProperties = schema.properties as Record<string, JsonSchema> | undefined
+
+            if (!schemaProperties) return [model]
+
+            for (const [subName, subSchema] of Object.entries(schemaProperties)) {
+                const subModels = buildIrModels(scopeName, subName, subSchema)
+                const mainModel: IRModel | JsonSchema =
+                    subModels.find(m => m.modelName === subName) ?? subSchema
+
+                const property: IRProperty = {
+                    type: mainModel.type as string,
+                    description: mainModel.description,
+                    scopeName: (mainModel as IRModel).scopeName ?? scopeName,
+                    modelName: (mainModel as IRModel).modelName ?? subName,
+                    required: (schema.required as string[] | undefined)?.includes(subName),
+                }
+
+                const itemsSource =
+                    (mainModel as IRModel).properties?.[0]?.items ??
+                    ((mainModel as JsonSchema).items as JsonSchema | undefined)
+                if (itemsSource) {
+                    property.items = {
+                        type: itemsSource.type as string,
+                        description: itemsSource.description,
+                        scopeName: (itemsSource as IRProperty['items'])?.scopeName ?? scopeName,
+                        modelName: (itemsSource as IRProperty['items'])?.modelName ?? subName,
+                    }
+                }
+
+                properties.push(property)
+                models.push(...subModels)
+            }
+            return [model, ...models]
+        }
+        default:
+            return []
+    }
+}
+
+function buildModelImports(model: IRModel): ModelInfo['imports'] {
+    const imports = new Map<string, { className: string; fileName: string }>()
+    const addImport = (modelName: string | undefined) => {
+        if (!modelName || modelName === model.modelName) return
+        const className = pascalCase(modelName)
+        imports.set(className, {
+            className,
+            fileName: kebabCase(modelName),
+        })
+    }
+
+    for (const property of model.properties ?? []) {
+        if (property.type === 'object') {
+            addImport(property.modelName)
+        }
+        if (property.type === 'array' && property.items?.type === 'object') {
+            addImport(property.items.modelName)
+        }
+    }
+
+    return [...imports.values()]
+}
+
+function buildModelSchema(model: IRModel, models: IRModel[], seen = new Set<string>()): JsonObject {
+    const key = `${model.scopeName}:${model.modelName}`
+    if (seen.has(key)) return { type: 'object' }
+
+    const nextSeen = new Set(seen)
+    nextSeen.add(key)
+
+    const properties: JsonObject = {}
+    const required: string[] = []
+
+    for (const property of model.properties ?? []) {
+        properties[property.modelName] = buildPropertySchema(property, models, nextSeen)
+        if (property.required) required.push(property.modelName)
+    }
+
+    const schema: JsonObject = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties,
+        additionalProperties: false,
+    }
+    if (model.description) schema.description = model.description
+    if (required.length > 0) schema.required = required
+    return schema
+}
+
+function buildNestedObjectSchema(model: IRModel, models: IRModel[], seen: Set<string>): JsonObject {
+    const { $schema: _schema, ...schema } = buildModelSchema(model, models, seen)
+    return schema
+}
+
+function buildPropertySchema(
+    property: IRProperty,
+    models: IRModel[],
+    seen: Set<string>
+): JsonObject {
+    const schema = buildSchemaForType(
+        property.type,
+        property.scopeName,
+        property.modelName,
+        models,
+        seen
+    )
+    if (property.description) schema.description = property.description
+    if (property.type === 'array' && property.items) {
+        schema.items = buildSchemaForType(
+            property.items.type,
+            property.items.scopeName,
+            property.items.modelName,
+            models,
+            seen
+        )
+        if (
+            property.items.description &&
+            typeof schema.items === 'object' &&
+            schema.items !== null
+        ) {
+            const itemSchema = schema.items as JsonObject
+            itemSchema.description = property.items.description
+        }
+    }
+    return schema
+}
+
+function buildSchemaForType(
+    type: string,
+    scopeName: string,
+    modelName: string,
+    models: IRModel[],
+    seen: Set<string>
+): JsonObject {
+    switch (type) {
+        case 'string':
+        case 'number':
+        case 'integer':
+        case 'boolean':
+        case 'null':
+            return { type }
+        case 'array':
+            return { type: 'array' }
+        case 'object': {
+            const model = findModel(models, scopeName, modelName)
+            if (!model) return { type: 'object' }
+            return buildNestedObjectSchema(model, models, seen)
+        }
+        default:
+            return {}
+    }
+}
+
+function findModel(models: IRModel[], scopeName: string, modelName: string): IRModel | undefined {
+    return models.find(model => model.scopeName === scopeName && model.modelName === modelName)
+}
+
+function toHandlerInfo(
+    messageName: string,
+    message: SpecMessage,
+    rolesByName: Map<string, RoleInfo>,
+    _currentRoleName: string,
+    _allRoles: RoleInfo[]
+) {
+    const payloadType = pascalCase(messageName) + 'Payload'
+    const methodSuffix = pascalCase(messageName)
+    return {
+        dispatchMethodName: camelCase(messageName),
+        onMethodName: `on${methodSuffix}`,
+        listenerFieldName: `${camelCase(messageName)}Handlers`,
+        messageName,
+        payloadType,
+        payloadFileName: kebabCase(payloadType),
+        schema: toJsonValue(message.payload),
+        fromRoles: getExplicitMessageFromRoles(message, rolesByName),
+        bindFromRoles: getMessageFromRoles(message, rolesByName, _currentRoleName, _allRoles),
+    }
+}
+
+function toMessageInfo(
+    messageName: string,
+    message: SpecMessage,
+    rolesByName: Map<string, RoleInfo>
+): MessageInfo {
+    const payloadType = pascalCase(messageName) + 'Payload'
+    return {
+        methodName: camelCase(messageName),
+        messageName,
+        payloadType,
+        payloadFileName: kebabCase(payloadType),
+        schema: toJsonValue(message.payload),
+        fromRoles: getExplicitMessageFromRoles(message, rolesByName),
+    }
+}
+
+function toJsonValue(value: unknown): JsonValue {
+    return JSON.parse(JSON.stringify(value)) as JsonValue
+}
+
 function mapType(property: IRProperty): string {
     switch (property.type) {
         case 'string':
             return 'string'
         case 'number':
-            return 'double'
         case 'integer':
-            return 'int'
+            return 'number'
         case 'boolean':
-            return 'bool'
+            return 'boolean'
+        case 'null':
+            return 'null'
         case 'array':
-            if (!property.items) return 'List<object>'
-            return `List<${mapType(property.items as IRProperty)}>`
+            if (!property.items) return 'unknown[]'
+            return `${mapType(property.items as IRProperty)}[]`
         case 'object':
             return pascalCase(property.modelName)
         default:
-            return 'object'
+            return 'unknown'
     }
 }

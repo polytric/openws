@@ -1,5 +1,6 @@
 node_modules
 generated
+tmp
 dist
 
 # .NET build artifacts

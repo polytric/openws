@@ -1,0 +1,3 @@
+<% for (const model of ctx.models) { -%>
+export * from './<%= model.fileName %><%= ctx.isTypeScript ? '' : '.js' %>'
+<% } -%>
