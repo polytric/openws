@@ -296,6 +296,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     extension,
                     handlers: roleHandlers,
                     networkName,
+                    networkFileName,
                     networkDescription: networkSpec.description,
                     networkVersion: networkSpec.version,
                     remoteRoles,
