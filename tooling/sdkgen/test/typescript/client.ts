@@ -3,8 +3,8 @@ import {
     type ClientServerApi,
     JoinedRoomPayload,
     ReceivedMessagePayload,
-} from './openws-sdkgen-typescript-node/src/sdk/client.ts'
-import { SendMessagePayload } from './openws-sdkgen-typescript-node/src/core/models/server/index.ts'
+} from './openws-sdkgen-typescript-node/chat/core/src/sdk/client.ts'
+import { SendMessagePayload } from './openws-sdkgen-typescript-node/chat/core/src/models/server/index.ts'
 
 const userId = process.env.OPENWS_USER_ID ?? 'user-a'
 const roomId = process.env.OPENWS_ROOM_ID ?? 'room-1'

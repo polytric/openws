@@ -1,4 +1,7 @@
-<% for (const network of ctx.networkExports) { -%>
-export * as <%= network.exportName %> from './<%= network.fileName %><%= ctx.isTypeScript ? '' : '/index.js' %>'
+export * from './network<%= ctx.isTypeScript ? '' : '.js' %>'
+export * from './roles<%= ctx.isTypeScript ? '' : '/index.js' %>'
+export * as roles from './roles<%= ctx.isTypeScript ? '' : '/index.js' %>'
+<% for (const modelScope of ctx.modelScopes) { -%>
+export * as <%= modelScope.varName %>Models from './models/<%= modelScope.fileName %><%= ctx.isTypeScript ? '' : '/index.js' %>'
 <% } -%>
 export * as sdk from './sdk<%= ctx.isTypeScript ? '' : '/index.js' %>'

@@ -7,39 +7,39 @@ import type {
     OpenWsEnvelope,
     Transport,
     Unsubscribe,
-} from '../core/network'
+} from '../network'
 import {
     WsTransport,
     bindTransport,
     canBindTransport,
     decodeEnvelope,
     encodeEnvelope,
-} from '../core/network'
-import type { ReceivedRoomStatsPayload } from '../core/models/portal'
-export * from '../core/models/portal'
-import { PortalHost, Server, type ServerApi } from '../core/roles'
+} from '../network'
+import type { JoinedRoomPayload, ReceivedMessagePayload } from '../models/client'
+export * from '../models/client'
+import { ClientHost, Server, type ServerApi } from '../roles'
 
-export type PortalServerApi = Pick<ServerApi, 'sendMessage' | 'requestRoomStats'>
+export type ClientServerApi = Pick<ServerApi, 'createRoom' | 'joinRoom' | 'sendMessage'>
 
-export type PortalPeerApi = PortalServerApi
+export type ClientPeerApi = ClientServerApi
 
-export type PortalMessageHandler<TPayload, TApi = PortalPeerApi> = (
+export type ClientMessageHandler<TPayload, TApi = ClientPeerApi> = (
     payload: TPayload,
     api: TApi
 ) => void | Promise<void>
 
-export type PortalErrorHandler = (error: unknown) => void | Promise<void>
+export type ClientErrorHandler = (error: unknown) => void | Promise<void>
 
-export class Portal {
-    static readonly CONFIG = PortalHost.CONFIG
+export class Client {
+    static readonly CONFIG = ClientHost.CONFIG
 
-    readonly name = Portal.CONFIG.name
-    readonly description = Portal.CONFIG.description
-    serverApi!: PortalServerApi
+    readonly name = Client.CONFIG.name
+    readonly description = Client.CONFIG.description
+    serverApi!: ClientServerApi
 
     private readonly binder: Fluent.NetworkBinder
     private readonly runtime: Fluent.Runtime
-    private readonly fromRole = 'portal'
+    private readonly fromRole = 'client'
     private readonly sendEnvelope: (
         toRole: string,
         messageName: string,
@@ -50,16 +50,19 @@ export class Portal {
     private readonly apisByMessageName: Record<string, ApiProto> = {}
     private readonly handlersByMessageName: Record<
         string,
-        (payload: unknown, api: PortalPeerApi) => Promise<void>
+        (payload: unknown, api: ClientPeerApi) => Promise<void>
     > = {}
-    private readonly messageErrorHandlers = new Set<PortalErrorHandler>()
-    private readonly socketErrorHandlers = new Set<PortalErrorHandler>()
-    private readonly receivedRoomStatsHandlers = new Set<
-        PortalMessageHandler<ReceivedRoomStatsPayload, PortalServerApi>
+    private readonly messageErrorHandlers = new Set<ClientErrorHandler>()
+    private readonly socketErrorHandlers = new Set<ClientErrorHandler>()
+    private readonly joinedRoomHandlers = new Set<
+        ClientMessageHandler<JoinedRoomPayload, ClientServerApi>
+    >()
+    private readonly receivedMessageHandlers = new Set<
+        ClientMessageHandler<ReceivedMessagePayload, ClientServerApi>
     >()
 
     constructor(protected readonly transport: Transport = new WsTransport()) {
-        const HostRole = this.constructor as typeof Portal
+        const HostRole = this.constructor as typeof Client
         this.binder = Fluent.bindings(
             WS.network({
                 name: 'core',
@@ -74,16 +77,19 @@ export class Portal {
                 encodeEnvelope({ fromRole: this.fromRole, messageName, payload })
             )
         }
-        this.handlersByMessageName['receivedRoomStats'] = async (payload, api) => {
-            await this.receivedRoomStats(
-                payload as ReceivedRoomStatsPayload,
-                api as PortalServerApi
-            )
+        this.handlersByMessageName['joinedRoom'] = async (payload, api) => {
+            await this.joinedRoom(payload as JoinedRoomPayload, api as ClientServerApi)
         }
-        this.binder.fromRoles['server'].on('receivedRoomStats', async (payload, api) => {
-            await this.receivedRoomStats(
-                payload as ReceivedRoomStatsPayload,
-                api as unknown as PortalServerApi
+        this.binder.fromRoles['server'].on('joinedRoom', async (payload, api) => {
+            await this.joinedRoom(payload as JoinedRoomPayload, api as unknown as ClientServerApi)
+        })
+        this.handlersByMessageName['receivedMessage'] = async (payload, api) => {
+            await this.receivedMessage(payload as ReceivedMessagePayload, api as ClientServerApi)
+        }
+        this.binder.fromRoles['server'].on('receivedMessage', async (payload, api) => {
+            await this.receivedMessage(
+                payload as ReceivedMessagePayload,
+                api as unknown as ClientServerApi
             )
         })
         if (canBindTransport(transport)) {
@@ -91,8 +97,8 @@ export class Portal {
         }
     }
 
-    async connect(roleName: 'server', endpoint?: OpenWsEndpoint): Promise<PortalServerApi>
-    async connect(roleName: string, endpoint?: OpenWsEndpoint): Promise<PortalPeerApi> {
+    async connect(roleName: 'server', endpoint?: OpenWsEndpoint): Promise<ClientServerApi>
+    async connect(roleName: string, endpoint?: OpenWsEndpoint): Promise<ClientPeerApi> {
         switch (roleName) {
             case 'server': {
                 const remoteEndpoint =
@@ -103,9 +109,10 @@ export class Portal {
                 await this.transport.connect?.(roleName, remoteEndpoint)
                 if (!this.apisByRole['server']) {
                     const serverApi = this.runtime.createApi('server', this.sendEnvelope)
-                    this.serverApi = serverApi as unknown as PortalServerApi
+                    this.serverApi = serverApi as unknown as ClientServerApi
                     this.apisByRole['server'] = serverApi
-                    this.apisByMessageName['receivedRoomStats'] = serverApi
+                    this.apisByMessageName['joinedRoom'] = serverApi
+                    this.apisByMessageName['receivedMessage'] = serverApi
                 }
                 return this.serverApi
             }
@@ -139,7 +146,7 @@ export class Portal {
         }
     }
 
-    onMessageError(handler: PortalErrorHandler): Unsubscribe {
+    onMessageError(handler: ClientErrorHandler): Unsubscribe {
         this.messageErrorHandlers.add(handler)
         return () => {
             this.messageErrorHandlers.delete(handler)
@@ -152,28 +159,38 @@ export class Portal {
         }
     }
 
-    onSocketError(handler: PortalErrorHandler): Unsubscribe {
+    onSocketError(handler: ClientErrorHandler): Unsubscribe {
         this.socketErrorHandlers.add(handler)
         return () => {
             this.socketErrorHandlers.delete(handler)
         }
     }
 
-    async receivedRoomStats(
-        payload: ReceivedRoomStatsPayload,
-        api: PortalServerApi
-    ): Promise<void> {
-        for (const handler of this.receivedRoomStatsHandlers) {
+    async joinedRoom(payload: JoinedRoomPayload, api: ClientServerApi): Promise<void> {
+        for (const handler of this.joinedRoomHandlers) {
             await handler(payload, api)
         }
     }
 
-    onReceivedRoomStats(
-        handler: PortalMessageHandler<ReceivedRoomStatsPayload, PortalServerApi>
-    ): Unsubscribe {
-        this.receivedRoomStatsHandlers.add(handler)
+    onJoinedRoom(handler: ClientMessageHandler<JoinedRoomPayload, ClientServerApi>): Unsubscribe {
+        this.joinedRoomHandlers.add(handler)
         return () => {
-            this.receivedRoomStatsHandlers.delete(handler)
+            this.joinedRoomHandlers.delete(handler)
+        }
+    }
+
+    async receivedMessage(payload: ReceivedMessagePayload, api: ClientServerApi): Promise<void> {
+        for (const handler of this.receivedMessageHandlers) {
+            await handler(payload, api)
+        }
+    }
+
+    onReceivedMessage(
+        handler: ClientMessageHandler<ReceivedMessagePayload, ClientServerApi>
+    ): Unsubscribe {
+        this.receivedMessageHandlers.add(handler)
+        return () => {
+            this.receivedMessageHandlers.delete(handler)
         }
     }
 
@@ -192,7 +209,7 @@ export class Portal {
         const localHandler = this.handlersByMessageName[envelope.messageName]
         const localApi = this.apisByMessageName[envelope.messageName]
         if (envelope.fromRole === this.fromRole && localHandler && localApi) {
-            await localHandler(envelope.payload, localApi as unknown as PortalPeerApi)
+            await localHandler(envelope.payload, localApi as unknown as ClientPeerApi)
             return
         }
 

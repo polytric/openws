@@ -1,7 +1,6 @@
-<% const networkDir = ctx.networkFileName -%>
-<% const networkImport = ctx.isTypeScript ? `../${networkDir}/network` : `../${networkDir}/network.js` -%>
-<% const modelImportPath = ctx.isTypeScript ? `../${networkDir}/models/${ctx.fileName}` : `../${networkDir}/models/${ctx.fileName}/index.js` -%>
-<% const rolesImport = ctx.isTypeScript ? `../${networkDir}/roles` : `../${networkDir}/roles/index.js` -%>
+<% const networkImport = ctx.isTypeScript ? '../network' : '../network.js' -%>
+<% const modelImportPath = ctx.isTypeScript ? `../models/${ctx.fileName}` : `../models/${ctx.fileName}/index.js` -%>
+<% const rolesImport = ctx.isTypeScript ? '../roles' : '../roles/index.js' -%>
 <% if (ctx.isTypeScript) { -%>
 import * as WS from '@polytric/openws/class'
 import * as Fluent from '@polytric/openws/fluent'

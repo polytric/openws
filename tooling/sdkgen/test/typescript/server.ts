@@ -7,25 +7,25 @@ import {
     networkDescription,
     networkName,
     networkVersion,
-} from './openws-sdkgen-typescript-node/src/core/network.ts'
+} from './openws-sdkgen-typescript-node/chat/core/src/network.ts'
 import {
     Client as ClientRole,
     Portal as PortalRole,
     ServerHost,
     type ClientApi,
     type PortalApi,
-} from './openws-sdkgen-typescript-node/src/core/roles/index.ts'
+} from './openws-sdkgen-typescript-node/chat/core/src/roles/index.ts'
 import {
     JoinedRoomPayload,
     ReceivedMessagePayload,
-} from './openws-sdkgen-typescript-node/src/core/models/client/index.ts'
-import { ReceivedRoomStatsPayload } from './openws-sdkgen-typescript-node/src/core/models/portal/index.ts'
+} from './openws-sdkgen-typescript-node/chat/core/src/models/client/index.ts'
+import { ReceivedRoomStatsPayload } from './openws-sdkgen-typescript-node/chat/core/src/models/portal/index.ts'
 import {
     RequestRoomStatsPayload,
     CreateRoomPayload,
     JoinRoomPayload,
     SendMessagePayload,
-} from './openws-sdkgen-typescript-node/src/core/models/server/index.ts'
+} from './openws-sdkgen-typescript-node/chat/core/src/models/server/index.ts'
 
 const port = Number(process.env.OPENWS_PORT ?? 8082)
 const path = process.env.OPENWS_PATH ?? '/chat'

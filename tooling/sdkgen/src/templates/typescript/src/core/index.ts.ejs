@@ -1,6 +1,0 @@
-export * from './network<%= ctx.isTypeScript ? '' : '.js' %>'
-export * from './roles<%= ctx.isTypeScript ? '' : '/index.js' %>'
-export * as roles from './roles<%= ctx.isTypeScript ? '' : '/index.js' %>'
-<% for (const modelScope of ctx.modelScopes) { -%>
-export * as <%= modelScope.varName %>Models from './models/<%= modelScope.fileName %><%= ctx.isTypeScript ? '' : '/index.js' %>'
-<% } -%>

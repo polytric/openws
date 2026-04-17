@@ -14,9 +14,8 @@ import type {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const TEMPLATE_DIR = path.join(__dirname, '../templates/typescript')
 const SRC_TEMPLATE_DIR = path.join(TEMPLATE_DIR, 'src')
-const CORE_TEMPLATE_DIR = path.join(SRC_TEMPLATE_DIR, 'core')
-const ROLES_TEMPLATE_DIR = path.join(CORE_TEMPLATE_DIR, 'roles')
-const MODELS_TEMPLATE_DIR = path.join(CORE_TEMPLATE_DIR, 'models')
+const ROLES_TEMPLATE_DIR = path.join(SRC_TEMPLATE_DIR, 'roles')
+const MODELS_TEMPLATE_DIR = path.join(SRC_TEMPLATE_DIR, 'models')
 const SDK_TEMPLATE_DIR = path.join(SRC_TEMPLATE_DIR, 'sdk')
 
 function pascalCase(str: string): string {
@@ -103,7 +102,10 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     const language = Object.keys(request.target)[0] as 'javascript' | 'typescript'
     const isTypeScript = language === 'typescript'
     const extension = isTypeScript ? 'ts' : 'js'
-    const packageName = `@${kebabCase(ir.package.project)}/${kebabCase(ir.package.service)}-openws-sdk`
+    const serviceFileName = kebabCase(ir.package.service)
+    const networkFileName = kebabCase(request.network)
+    const packageOutputPath = path.join(request.outputPath, serviceFileName, networkFileName)
+    const packageName = `@${kebabCase(ir.package.project)}/${serviceFileName}-${networkFileName}-openws-sdk`
 
     const plan: PlanStep[] = [
         {
@@ -117,7 +119,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 extension,
             }),
             template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
-            output: path.join(request.outputPath, 'package.json'),
+            output: path.join(packageOutputPath, 'package.json'),
         },
     ]
 
@@ -128,19 +130,17 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 command: 'render',
                 getData: () => ({}),
                 template: path.join(TEMPLATE_DIR, 'tsconfig.json.ejs'),
-                output: path.join(request.outputPath, 'tsconfig.json'),
+                output: path.join(packageOutputPath, 'tsconfig.json'),
             },
             {
                 name: `${language} tsup config`,
                 command: 'render',
                 getData: () => ({}),
                 template: path.join(TEMPLATE_DIR, 'tsup.config.ts.ejs'),
-                output: path.join(request.outputPath, 'tsup.config.ts'),
+                output: path.join(packageOutputPath, 'tsup.config.ts'),
             }
         )
     }
-
-    const networkExports: Array<{ exportName: string; fileName: string }> = []
 
     const selectedNetworkSpec = spec.networks[request.network]
     if (!selectedNetworkSpec) {
@@ -148,9 +148,8 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     }
 
     for (const [networkName, networkSpec] of [[request.network, selectedNetworkSpec]] as const) {
-        const networkFileName = kebabCase(networkName)
-        const networkOutputPath = path.join(request.outputPath, 'src', networkFileName)
-        const sdkOutputPath = path.join(request.outputPath, 'src', 'sdk')
+        const sourceOutputPath = path.join(packageOutputPath, 'src')
+        const sdkOutputPath = path.join(sourceOutputPath, 'sdk')
         const allRoles = Object.values(networkSpec.roles).map(toRoleInfo)
         const rolesByName = new Map(allRoles.map(role => [role.roleName, role]))
         const hostRoles = request.hostRoles.map(hostRole => {
@@ -163,11 +162,6 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             return role
         })
         const modelScopes = buildModelScopes(buildSpecModels(networkSpec))
-
-        networkExports.push({
-            exportName: camelCase(networkName),
-            fileName: networkFileName,
-        })
 
         plan.push({
             name: `${language} network ${networkName}`,
@@ -182,20 +176,8 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 allRoles,
                 extension,
             }),
-            template: path.join(CORE_TEMPLATE_DIR, 'network.ts.ejs'),
-            output: path.join(networkOutputPath, `network.${extension}`),
-        })
-
-        plan.push({
-            name: `${language} network exports ${networkName}`,
-            command: 'render',
-            getData: () => ({
-                isTypeScript,
-                extension,
-                modelScopes,
-            }),
-            template: path.join(CORE_TEMPLATE_DIR, 'index.ts.ejs'),
-            output: path.join(networkOutputPath, `index.${extension}`),
+            template: path.join(SRC_TEMPLATE_DIR, 'network.ts.ejs'),
+            output: path.join(sourceOutputPath, `network.${extension}`),
         })
 
         const roleMessagesByName = new Map<string, MessageInfo[]>()
@@ -223,7 +205,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     ...role,
                 }),
                 template: path.join(ROLES_TEMPLATE_DIR, 'role.ts.ejs'),
-                output: path.join(networkOutputPath, 'roles', `${role.fileName}.${extension}`),
+                output: path.join(sourceOutputPath, 'roles', `${role.fileName}.${extension}`),
             })
         }
 
@@ -236,7 +218,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 roles: allRoles,
             }),
             template: path.join(ROLES_TEMPLATE_DIR, 'index.ts.ejs'),
-            output: path.join(networkOutputPath, 'roles', `index.${extension}`),
+            output: path.join(sourceOutputPath, 'roles', `index.${extension}`),
         })
 
         for (const modelScope of modelScopes) {
@@ -250,7 +232,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 }),
                 template: path.join(MODELS_TEMPLATE_DIR, 'index.ts.ejs'),
                 output: path.join(
-                    networkOutputPath,
+                    sourceOutputPath,
                     'models',
                     modelScope.fileName,
                     `index.${extension}`
@@ -267,7 +249,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     }),
                     template: path.join(MODELS_TEMPLATE_DIR, 'model.ts.ejs'),
                     output: path.join(
-                        networkOutputPath,
+                        sourceOutputPath,
                         'models',
                         modelScope.fileName,
                         `${model.fileName}.${extension}`
@@ -309,7 +291,6 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     extension,
                     handlers: roleHandlers,
                     networkName,
-                    networkFileName,
                     networkDescription: networkSpec.description,
                     networkVersion: networkSpec.version,
                     remoteRoles,
@@ -331,19 +312,19 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             template: path.join(SDK_TEMPLATE_DIR, 'index.ts.ejs'),
             output: path.join(sdkOutputPath, `index.${extension}`),
         })
-    }
 
-    plan.push({
-        name: `${language} package exports`,
-        command: 'render',
-        getData: () => ({
-            isTypeScript,
-            extension,
-            networkExports,
-        }),
-        template: path.join(SRC_TEMPLATE_DIR, 'index.ts.ejs'),
-        output: path.join(request.outputPath, 'src', `index.${extension}`),
-    })
+        plan.push({
+            name: `${language} package exports`,
+            command: 'render',
+            getData: () => ({
+                isTypeScript,
+                extension,
+                modelScopes,
+            }),
+            template: path.join(SRC_TEMPLATE_DIR, 'index.ts.ejs'),
+            output: path.join(sourceOutputPath, `index.${extension}`),
+        })
+    }
 
     return {
         ...ctx,

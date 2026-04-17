@@ -44,5 +44,5 @@ function getNetworkOutputPaths(ctx: PipelineContext): string[] {
         return [path.join(request.outputPath, assemblyName, networkFolder)]
     }
 
-    return [path.join(request.outputPath, 'src', kebabCase(request.network))]
+    return [path.join(request.outputPath, kebabCase(spec.name), kebabCase(request.network))]
 }
