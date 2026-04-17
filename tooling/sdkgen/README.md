@@ -29,7 +29,7 @@ openws-sdkgen \
   --spec ./openws-spec.json \
   --out ./generated \
   --project MyCompany \
-  --service ChatService \
+  --network core \
   --hostRole server \
   --language csharp \
   --environment unity
@@ -40,7 +40,7 @@ The CLI exposes the following options:
 - `--spec` (string): Path to the OpenWS spec JSON file.
 - `--out` (string): Output directory for generated code.
 - `--project` (string): Project/namespace prefix for generated code.
-- `--service` (string): Service name (default: `MyService`).
+- `--network` (string): Network name to generate.
 - `--hostRole` (string): Participant role name that represents the host side.
 - `--language` (string): Target language (`csharp`, `javascript`, or `typescript`).
 - `--environment` (string|array): Target environment (`unity`, `node`, `browser`).

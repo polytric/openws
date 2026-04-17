@@ -18,6 +18,7 @@ export interface RawInput {
     spec: string
     out: string
     project: string
+    network: string
     hostRole: string[]
     language: 'csharp' | 'javascript' | 'typescript'
     environment: 'unity' | 'node' | 'browser'
@@ -28,6 +29,7 @@ export interface BuildRequest {
     specPath: string
     outputPath: string
     project: string
+    network: string
     hostRoles: string[]
     target: {
         csharp?: {

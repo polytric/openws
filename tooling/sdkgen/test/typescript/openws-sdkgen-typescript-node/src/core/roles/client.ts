@@ -19,14 +19,7 @@ export class Client {
             joinedRoom: {
                 payload: {
                     type: 'object',
-                    properties: {
-                        joinerId: {
-                            type: 'string',
-                        },
-                        roomId: {
-                            type: 'string',
-                        },
-                    },
+                    properties: { joinerId: { type: 'string' }, roomId: { type: 'string' } },
                     required: ['joinerId', 'roomId'],
                     additionalProperties: false,
                     $schema: 'http://json-schema.org/draft-07/schema#',
@@ -36,15 +29,9 @@ export class Client {
                 payload: {
                     type: 'object',
                     properties: {
-                        senderId: {
-                            type: 'string',
-                        },
-                        roomId: {
-                            type: 'string',
-                        },
-                        text: {
-                            type: 'string',
-                        },
+                        senderId: { type: 'string' },
+                        roomId: { type: 'string' },
+                        text: { type: 'string' },
                     },
                     required: ['senderId', 'roomId', 'text'],
                     additionalProperties: false,

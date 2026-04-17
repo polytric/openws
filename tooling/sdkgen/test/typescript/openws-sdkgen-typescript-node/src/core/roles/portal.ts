@@ -15,11 +15,7 @@ export class Portal {
             receivedRoomStats: {
                 payload: {
                     type: 'object',
-                    properties: {
-                        roomId: {
-                            type: 'string',
-                        },
-                    },
+                    properties: { roomId: { type: 'string' } },
                     required: ['roomId'],
                     additionalProperties: false,
                     $schema: 'http://json-schema.org/draft-07/schema#',

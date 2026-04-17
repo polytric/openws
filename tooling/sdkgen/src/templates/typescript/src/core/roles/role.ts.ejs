@@ -1,20 +1,13 @@
 <% const modelImportPath = ctx.isTypeScript ? `../models/${ctx.fileName}` : `../models/${ctx.fileName}/index.js` -%>
 <% if (ctx.isTypeScript) { -%>
 <% if (ctx.messages.length > 0) { -%>
-import type {
-<% for (const message of ctx.messages) { -%>
-    <%= message.payloadType %>,
-    <%= message.payloadType %>Init,
-<% } -%>
-} from '<%= modelImportPath %>'
+<% const payloadImports = ctx.messages.flatMap(message => [message.payloadType, `${message.payloadType}Init`]) -%>
+import type { <%= payloadImports.join(', ') %> } from '<%= modelImportPath %>'
 <% } -%>
 <% const importedPeerRoles = new Map(); for (const message of ctx.messages) { for (const fromRole of message.fromRoles ?? []) { if (fromRole.roleName !== ctx.roleName) importedPeerRoles.set(fromRole.roleName, fromRole) } } -%>
 <% if (importedPeerRoles.size > 0) { -%>
-import {
-<% for (const fromRole of importedPeerRoles.values()) { -%>
-    <%= fromRole.roleClassName %>,
-<% } -%>
-} from './index'
+<% const peerRoleImports = [...importedPeerRoles.values()].map(fromRole => fromRole.roleClassName) -%>
+import { <%= peerRoleImports.join(', ') %> } from './index'
 <% } -%>
 
 export interface <%= ctx.apiName %> {
@@ -30,12 +23,12 @@ export class <%= ctx.roleClassName %> {
         messages: {
 <% for (const message of ctx.messages) { -%>
             <%= message.messageName %>: {
-                payload: <%- JSON.stringify(message.schema, null, 16) %>,
+                payload: <%- JSON.stringify(message.schema) %>,
             },
 <% } -%>
         },
     }
-    static readonly endpoints = <%- JSON.stringify(ctx.endpoints, null, 4) %>
+    static readonly endpoints = <%- JSON.stringify(ctx.endpoints) %>
 }
 
 export class <%= ctx.hostRoleClassName %> {
@@ -60,11 +53,8 @@ export class <%= ctx.hostRoleClassName %> {
 <% } else { -%>
 <% const importedPeerRoles = new Map(); for (const message of ctx.messages) { for (const fromRole of message.fromRoles ?? []) { if (fromRole.roleName !== ctx.roleName) importedPeerRoles.set(fromRole.roleName, fromRole) } } -%>
 <% if (importedPeerRoles.size > 0) { -%>
-import {
-<% for (const fromRole of importedPeerRoles.values()) { -%>
-    <%= fromRole.roleClassName %>,
-<% } -%>
-} from './index.js'
+<% const peerRoleImports = [...importedPeerRoles.values()].map(fromRole => fromRole.roleClassName) -%>
+import { <%= peerRoleImports.join(', ') %> } from './index.js'
 <% } -%>
 
 export class <%= ctx.roleClassName %> {
@@ -74,12 +64,12 @@ export class <%= ctx.roleClassName %> {
         messages: {
 <% for (const message of ctx.messages) { -%>
             <%= message.messageName %>: {
-                payload: <%- JSON.stringify(message.schema, null, 16) %>,
+                payload: <%- JSON.stringify(message.schema) %>,
             },
 <% } -%>
         },
     }
-    static endpoints = <%- JSON.stringify(ctx.endpoints, null, 4) %>
+    static endpoints = <%- JSON.stringify(ctx.endpoints) %>
 }
 
 export class <%= ctx.hostRoleClassName %> {

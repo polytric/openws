@@ -139,7 +139,11 @@ export default function buildIr(ctx: PipelineContext): PipelineContext {
     if (!request) throw new Error('request is required')
     if (!spec) throw new Error('spec is required')
 
-    const { hostRoles } = request
+    const { hostRoles, network } = request
+    const selectedNetworkSpec = spec.networks[network]
+    if (!selectedNetworkSpec) {
+        throw new Error(`Network "${network}" does not exist in the spec`)
+    }
 
     const ir: IR = {
         package: {
@@ -151,8 +155,16 @@ export default function buildIr(ctx: PipelineContext): PipelineContext {
         networks: [],
     }
 
-    for (const [networkName, networkSpec] of Object.entries(spec.networks)) {
-        const hostRoleSpecs = hostRoles.map(hostRole => networkSpec.roles[hostRole])
+    for (const [networkName, networkSpec] of [[network, selectedNetworkSpec]] as const) {
+        const hostRoleSpecs = hostRoles.map(hostRole => {
+            const hostRoleSpec = networkSpec.roles[hostRole]
+            if (!hostRoleSpec) {
+                throw new Error(
+                    `Host role "${hostRole}" does not exist in network "${networkName}"`
+                )
+            }
+            return hostRoleSpec
+        })
         const otherRoleSpecs: Record<string, (typeof networkSpec.roles)[string]> = {}
 
         for (const [roleName, roleSpec] of Object.entries(networkSpec.roles)) {

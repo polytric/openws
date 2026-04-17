@@ -142,13 +142,26 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
 
     const networkExports: Array<{ exportName: string; fileName: string }> = []
 
-    for (const [networkName, networkSpec] of Object.entries(spec.networks)) {
+    const selectedNetworkSpec = spec.networks[request.network]
+    if (!selectedNetworkSpec) {
+        throw new Error(`Network "${request.network}" does not exist in the spec`)
+    }
+
+    for (const [networkName, networkSpec] of [[request.network, selectedNetworkSpec]] as const) {
         const networkFileName = kebabCase(networkName)
         const networkOutputPath = path.join(request.outputPath, 'src', networkFileName)
         const sdkOutputPath = path.join(request.outputPath, 'src', 'sdk')
         const allRoles = Object.values(networkSpec.roles).map(toRoleInfo)
         const rolesByName = new Map(allRoles.map(role => [role.roleName, role]))
-        const hostRoles = allRoles
+        const hostRoles = request.hostRoles.map(hostRole => {
+            const role = rolesByName.get(hostRole)
+            if (!role) {
+                throw new Error(
+                    `Host role "${hostRole}" does not exist in network "${networkName}"`
+                )
+            }
+            return role
+        })
         const modelScopes = buildModelScopes(buildSpecModels(networkSpec))
 
         networkExports.push({

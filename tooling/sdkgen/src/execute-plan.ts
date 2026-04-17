@@ -2,10 +2,25 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import ejs from 'ejs'
+import * as prettier from 'prettier'
 
 import type { PipelineContext } from './types.js'
 
 const rendererCache: Record<string, ejs.TemplateFunction> = {}
+const parserByExtension: Record<string, prettier.BuiltInParserName> = {
+    '.js': 'babel',
+    '.json': 'json',
+    '.ts': 'typescript',
+}
+const fallbackFormatOptions = {
+    semi: false,
+    singleQuote: true,
+    tabWidth: 4,
+    trailingComma: 'es5',
+    printWidth: 100,
+    arrowParens: 'avoid',
+    endOfLine: 'lf',
+} satisfies prettier.Options
 
 function renderTemplate(templatePath: string, data: ejs.Data): string {
     if (rendererCache[templatePath]) {
@@ -17,7 +32,19 @@ function renderTemplate(templatePath: string, data: ejs.Data): string {
     return renderer(data)
 }
 
-export default function executePlan(ctx: PipelineContext): PipelineContext {
+async function formatRenderedOutput(output: string, content: string): Promise<string> {
+    const parser = parserByExtension[path.extname(output)]
+    if (!parser) return content
+
+    const config = await prettier.resolveConfig(output, { editorconfig: true })
+    return prettier.format(content, {
+        ...fallbackFormatOptions,
+        ...config,
+        parser,
+    })
+}
+
+export default async function executePlan(ctx: PipelineContext): Promise<PipelineContext> {
     const { plan } = ctx
     if (!plan) throw new Error('plan is required')
 
@@ -35,7 +62,8 @@ export default function executePlan(ctx: PipelineContext): PipelineContext {
                 const data = getData()
                 console.log(data)
                 fs.mkdirSync(path.dirname(output), { recursive: true })
-                fs.writeFileSync(output, renderTemplate(template, { ctx: data }))
+                const rendered = renderTemplate(template, { ctx: data })
+                fs.writeFileSync(output, await formatRenderedOutput(output, rendered))
                 break
             }
         }

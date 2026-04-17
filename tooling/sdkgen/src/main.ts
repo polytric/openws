@@ -11,8 +11,8 @@ import type { PipelineContext, PipelineStep } from './types.js'
 const Pipeline: PipelineStep[] = [
     parseInput,
     buildRequest,
-    prepareOutput,
     loadSpec,
+    prepareOutput,
     buildIr,
     dispatchBuildPlan,
     executePlan,

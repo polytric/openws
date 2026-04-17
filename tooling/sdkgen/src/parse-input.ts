@@ -22,6 +22,11 @@ export default function parseInput(ctx: PipelineContext): PipelineContext {
             description: 'The project name',
             demandOption: true,
         })
+        .option('network', {
+            type: 'string',
+            description: 'The network to be generated',
+            demandOption: true,
+        })
         .option('hostRole', {
             type: 'array',
             string: true,

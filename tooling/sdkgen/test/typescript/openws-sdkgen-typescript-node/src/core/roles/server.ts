@@ -25,14 +25,7 @@ export class Server {
             createRoom: {
                 payload: {
                     type: 'object',
-                    properties: {
-                        userId: {
-                            type: 'string',
-                        },
-                        roomId: {
-                            type: 'string',
-                        },
-                    },
+                    properties: { userId: { type: 'string' }, roomId: { type: 'string' } },
                     required: ['userId', 'roomId'],
                     additionalProperties: false,
                     $schema: 'http://json-schema.org/draft-07/schema#',
@@ -41,14 +34,7 @@ export class Server {
             joinRoom: {
                 payload: {
                     type: 'object',
-                    properties: {
-                        userId: {
-                            type: 'string',
-                        },
-                        roomId: {
-                            type: 'string',
-                        },
-                    },
+                    properties: { userId: { type: 'string' }, roomId: { type: 'string' } },
                     required: ['userId', 'roomId'],
                     additionalProperties: false,
                     $schema: 'http://json-schema.org/draft-07/schema#',
@@ -58,15 +44,9 @@ export class Server {
                 payload: {
                     type: 'object',
                     properties: {
-                        userId: {
-                            type: 'string',
-                        },
-                        roomId: {
-                            type: 'string',
-                        },
-                        text: {
-                            type: 'string',
-                        },
+                        userId: { type: 'string' },
+                        roomId: { type: 'string' },
+                        text: { type: 'string' },
                     },
                     required: ['userId', 'roomId', 'text'],
                     additionalProperties: false,
@@ -76,11 +56,7 @@ export class Server {
             requestRoomStats: {
                 payload: {
                     type: 'object',
-                    properties: {
-                        roomId: {
-                            type: 'string',
-                        },
-                    },
+                    properties: { roomId: { type: 'string' } },
                     required: ['roomId'],
                     additionalProperties: false,
                     $schema: 'http://json-schema.org/draft-07/schema#',
@@ -88,14 +64,7 @@ export class Server {
             },
         },
     }
-    static readonly endpoints = [
-        {
-            scheme: 'ws',
-            host: 'localhost',
-            port: 8082,
-            path: '/chat',
-        },
-    ]
+    static readonly endpoints = [{ scheme: 'ws', host: 'localhost', port: 8082, path: '/chat' }]
 }
 
 export class ServerHost {

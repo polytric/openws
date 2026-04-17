@@ -10,6 +10,7 @@ const validateBuildRequest = S.obj({
     specPath: S.str,
     outputPath: S.str,
     project: S.str,
+    network: S.str,
     hostRoles: S.arr(S.str),
     target: S.obj({
         csharp: S.obj({
@@ -38,6 +39,7 @@ export default function buildRequest(ctx: PipelineContext): PipelineContext {
         specPath: path.join(process.cwd(), rawInput.spec),
         outputPath: path.join(process.cwd(), rawInput.out),
         project: rawInput.project,
+        network: toCamelCase(rawInput.network),
         hostRoles: rawInput.hostRole.map(r => toCamelCase(r)),
         target: {
             [rawInput.language]: {
