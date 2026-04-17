@@ -60,7 +60,6 @@ export default async function executePlan(ctx: PipelineContext): Promise<Pipelin
                 if (!getData || !template) continue
 
                 const data = getData()
-                console.log(data)
                 fs.mkdirSync(path.dirname(output), { recursive: true })
                 const rendered = renderTemplate(template, { ctx: data })
                 fs.writeFileSync(output, await formatRenderedOutput(output, rendered))

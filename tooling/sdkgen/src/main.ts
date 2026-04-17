@@ -26,11 +26,7 @@ async function main(): Promise<PipelineContext> {
     return ctx
 }
 
-main()
-    .then(result => {
-        console.log(JSON.stringify(result, null, 2))
-    })
-    .catch(err => {
-        console.error(err)
-        process.exit(1)
-    })
+main().catch(err => {
+    console.error(err)
+    process.exit(1)
+})
