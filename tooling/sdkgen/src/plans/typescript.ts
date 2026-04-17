@@ -87,6 +87,11 @@ interface ModelInfo {
     }>
 }
 
+interface PackageExport {
+    subpath: string
+    outputPath: string
+}
+
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 type JsonObject = { [key: string]: JsonValue }
 type SpecNetwork = Spec['networks'][string]
@@ -107,40 +112,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     const packageOutputPath = path.join(request.outputPath, serviceFileName, networkFileName)
     const packageName = `@${kebabCase(ir.package.project)}/${serviceFileName}-${networkFileName}-openws-sdk`
 
-    const plan: PlanStep[] = [
-        {
-            name: `${language} package manifest`,
-            command: 'render',
-            getData: () => ({
-                isTypeScript,
-                packageName,
-                description: ir.package.description,
-                version: ir.package.version ?? '0.0.1',
-                extension,
-            }),
-            template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
-            output: path.join(packageOutputPath, 'package.json'),
-        },
-    ]
-
-    if (isTypeScript) {
-        plan.push(
-            {
-                name: `${language} tsconfig`,
-                command: 'render',
-                getData: () => ({}),
-                template: path.join(TEMPLATE_DIR, 'tsconfig.json.ejs'),
-                output: path.join(packageOutputPath, 'tsconfig.json'),
-            },
-            {
-                name: `${language} tsup config`,
-                command: 'render',
-                getData: () => ({}),
-                template: path.join(TEMPLATE_DIR, 'tsup.config.ts.ejs'),
-                output: path.join(packageOutputPath, 'tsup.config.ts'),
-            }
-        )
-    }
+    const plan: PlanStep[] = []
 
     const selectedNetworkSpec = spec.networks[request.network]
     if (!selectedNetworkSpec) {
@@ -162,6 +134,44 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             return role
         })
         const modelScopes = buildModelScopes(buildSpecModels(networkSpec))
+        const packageEntries = buildPackageEntries(extension, allRoles, hostRoles, modelScopes)
+        const packageExports = buildPackageExports(packageEntries)
+
+        plan.push(
+            {
+                name: `${language} package manifest`,
+                command: 'render',
+                getData: () => ({
+                    isTypeScript,
+                    packageName,
+                    description: ir.package.description,
+                    version: ir.package.version ?? '0.0.1',
+                    packageExports,
+                }),
+                template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
+                output: path.join(packageOutputPath, 'package.json'),
+            },
+            {
+                name: `${language} tsup config`,
+                command: 'render',
+                getData: () => ({
+                    isTypeScript,
+                    packageEntries,
+                }),
+                template: path.join(TEMPLATE_DIR, 'tsup.config.ts.ejs'),
+                output: path.join(packageOutputPath, 'tsup.config.ts'),
+            }
+        )
+
+        if (isTypeScript) {
+            plan.push({
+                name: `${language} tsconfig`,
+                command: 'render',
+                getData: () => ({}),
+                template: path.join(TEMPLATE_DIR, 'tsconfig.json.ejs'),
+                output: path.join(packageOutputPath, 'tsconfig.json'),
+            })
+        }
 
         plan.push({
             name: `${language} network ${networkName}`,
@@ -364,6 +374,46 @@ function buildModelScopes(models: IRModel[]): ModelScope[] {
     }
 
     return [...scopes.values()]
+}
+
+function buildPackageEntries(
+    extension: string,
+    allRoles: RoleInfo[],
+    hostRoles: RoleInfo[],
+    modelScopes: ModelScope[]
+): Record<string, string> {
+    const entries: Record<string, string> = {
+        index: `src/index.${extension}`,
+        network: `src/network.${extension}`,
+        'roles/index': `src/roles/index.${extension}`,
+        'sdk/index': `src/sdk/index.${extension}`,
+    }
+
+    for (const role of allRoles) {
+        entries[`roles/${role.fileName}`] = `src/roles/${role.fileName}.${extension}`
+    }
+
+    for (const role of hostRoles) {
+        entries[`sdk/${role.fileName}`] = `src/sdk/${role.fileName}.${extension}`
+    }
+
+    for (const modelScope of modelScopes) {
+        entries[`models/${modelScope.fileName}/index`] =
+            `src/models/${modelScope.fileName}/index.${extension}`
+        for (const model of modelScope.models) {
+            entries[`models/${modelScope.fileName}/${model.fileName}`] =
+                `src/models/${modelScope.fileName}/${model.fileName}.${extension}`
+        }
+    }
+
+    return entries
+}
+
+function buildPackageExports(packageEntries: Record<string, string>): PackageExport[] {
+    return Object.keys(packageEntries).map(entryName => ({
+        subpath: entryName === 'index' ? '.' : `./${entryName.replace(/\/index$/, '')}`,
+        outputPath: `./dist/${entryName}`,
+    }))
 }
 
 function toRoleInfo(role: SpecRole): RoleInfo {

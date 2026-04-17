@@ -3,39 +3,35 @@
     "version": <%- JSON.stringify(ctx.version) %>,
     "description": <%- JSON.stringify(ctx.description ?? '') %>,
     "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
 <% if (ctx.isTypeScript) { -%>
-    "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
+<% } -%>
     "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
+<% for (let i = 0; i < ctx.packageExports.length; i++) { -%>
+<% const packageExport = ctx.packageExports[i] -%>
+        <%- JSON.stringify(packageExport.subpath) %>: {
+<% if (ctx.isTypeScript) { -%>
+            "types": <%- JSON.stringify(`${packageExport.outputPath}.d.ts`) %>,
+<% } -%>
+            "import": <%- JSON.stringify(`${packageExport.outputPath}.js`) %>,
+            "require": <%- JSON.stringify(`${packageExport.outputPath}.cjs`) %>
+        },
+<% } -%>
+        "./package.json": "./package.json"
     },
-    "files": [
-        "dist"
-    ],
+    "files": ["dist"],
     "dependencies": {
         "@polytric/openws": "^0.0.4"
     },
     "scripts": {
         "build": "tsup",
-        "typecheck": "tsc --noEmit"
+        "prepublishOnly": "npm run build"<% if (ctx.isTypeScript) { %>,
+        "typecheck": "tsc --noEmit"<% } %>
     },
     "devDependencies": {
         "tsup": "^8.5.1",
         "typescript": "^5.9.3"
     }
-<% } else { -%>
-    "main": "./src/index.js",
-    "exports": {
-        ".": "./src/index.js"
-    },
-    "files": [
-        "src"
-    ],
-    "dependencies": {
-        "@polytric/openws": "^0.0.4"
-    }
-<% } -%>
 }

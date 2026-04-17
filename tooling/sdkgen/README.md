@@ -52,6 +52,13 @@ The CLI exposes the following options:
 The generator is wired for:
 
 - C# (Unity) with `newtonsoft` serialization templates.
+- JavaScript (Node/browser) packages.
+- TypeScript (Node/browser) packages with declaration output.
+
+Generated JavaScript and TypeScript packages include a `tsup` build config and a
+`prepublishOnly` build script. The published package exports ESM (`dist/*.js`) and
+CJS (`dist/*.cjs`) entry points for the root SDK, network metadata, roles, SDK
+adaptors, and payload models.
 
 Additional targets are configured through build plans in `tooling/sdkgen/src/plans` and can be expanded as needed.
 

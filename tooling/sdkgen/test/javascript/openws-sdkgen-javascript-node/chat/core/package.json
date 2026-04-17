@@ -5,95 +5,76 @@
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
         },
         "./network": {
-            "types": "./dist/network.d.ts",
             "import": "./dist/network.js",
             "require": "./dist/network.cjs"
         },
         "./roles": {
-            "types": "./dist/roles/index.d.ts",
             "import": "./dist/roles/index.js",
             "require": "./dist/roles/index.cjs"
         },
         "./sdk": {
-            "types": "./dist/sdk/index.d.ts",
             "import": "./dist/sdk/index.js",
             "require": "./dist/sdk/index.cjs"
         },
         "./roles/server": {
-            "types": "./dist/roles/server.d.ts",
             "import": "./dist/roles/server.js",
             "require": "./dist/roles/server.cjs"
         },
         "./roles/client": {
-            "types": "./dist/roles/client.d.ts",
             "import": "./dist/roles/client.js",
             "require": "./dist/roles/client.cjs"
         },
         "./roles/portal": {
-            "types": "./dist/roles/portal.d.ts",
             "import": "./dist/roles/portal.js",
             "require": "./dist/roles/portal.cjs"
         },
         "./sdk/client": {
-            "types": "./dist/sdk/client.d.ts",
             "import": "./dist/sdk/client.js",
             "require": "./dist/sdk/client.cjs"
         },
         "./models/server": {
-            "types": "./dist/models/server/index.d.ts",
             "import": "./dist/models/server/index.js",
             "require": "./dist/models/server/index.cjs"
         },
         "./models/server/create-room-payload": {
-            "types": "./dist/models/server/create-room-payload.d.ts",
             "import": "./dist/models/server/create-room-payload.js",
             "require": "./dist/models/server/create-room-payload.cjs"
         },
         "./models/server/join-room-payload": {
-            "types": "./dist/models/server/join-room-payload.d.ts",
             "import": "./dist/models/server/join-room-payload.js",
             "require": "./dist/models/server/join-room-payload.cjs"
         },
         "./models/server/send-message-payload": {
-            "types": "./dist/models/server/send-message-payload.d.ts",
             "import": "./dist/models/server/send-message-payload.js",
             "require": "./dist/models/server/send-message-payload.cjs"
         },
         "./models/server/request-room-stats-payload": {
-            "types": "./dist/models/server/request-room-stats-payload.d.ts",
             "import": "./dist/models/server/request-room-stats-payload.js",
             "require": "./dist/models/server/request-room-stats-payload.cjs"
         },
         "./models/client": {
-            "types": "./dist/models/client/index.d.ts",
             "import": "./dist/models/client/index.js",
             "require": "./dist/models/client/index.cjs"
         },
         "./models/client/joined-room-payload": {
-            "types": "./dist/models/client/joined-room-payload.d.ts",
             "import": "./dist/models/client/joined-room-payload.js",
             "require": "./dist/models/client/joined-room-payload.cjs"
         },
         "./models/client/received-message-payload": {
-            "types": "./dist/models/client/received-message-payload.d.ts",
             "import": "./dist/models/client/received-message-payload.js",
             "require": "./dist/models/client/received-message-payload.cjs"
         },
         "./models/portal": {
-            "types": "./dist/models/portal/index.d.ts",
             "import": "./dist/models/portal/index.js",
             "require": "./dist/models/portal/index.cjs"
         },
         "./models/portal/received-room-stats-payload": {
-            "types": "./dist/models/portal/received-room-stats-payload.d.ts",
             "import": "./dist/models/portal/received-room-stats-payload.js",
             "require": "./dist/models/portal/received-room-stats-payload.cjs"
         },
@@ -105,8 +86,7 @@
     },
     "scripts": {
         "build": "tsup",
-        "prepublishOnly": "npm run build",
-        "typecheck": "tsc --noEmit"
+        "prepublishOnly": "npm run build"
     },
     "devDependencies": {
         "tsup": "^8.5.1",

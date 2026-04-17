@@ -1,10 +1,13 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-    entry: ['src/index.ts'],
-    format: ['esm'],
-    dts: true,
+    entry: <%- JSON.stringify(ctx.packageEntries, null, 4) %>,
+    format: ['esm', 'cjs'],
+    dts: <%= ctx.isTypeScript ? 'true' : 'false' %>,
     clean: true,
     target: 'es2022',
     outDir: 'dist',
+    outExtension({ format }) {
+        return { js: format === 'cjs' ? '.cjs' : '.js' }
+    },
 })
