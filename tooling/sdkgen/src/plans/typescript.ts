@@ -115,7 +115,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 isTypeScript,
                 packageName,
                 description: ir.package.description,
-                version: ir.package.version ?? '0.0.0',
+                version: ir.package.version ?? '0.0.1',
                 extension,
             }),
             template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
