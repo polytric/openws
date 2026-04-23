@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Polytric OpenWS Runtime",
     "type": "module",
     "main": "./dist/index.js",
@@ -50,6 +50,7 @@
         "build:watch": "tsup --watch src",
         "prepublishOnly": "pnpm build",
         "setup": "pnpm install",
+        "test:create-api:ts": "tsx test/runtime-create-api.ts",
         "test:class:cjs": "nodemon -w dist -w test/class.cjs test/class.cjs",
         "test:class:ts": "tsx watch test/class.ts",
         "test:decorator:cjs": "nodemon -w dist -w test/decorator.cjs --exec 'esbuild test/decorator.cjs --bundle --platform=node --target=node18 --format=cjs --packages=external | node'",
