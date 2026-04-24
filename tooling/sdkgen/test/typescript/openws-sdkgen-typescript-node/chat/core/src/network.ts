@@ -29,7 +29,7 @@ export interface OpenWsEndpoint {
 }
 
 export type Unsubscribe = () => void
-export type TransportEvent = 'message' | 'error'
+export type TransportEvent = 'message' | 'error' | 'close'
 export type TransportHandler = (data: unknown) => void | Promise<void>
 
 export interface Transport {
@@ -107,6 +107,7 @@ export class WsTransport implements Transport {
     private readonly listeners: Record<TransportEvent, Set<TransportHandler>> = {
         message: new Set(),
         error: new Set(),
+        close: new Set(),
     }
 
     constructor(socket?: unknown) {
@@ -148,14 +149,11 @@ export class WsTransport implements Transport {
     close(): void {
         const socket = this.socket as { close?: () => void } | undefined
         socket?.close?.()
-        this.socketUnsubscribe?.()
-        this.socket = undefined
-        this.socketUnsubscribe = undefined
-        this.openPromise = undefined
+        this.clearSocket()
     }
 
     private bindSocket(socket: unknown): void {
-        this.socketUnsubscribe?.()
+        this.clearSocket()
         this.socket = socket
         this.openPromise = undefined
 
@@ -165,10 +163,29 @@ export class WsTransport implements Transport {
         const unsubscribeError = addSocketListener(socket, 'error', error => {
             void this.emit('error', error)
         })
+        const unsubscribeClose = addSocketListener(socket, 'close', event => {
+            void this.handleSocketClose(socket, event)
+        })
         this.socketUnsubscribe = () => {
             unsubscribeMessage()
             unsubscribeError()
+            unsubscribeClose()
         }
+    }
+
+    private async handleSocketClose(socket: unknown, event: unknown): Promise<void> {
+        if (this.socket !== socket) {
+            return
+        }
+        this.clearSocket()
+        await this.emit('close', event)
+    }
+
+    private clearSocket(): void {
+        this.socketUnsubscribe?.()
+        this.socket = undefined
+        this.socketUnsubscribe = undefined
+        this.openPromise = undefined
     }
 
     private async emit(event: TransportEvent, data: unknown): Promise<void> {
@@ -202,9 +219,14 @@ export class WsTransport implements Transport {
                 cleanup()
                 reject(error)
             })
+            const unsubscribeClose = addSocketListener(socket, 'close', event => {
+                cleanup()
+                reject(event instanceof Error ? event : new Error('WebSocket closed before opening'))
+            })
             cleanup = () => {
                 unsubscribeOpen()
                 unsubscribeError()
+                unsubscribeClose()
             }
         })
         await this.openPromise
@@ -255,7 +277,7 @@ function getReadyState(socket: unknown): number | undefined {
 
 function addSocketListener(
     socket: unknown,
-    event: 'open' | 'message' | 'error',
+    event: 'open' | 'message' | 'error' | 'close',
     handler: (...args: unknown[]) => void
 ): Unsubscribe {
     const target = socket as {

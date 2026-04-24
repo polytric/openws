@@ -68,6 +68,7 @@ export class WsTransport {
     listeners = {
         message: new Set(),
         error: new Set(),
+        close: new Set(),
     }
 
     constructor(socket) {
@@ -108,14 +109,11 @@ export class WsTransport {
 
     close() {
         this.socket?.close?.()
-        this.socketUnsubscribe?.()
-        this.socket = undefined
-        this.socketUnsubscribe = undefined
-        this.openPromise = undefined
+        this.clearSocket()
     }
 
     bindSocket(socket) {
-        this.socketUnsubscribe?.()
+        this.clearSocket()
         this.socket = socket
         this.openPromise = undefined
 
@@ -125,10 +123,29 @@ export class WsTransport {
         const unsubscribeError = addSocketListener(socket, 'error', error => {
             void this.emit('error', error)
         })
+        const unsubscribeClose = addSocketListener(socket, 'close', event => {
+            void this.handleSocketClose(socket, event)
+        })
         this.socketUnsubscribe = () => {
             unsubscribeMessage()
             unsubscribeError()
+            unsubscribeClose()
         }
+    }
+
+    async handleSocketClose(socket, event) {
+        if (this.socket !== socket) {
+            return
+        }
+        this.clearSocket()
+        await this.emit('close', event)
+    }
+
+    clearSocket() {
+        this.socketUnsubscribe?.()
+        this.socket = undefined
+        this.socketUnsubscribe = undefined
+        this.openPromise = undefined
     }
 
     async emit(event, data) {
@@ -162,9 +179,14 @@ export class WsTransport {
                 cleanup()
                 reject(error)
             })
+            const unsubscribeClose = addSocketListener(socket, 'close', event => {
+                cleanup()
+                reject(event instanceof Error ? event : new Error('WebSocket closed before opening'))
+            })
             cleanup = () => {
                 unsubscribeOpen()
                 unsubscribeError()
+                unsubscribeClose()
             }
         })
         await this.openPromise
