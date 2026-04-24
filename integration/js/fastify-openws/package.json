@@ -1,6 +1,6 @@
 {
     "name": "@polytric/fastify-openws",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Polytric OpenWS Runtime for Fastify",
     "type": "module",
     "main": "./dist/index.js",
@@ -42,8 +42,8 @@
     },
     "dependencies": {
         "@fastify/websocket": "^11.2.0",
-        "@polytric/openws": "workspace:*",
-        "@polytric/openws-spec": "workspace:*",
+        "@polytric/openws": "workspace:^",
+        "@polytric/openws-spec": "workspace:^",
         "ajv": "^8.17.1",
         "fastify-plugin": "^5.1.0"
     },

@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "Polytric OpenWS Runtime",
     "type": "module",
     "main": "./dist/index.js",
@@ -59,7 +59,7 @@
         "test:fluent:ts": "tsx watch test/fluent.ts"
     },
     "dependencies": {
-        "@polytric/openws-spec": "workspace:*",
+        "@polytric/openws-spec": "workspace:^",
         "ajv": "^8.17.1"
     },
     "devDependencies": {

@@ -45,7 +45,6 @@ async function openwsPlugin(fastify: FastifyInstance, _options: any) {
 
                 conn.on('message', async (msg: Buffer) => {
                     try {
-                        console.log('message', msg.toString())
                         const { fromRole, messageName, payload } = JSON.parse(msg.toString())
                         session.open(fromRole) // idempotent open, subsequent calls are cheap
                         await session.handleMessage(fromRole, messageName, payload)

@@ -36,7 +36,6 @@ export function bindings(config: NetworkConfig): Fluent.NetworkBinder {
 
             const from = messageConfig.from ?? Object.keys(remoteRoles)
             for (const fromRoleName of from) {
-                console.log('on', fromRoleName, messageConfig.name, descriptor.value.name)
                 binder.fromRoles[fromRoleName].on(messageConfig.name, (payload, api) =>
                     (role as any)[descriptor.value.name](payload, api)
                 )
