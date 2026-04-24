@@ -112,6 +112,9 @@ importers:
       '@polytric/openws':
         specifier: workspace:^
         version: link:../openws
+      '@types/node':
+        specifier: ^22.19.3
+        version: 22.19.3
       nodemon:
         specifier: ^3.1.11
         version: 3.1.11
