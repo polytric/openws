@@ -101,7 +101,7 @@
     },
     "files": ["dist"],
     "dependencies": {
-        "@polytric/openws": "^0.0.7"
+        "@polytric/openws": "^0.0.8"
     },
     "scripts": {
         "build": "tsup",
