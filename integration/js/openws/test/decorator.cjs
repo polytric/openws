@@ -29,17 +29,17 @@ class Server {
     users = {}
 
     @WS.handler({ payload: S.obj({ userId: S.str, roomId: S.str }), from: [Client] })
-    async createRoom({ userId, roomId }, api) {
+    async createRoom({ userId, roomId }, peer) {
         this.rooms[roomId] = { members: [userId] }
-        this.users[userId] = { userId, api }
-        await api.joinedRoom({ roomId, joinerId: userId })
+        this.users[userId] = { userId, peer }
+        await peer.joinedRoom({ roomId, joinerId: userId })
     }
 
     @WS.handler({ payload: S.obj({ userId: S.str, roomId: S.str }), from: Client })
-    async joinRoom({ userId, roomId }, api) {
+    async joinRoom({ userId, roomId }, peer) {
         this.rooms[roomId].members.push(userId)
-        this.users[userId] = { userId, api }
-        await api.joinedRoom({ roomId, joinerId: userId })
+        this.users[userId] = { userId, peer }
+        await peer.joinedRoom({ roomId, joinerId: userId })
     }
 
     @WS.handler({
@@ -47,12 +47,12 @@ class Server {
         payload: S.obj({ userId: S.str, roomId: S.str, text: S.str }),
         from: [Client],
     })
-    async sendMessage({ userId, roomId, text }, _api) {
+    async sendMessage({ userId, roomId, text }, _peer) {
         for (const member of this.rooms[roomId].members) {
             if (userId && member === userId) {
                 continue
             }
-            await this.users[member].api.receivedMessage({
+            await this.users[member].peer.receivedMessage({
                 roomId,
                 senderId: userId,
                 text,
@@ -68,13 +68,13 @@ class Server {
     })
     async sendMessagePortal({ userId, roomId, text }) {
         for (const member of this.rooms[roomId].members) {
-            await this.users[member].api.receivedMessage({ roomId, senderId: userId, text })
+            await this.users[member].peer.receivedMessage({ roomId, senderId: userId, text })
         }
     }
 
     @WS.handler({ payload: S.obj({ roomId: S.str }), from: [Portal] })
-    async requestRoomStats({ roomId }, api) {
-        await api.receivedRoomStats({ roomId })
+    async requestRoomStats({ roomId }, peer) {
+        await peer.receivedRoomStats({ roomId })
     }
 }
 

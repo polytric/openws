@@ -12,22 +12,45 @@ type HandlerBinder = {
     fromRole: string
     messageName: string
     validatePayload: ValidateFunction
-    handler: (payload: any, api: ApiProto) => Promise<void>
+    handler: (payload: any, peer: PeerProto) => Promise<void>
 }
 
+/**
+ * Sends or dispatches a message associated with a remote role.
+ *
+ * Outbound API helpers use the first argument as the peer role being addressed.
+ * Inbound session dispatch uses it as the peer role that sent the message.
+ * Transport glue usually implements outbound sends by encoding an envelope and
+ * writing it to a socket.
+ */
 export type SendFn = (fromRole: string, messageName: string, payload: any) => Promise<void>
 
-export type ApiProto = {
+/**
+ * Runtime peer handle exposed to message handlers for replying to the connected peer.
+ *
+ * `rawSend` is the transport-provided send function. Message names from the
+ * remote role are added as methods at runtime and validate payloads before
+ * calling `rawSend`.
+ */
+export type PeerProto = {
     rawSend: SendFn
     [messageName: string]: (...args: any[]) => Promise<void>
 }
 
+/**
+ * Runtime bindings for one remote role in a network.
+ *
+ * A `RemoteRoleBinder` is created by `NetworkBinder` for each non-host role in
+ * the network spec. It stores the behavior attached to that role: lifecycle
+ * callbacks, inbound message handlers, and the peer handle shape that handlers
+ * use to reply to the connected peer.
+ */
 export class RemoteRoleBinder {
     private readonly hostMessages: { [messageName: string]: Builder.Message } = {}
     private readonly handlers: {
         [messageName: string]: HandlerBinder
     } = {}
-    private readonly apiProto: { [key: string]: any } = {}
+    private readonly peerProto: { [key: string]: any } = {}
 
     constructor(
         public readonly role: Builder.Role,
@@ -41,7 +64,7 @@ export class RemoteRoleBinder {
             const validate = payloadSchema
                 ? ajv.compile(payloadSchema)
                 : ((() => true) as unknown as ValidateFunction)
-            this.apiProto[message.name] = async function (this: ApiProto, payload: any) {
+            this.peerProto[message.name] = async function (this: PeerProto, payload: any) {
                 if (!validate(payload)) {
                     throw new Error(`Invalid payload for message ${message.name}`, {
                         cause: validate.errors,
@@ -52,20 +75,48 @@ export class RemoteRoleBinder {
         }
     }
 
+    /**
+     * Registers a callback for when a session is opened by this remote role.
+     *
+     * This is called by `Session.open(fromRole)`. WebSocket or framework glue is
+     * responsible for translating the concrete socket open event into that
+     * session call.
+     */
     onOpen(handler: (fromRole: string) => Promise<void>): this {
         this.handleOpen = handler
         return this
     }
+    /**
+     * Registers a callback for when a session for this remote role closes.
+     *
+     * This is called by `Session.close()`. The session must have been opened
+     * first so the runtime knows which remote role owns the connection.
+     */
     onClose(handler: (fromRole: string) => Promise<void>): this {
         this.handleClose = handler
         return this
     }
+    /**
+     * Registers a callback for transport or connection errors on this role.
+     *
+     * This is called by `Session.error(error)`. Message dispatch errors are
+     * thrown by `handleMessage`; generated SDK clients may expose those through
+     * separate message-error callbacks.
+     */
     onError(handler: (fromRole: string, error: Error) => Promise<void>): this {
         this.handleError = handler
         return this
     }
 
-    on(messageName: string, handler: (payload: any, api: ApiProto) => Promise<void>): this {
+    /**
+     * Registers an inbound message handler for this remote role.
+     *
+     * The message name must refer to a host message in the network. Payloads are
+     * validated against the message schema before the handler runs. The `peer`
+     * argument contains outbound methods for messages the host can send back to
+     * the connected peer.
+     */
+    on(messageName: string, handler: (payload: any, peer: PeerProto) => Promise<void>): this {
         const message = this.hostMessages[messageName]
         if (!message) {
             throw new Error(`Message ${messageName} not found in host messages`)
@@ -85,7 +136,11 @@ export class RemoteRoleBinder {
     handleClose: (fromRole: string) => Promise<void> = async () => {}
     handleError: (fromRole: string, error: Error) => Promise<void> = async () => {}
 
-    async handleMessage(messageName: string, payload: any, api: ApiProto) {
+    /**
+     * Dispatches an inbound message from this remote role to its registered
+     * handler after validating the payload.
+     */
+    async handleMessage(messageName: string, payload: any, peer: PeerProto) {
         const handler = this.handlers[messageName]
         if (!handler) {
             throw new Error(`Handler for message ${messageName} not found`)
@@ -95,20 +150,42 @@ export class RemoteRoleBinder {
                 cause: handler.validatePayload.errors,
             })
         }
-        await handler.handler(payload, api)
+        await handler.handler(payload, peer)
     }
 
-    createApi(send: SendFn) {
-        const api = Object.create(this.apiProto) as ApiProto
-        api.rawSend = send
-        return api
+    /**
+     * Creates a role-aware outbound peer handle backed by a transport send function.
+     *
+     * Runtime and SDK code use this to materialize the message methods that are
+     * passed to handlers or returned from `Runtime.createPeer`.
+     */
+    createPeer(send: SendFn) {
+        const peer = Object.create(this.peerProto) as PeerProto
+        peer.rawSend = send
+        return peer
     }
 }
 
+/**
+ * Runtime behavior attached to a declarative OpenWS network.
+ *
+ * The network is the memory graph of the spec. A `NetworkBinder` keeps that
+ * graph available through `network` and creates one `RemoteRoleBinder` for each
+ * remote role so application code can attach behavior to the spec.
+ */
 export class NetworkBinder {
+    /**
+     * Runtime bindings keyed by remote role name.
+     *
+     * Host roles are excluded. Each entry represents behavior for a peer role
+     * that can open sessions, send messages, and receive replies.
+     */
     fromRoles: { [fromRoleName: string]: RemoteRoleBinder } = {}
 
     #network: Builder.Network
+    /**
+     * The normalized network graph used for runtime binding and spec export.
+     */
     get network() {
         return this.#network
     }

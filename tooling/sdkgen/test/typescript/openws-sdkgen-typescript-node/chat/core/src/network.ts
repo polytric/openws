@@ -15,12 +15,18 @@ export const endpoints = {
     portal: [],
 }
 
+/**
+ * Wire-format message envelope used by this OpenWS SDK.
+ */
 export interface OpenWsEnvelope<Payload = unknown> {
     fromRole: string
     messageName: string
     payload: Payload
 }
 
+/**
+ * Connection endpoint metadata from the OpenWS spec.
+ */
 export interface OpenWsEndpoint {
     scheme: string
     host?: string
@@ -32,6 +38,12 @@ export type Unsubscribe = () => void
 export type TransportEvent = 'message' | 'error' | 'close'
 export type TransportHandler = (data: unknown) => void | Promise<void>
 
+/**
+ * Minimal transport contract used by generated SDK clients.
+ *
+ * Implement this interface to plug in a custom socket, browser WebSocket,
+ * server-side WebSocket client, or test transport.
+ */
 export interface Transport {
     send(data: string): void | Promise<void>
     on?(event: TransportEvent, handler: TransportHandler): unknown
@@ -44,24 +56,47 @@ export interface BindTransportOptions {
     closeOnError?: boolean
 }
 
+/**
+ * Callback surface used by `bindTransport`.
+ *
+ * `handle...` methods are framework entrypoints called by transport glue.
+ * Generated clients expose matching `on...` methods for application callbacks.
+ */
 export interface RawMessageHandler {
     handleRawMessage(data: string): void | Promise<void>
-    messageError?(error: unknown): void | Promise<void>
-    socketError?(error: unknown): void | Promise<void>
+    handleMessageError?(error: unknown): void | Promise<void>
+    handleSocketError?(error: unknown): void | Promise<void>
+    handleSocketClose?(event: unknown): void | Promise<void>
 }
 
+/**
+ * Encodes an OpenWS envelope for transport.
+ */
 export function encodeEnvelope(envelope: OpenWsEnvelope): string {
     return JSON.stringify(envelope)
 }
 
+/**
+ * Decodes raw transport data into an OpenWS envelope.
+ */
 export function decodeEnvelope(data: string): OpenWsEnvelope {
     return JSON.parse(data) as OpenWsEnvelope
 }
 
+/**
+ * Returns true when a transport can be bound to generated client callbacks.
+ */
 export function canBindTransport(transport: Transport): boolean {
     return typeof transport.on === 'function'
 }
 
+/**
+ * Binds transport events to a generated client or compatible raw message handler.
+ *
+ * Transport `message` events call `handleRawMessage`, message handling failures
+ * call `handleMessageError`, transport `error` events call `handleSocketError`,
+ * and transport `close` events call `handleSocketClose`.
+ */
 export function bindTransport(
     transport: Transport,
     handler: RawMessageHandler,
@@ -71,14 +106,17 @@ export function bindTransport(
         try {
             await handler.handleRawMessage(await normalizeMessageData(data))
         } catch (error) {
-            await handler.messageError?.(error)
+            await handler.handleMessageError?.(error)
             if (options.closeOnError) {
                 transport.close?.()
             }
         }
     }
     const handleSocketError = async (error: unknown) => {
-        await handler.socketError?.(error)
+        await handler.handleSocketError?.(error)
+    }
+    const handleSocketClose = async (event: unknown) => {
+        await handler.handleSocketClose?.(event)
     }
 
     const nodeHandler = (data: unknown, ..._args: unknown[]) => {
@@ -87,6 +125,9 @@ export function bindTransport(
     const nodeErrorHandler = (error: unknown, ..._args: unknown[]) => {
         void handleSocketError(error)
     }
+    const nodeCloseHandler = (event: unknown, ..._args: unknown[]) => {
+        void handleSocketClose(event)
+    }
 
     if (typeof transport.on !== 'function') {
         throw new Error('Transport must support on("message")')
@@ -94,12 +135,17 @@ export function bindTransport(
 
     const messageUnsubscribe = transport.on('message', nodeHandler)
     const errorUnsubscribe = transport.on('error', nodeErrorHandler)
+    const closeUnsubscribe = transport.on('close', nodeCloseHandler)
     return () => {
         if (typeof messageUnsubscribe === 'function') messageUnsubscribe()
         if (typeof errorUnsubscribe === 'function') errorUnsubscribe()
+        if (typeof closeUnsubscribe === 'function') closeUnsubscribe()
     }
 }
 
+/**
+ * WebSocket-backed transport implementation for generated SDK clients.
+ */
 export class WsTransport implements Transport {
     private socket?: unknown
     private socketUnsubscribe?: Unsubscribe
@@ -116,6 +162,9 @@ export class WsTransport implements Transport {
         }
     }
 
+    /**
+     * Opens the underlying WebSocket when needed and waits until it is ready.
+     */
     async connect(_roleName: string, endpoint?: OpenWsEndpoint): Promise<void> {
         if (!this.socket) {
             if (!endpoint) {
@@ -126,10 +175,16 @@ export class WsTransport implements Transport {
         await this.waitForOpen()
     }
 
+    /**
+     * Closes the underlying WebSocket connection.
+     */
     async disconnect(): Promise<void> {
         this.close()
     }
 
+    /**
+     * Sends already-encoded OpenWS envelope data.
+     */
     async send(data: string): Promise<void> {
         await this.waitForOpen()
         const socket = this.requireSocket() as { send?: (data: string) => void | Promise<void> }
@@ -139,6 +194,9 @@ export class WsTransport implements Transport {
         await socket.send(data)
     }
 
+    /**
+     * Registers a transport event callback.
+     */
     on(event: TransportEvent, handler: TransportHandler): Unsubscribe {
         this.listeners[event].add(handler)
         return () => {
@@ -146,6 +204,9 @@ export class WsTransport implements Transport {
         }
     }
 
+    /**
+     * Closes and clears the current socket.
+     */
     close(): void {
         const socket = this.socket as { close?: () => void } | undefined
         socket?.close?.()
@@ -221,7 +282,9 @@ export class WsTransport implements Transport {
             })
             const unsubscribeClose = addSocketListener(socket, 'close', event => {
                 cleanup()
-                reject(event instanceof Error ? event : new Error('WebSocket closed before opening'))
+                reject(
+                    event instanceof Error ? event : new Error('WebSocket closed before opening')
+                )
             })
             cleanup = () => {
                 unsubscribeOpen()

@@ -5,6 +5,9 @@ import * as Fluent from '../fluent'
 import { handlerCache, messageCache, roleCache } from './store'
 import type { NetworkConfig } from './types'
 
+/**
+ * Copies common decorator metadata into a fluent spec builder node.
+ */
 function addCommonMetadata(
     base: Fluent.Base,
     config: { description?: string; version?: string; [key: string]: any }
@@ -17,6 +20,13 @@ function addCommonMetadata(
     }
 }
 
+/**
+ * Builds a declarative OpenWS network graph from decorator metadata.
+ *
+ * Role and method decorators record metadata on the class constructors and
+ * methods. This function reads that metadata and returns the normalized network
+ * graph that can be exported as a spec or passed to the fluent runtime layer.
+ */
 export function network(config: NetworkConfig): Fluent.Network {
     const { roles, name, ...metadata } = config
 

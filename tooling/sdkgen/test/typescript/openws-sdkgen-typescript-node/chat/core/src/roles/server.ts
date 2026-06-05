@@ -10,7 +10,7 @@ import type {
 } from '../models/server'
 import { Client, Portal } from './index'
 
-export interface ServerApi {
+export interface ServerPeer {
     createRoom(payload: CreateRoomPayload | CreateRoomPayloadInit): Promise<void>
     joinRoom(payload: JoinRoomPayload | JoinRoomPayloadInit): Promise<void>
     sendMessage(payload: SendMessagePayload | SendMessagePayloadInit): Promise<void>

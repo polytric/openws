@@ -12,8 +12,8 @@ import {
     Client as ClientRole,
     Portal as PortalRole,
     ServerHost,
-    type ClientApi,
-    type PortalApi,
+    type ClientPeer,
+    type PortalPeer,
 } from './openws-sdkgen-typescript-node/chat/core/src/roles/index.ts'
 import {
     JoinedRoomPayload,
@@ -34,13 +34,13 @@ class ChatServer {
     static readonly CONFIG = ServerHost.CONFIG
 
     private readonly rooms = new Map<string, Set<string>>()
-    private readonly users = new Map<string, ClientApi>()
+    private readonly users = new Map<string, ClientPeer>()
 
-    async createRoom(payload: CreateRoomPayload, api: ClientApi): Promise<void> {
+    async createRoom(payload: CreateRoomPayload, peer: ClientPeer): Promise<void> {
         this.rooms.set(payload.roomId, new Set([payload.userId]))
-        this.users.set(payload.userId, api)
+        this.users.set(payload.userId, peer)
 
-        await api.joinedRoom(
+        await peer.joinedRoom(
             new JoinedRoomPayload({
                 roomId: payload.roomId,
                 joinerId: payload.userId,
@@ -48,14 +48,14 @@ class ChatServer {
         )
     }
 
-    async joinRoom(payload: JoinRoomPayload, api: ClientApi): Promise<void> {
+    async joinRoom(payload: JoinRoomPayload, peer: ClientPeer): Promise<void> {
         const room = this.rooms.get(payload.roomId)
         if (!room) {
             throw new Error(`Room ${payload.roomId} does not exist`)
         }
 
         room.add(payload.userId)
-        this.users.set(payload.userId, api)
+        this.users.set(payload.userId, peer)
 
         for (const memberId of room) {
             await this.users.get(memberId)?.joinedRoom(
@@ -84,8 +84,8 @@ class ChatServer {
         }
     }
 
-    async requestRoomStats(payload: RequestRoomStatsPayload, api: PortalApi): Promise<void> {
-        await api.receivedRoomStats(
+    async requestRoomStats(payload: RequestRoomStatsPayload, peer: PortalPeer): Promise<void> {
+        await peer.receivedRoomStats(
             new ReceivedRoomStatsPayload({
                 roomId: payload.roomId,
             })

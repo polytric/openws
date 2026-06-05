@@ -8,17 +8,17 @@ OpenWS is a specification for describing **WebSocket-based systems** in the same
 An OpenWS document describes:
 
 - **Networks**: logical WebSocket systems where `message`s are exchanged
-- **Roles**: `role`-based API surfaces with statically defined `message` contracts
+- **Roles**: peer types with statically defined `message` contracts
 - **Messages**: named `message` definitions that contain a `payload`
 - **Payload**: the shape of application data transmitted through WebSocket messages, defined with JSON Schema
 - **Metadata & connection hints**: document metadata (title, version, description) and optional connection hints (endpoints)
 
 Conceptually (at runtime), we also use the following terms throughout this document:
 
-- **Participants**: runtime instances/connections that assume a `role` on a `network`
-- **Handlers**: runtime message-processing functions invoked when a participant receives a `message`
+- **Peers**: runtime instances/connections that assume a `role` on a `network`
+- **Handlers**: runtime message-processing functions invoked when a peer receives a `message`
 
-Participants and handlers are **not serialized** in the OpenWS JSON document. They are explanatory terms used to describe how role/message contracts are typically implemented.
+Peers and handlers are **not serialized** in the OpenWS JSON document. They are explanatory terms used to describe how role/message contracts are typically implemented.
 
 This spec intentionally does **not** describe behavior or execution.
 
@@ -111,7 +111,7 @@ This repository/spec is intended to support a full "fleet" of packages, includin
 
 ## Networks
 
-A network is a logical WebSocket system, with multiple participants on the network forming a mesh. It is common to run multiple isolated features over WebSocket on a single host. For example, a chess game client may have a chat room, a tournament entry, and the actual chess game. They are logically separated like this in the spec:
+A network is a logical WebSocket system, with multiple peers on the network forming a mesh. It is common to run multiple isolated features over WebSocket on a single host. For example, a chess game client may have a chat room, a tournament entry, and the actual chess game. They are logically separated like this in the spec:
 
 ```json
 {
@@ -167,9 +167,9 @@ A network definition:
 
 ## Roles
 
-In the OpenWS document, we define **roles**. At runtime, a **participant** is a connected instance that assumes a `role` on a `network`.
+In the OpenWS document, we define **roles**. At runtime, a **peer** is a connected instance that assumes a `role` on a `network`.
 
-Multiple participants of the same role may exist on the same network. For example, in a chat service, a `server` is normally connected to many `client`s. OpenWS defers modeling one-to-one, one-to-many, or many-to-many relationships to the application/runtime.
+Multiple peers of the same role may exist on the same network. For example, in a chat service, a `server` is normally connected to many `client`s. OpenWS defers modeling one-to-one, one-to-many, or many-to-many relationships to the application/runtime.
 
 ```json
 {
@@ -184,7 +184,7 @@ Multiple participants of the same role may exist on the same network. For exampl
 }
 ```
 
-It is common for different components of a system to expose different APIs and provide different behaviors. This is naturally modeled by participants on the same network having different roles. Continuing the chat example, imagine we now have a mobile client, a customer web portal, and an admin console. To serve both customer and admin needs, the server is split into two separate roles, while a single backend may implement both roles. Distinct roles can be set up like this:
+It is common for different components of a system to expose different peer handles and provide different behaviors. This is naturally modeled by peers on the same network having different roles. Continuing the chat example, imagine we now have a mobile client, a customer web portal, and an admin console. To serve both customer and admin needs, the server is split into two separate roles, while a single backend may implement both roles. Distinct roles can be set up like this:
 
 ```json
 {
@@ -198,7 +198,7 @@ It is common for different components of a system to expose different APIs and p
 }
 ```
 
-IMPORTANT: this is not a role-based access control system, but the clean API boundary is intended to make layering an auth system trivial.
+IMPORTANT: this is not a role-based access control system, but the clean role boundary is intended to make layering an auth system trivial.
 
 A role definition:
 
@@ -212,8 +212,8 @@ In the OpenWS document, roles declare the data shapes they accept as messages. M
 
 Message definitions are **scoped to the receiving role**. At runtime:
 
-- A participant receives a message by name, and dispatches it to a handler.
-- A participant sends a message by targeting some other participant(s) whose role defines that message name and payload shape.
+- A peer receives a message by name, and dispatches it to a handler.
+- A peer sends a message by targeting another peer whose role defines that message name and payload shape.
 
 OpenWS intentionally describes **contracts**, not delivery semantics. Routing (broadcast, directed, room-based, etc.) is runtime-specific.
 
@@ -289,7 +289,7 @@ Tooling **MAY** use these fields for documentation, generation, and display.
 
 ### Connection hints
 
-Endpoints are **optional connection hints** that help participants determine how to establish connections. They do not prescribe deployment topology, discovery, authentication, or load-balancing.
+Endpoints are **optional connection hints** that help peers determine how to establish connections. They do not prescribe deployment topology, discovery, authentication, or load-balancing.
 
 An endpoint is typically attached to a role definition:
 
@@ -418,7 +418,7 @@ The following example is a minimal but complete OpenWS document modeling a chat 
                             }
                         },
                         "messageReceived": {
-                            "description": "Broadcast of a message to participants in a room.",
+                            "description": "Broadcast of a message to peers in a room.",
                             "payload": {
                                 "type": "object",
                                 "additionalProperties": false,

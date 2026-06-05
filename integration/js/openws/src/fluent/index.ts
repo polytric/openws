@@ -16,13 +16,29 @@ export {
     endpoint,
     spec,
 } from '@polytric/openws-spec/builder'
-export type { ApiProto } from './bindings'
+export type { PeerProto } from './bindings'
 
 export { NetworkBinder } from './bindings'
 export { Session, Runtime } from './runtime'
+
+/**
+ * Creates runtime bindings from a declarative OpenWS network graph.
+ *
+ * The returned binder keeps the normalized network available for spec export
+ * and exposes per-remote-role binders for attaching message and lifecycle
+ * behavior.
+ */
 export const bindings = (network: Network): NetworkBinder => {
     return new NetworkBinder(network)
 }
+
+/**
+ * Creates a runtime from network bindings.
+ *
+ * The runtime materializes bindings into connection-scoped peer handles and
+ * sessions. Transport glue can use sessions to drive open, close, error, and
+ * message dispatch callbacks.
+ */
 export const runtime = (binder: NetworkBinder): Runtime => {
     return new Runtime(binder)
 }

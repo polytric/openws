@@ -41,7 +41,7 @@ The CLI exposes the following options:
 - `--out` (string): Output directory for generated code.
 - `--project` (string): Project/namespace prefix for generated code.
 - `--network` (string): Network name to generate.
-- `--hostRole` (string): Participant role name that represents the host side.
+- `--hostRole` (string): Peer role name that represents the host side.
 - `--language` (string): Target language (`csharp`, `javascript`, or `typescript`).
 - `--environment` (string|array): Target environment (`unity`, `node`, `browser`).
 

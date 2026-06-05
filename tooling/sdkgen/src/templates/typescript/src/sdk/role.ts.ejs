@@ -4,7 +4,7 @@
 <% if (ctx.isTypeScript) { -%>
 import * as WS from '@polytric/openws/class'
 import * as Fluent from '@polytric/openws/fluent'
-import type { ApiProto } from '@polytric/openws/fluent'
+import type { PeerProto } from '@polytric/openws/fluent'
 import type { BindTransportOptions, OpenWsEndpoint, OpenWsEnvelope, Transport, Unsubscribe } from '<%= networkImport %>'
 import { WsTransport, bindTransport, canBindTransport, decodeEnvelope, encodeEnvelope } from '<%= networkImport %>'
 <% if (ctx.handlers.length > 0) { -%>
@@ -19,34 +19,70 @@ import {
     <%= ctx.hostRoleClassName %>,
 <% for (const remoteRole of ctx.remoteRoles) { -%>
     <%= remoteRole.roleClassName %>,
-    type <%= remoteRole.apiName %>,
+    type <%= remoteRole.peerName %>,
 <% } -%>
 } from '<%= rolesImport %>'
 
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-export type <%= remoteRole.scopedApiName %> = Pick<<%= remoteRole.apiName %>, <%- remoteRole.allowedMethodNames.length > 0 ? remoteRole.allowedMethodNames.map(methodName => JSON.stringify(methodName)).join(' | ') : 'never' %>>
+/**
+ * Connected <%- JSON.stringify(remoteRole.roleName) %> peer handle as seen by <%= ctx.className %>.
+ */
+export type <%= remoteRole.scopedPeerName %> = Pick<<%= remoteRole.peerName %>, <%- remoteRole.allowedMethodNames.length > 0 ? remoteRole.allowedMethodNames.map(methodName => JSON.stringify(methodName)).join(' | ') : 'never' %>>
 <% } -%>
 
 <% if (ctx.remoteRoles.length > 0) { -%>
-export type <%= ctx.className %>PeerApi = <%= ctx.remoteRoles.map(remoteRole => remoteRole.scopedApiName).join(' | ') %>
+/**
+ * Union of peer handles this generated client can connect to.
+ */
+export type <%= ctx.className %>Peer = <%= ctx.remoteRoles.map(remoteRole => remoteRole.scopedPeerName).join(' | ') %>
 
 <% } else { -%>
-export type <%= ctx.className %>PeerApi = unknown
+/**
+ * Union of peer handles this generated client can connect to.
+ */
+export type <%= ctx.className %>Peer = unknown
 
 <% } -%>
 <% if (ctx.handlers.length > 0) { -%>
-export type <%= ctx.className %>MessageHandler<TPayload, TApi = <%= ctx.className %>PeerApi> = (payload: TPayload, api: TApi) => void | Promise<void>
+/**
+ * Application callback for a received OpenWS message.
+ */
+export type <%= ctx.className %>MessageHandler<TPayload, TPeer = <%= ctx.className %>Peer> = (payload: TPayload, peer: TPeer) => void | Promise<void>
 
 <% } -%>
+/**
+ * Application callback for message or socket errors.
+ */
 export type <%= ctx.className %>ErrorHandler = (error: unknown) => void | Promise<void>
+/**
+ * Application callback for connection lifecycle events.
+ */
+export type <%= ctx.className %>LifecycleHandler = (roleName: string) => void | Promise<void>
+/**
+ * Application callback for connection lifecycle errors.
+ */
+export type <%= ctx.className %>LifecycleErrorHandler = (roleName: string, error: Error) => void | Promise<void>
 
+type <%= ctx.className %>Connection = {
+    roleName: string
+    session: Fluent.Session
+    peer: PeerProto
+}
+
+/**
+ * Generated OpenWS client for the <%- JSON.stringify(ctx.roleName) %> role in the <%- JSON.stringify(ctx.networkName) %> network.
+ *
+ * Application code calls command methods such as `connect` and registers
+ * callbacks with `on...` methods. Transport and framework glue call `handle...`
+ * methods to deliver inbound data, errors, and lifecycle events.
+ */
 export class <%= ctx.className %> {
     static readonly CONFIG = <%= ctx.hostRoleClassName %>.CONFIG
 
     readonly name = <%= ctx.className %>.CONFIG.name
     readonly description = <%= ctx.className %>.CONFIG.description
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-    <%= remoteRole.apiVarName %>!: <%= remoteRole.scopedApiName %>
+    <%= remoteRole.peerVarName %>!: <%= remoteRole.scopedPeerName %>
 <% } -%>
 
     private readonly binder: Fluent.NetworkBinder
@@ -54,14 +90,18 @@ export class <%= ctx.className %> {
     private readonly fromRole = <%- JSON.stringify(ctx.roleName) %>
     private readonly sendEnvelope: (toRole: string, messageName: string, payload: unknown) => Promise<void>
     private transportUnsubscribe?: Unsubscribe
-    private readonly apisByRole: Record<string, ApiProto> = {}
-    private readonly apisByMessageName: Record<string, ApiProto> = {}
-    private readonly handlersByMessageName: Record<string, (payload: unknown, api: <%= ctx.className %>PeerApi) => Promise<void>> = {}
+    private readonly connections = new Set<<%= ctx.className %>Connection>()
+    private readonly peersByMessageName: Record<string, PeerProto> = {}
+    private readonly peerRoleByMessageName: Record<string, string> = {}
+    private readonly handlersByMessageName: Record<string, (payload: unknown, peer: <%= ctx.className %>Peer) => Promise<void>> = {}
     private readonly messageErrorHandlers = new Set<<%= ctx.className %>ErrorHandler>()
     private readonly socketErrorHandlers = new Set<<%= ctx.className %>ErrorHandler>()
+    private readonly openHandlers = new Set<<%= ctx.className %>LifecycleHandler>()
+    private readonly closeHandlers = new Set<<%= ctx.className %>LifecycleHandler>()
+    private readonly lifecycleErrorHandlers = new Set<<%= ctx.className %>LifecycleErrorHandler>()
 <% for (const handler of ctx.handlers) { -%>
-<% const handlerApiType = handler.bindFromRoles.map(fromRole => ctx.remoteRoles.find(remoteRole => remoteRole.roleName === fromRole.roleName)?.scopedApiName).filter(Boolean).join(' | ') || `${ctx.className}PeerApi` -%>
-    private readonly <%= handler.listenerFieldName %> = new Set<<%= ctx.className %>MessageHandler<<%= handler.payloadType %>, <%= handlerApiType %>>>()
+<% const handlerPeerType = handler.bindFromRoles.map(fromRole => ctx.remoteRoles.find(remoteRole => remoteRole.roleName === fromRole.roleName)?.scopedPeerName).filter(Boolean).join(' | ') || `${ctx.className}Peer` -%>
+    private readonly <%= handler.listenerFieldName %> = new Set<<%= ctx.className %>MessageHandler<<%= handler.payloadType %>, <%= handlerPeerType %>>>()
 <% } -%>
 
     constructor(
@@ -81,15 +121,26 @@ export class <%= ctx.className %> {
             await this.transport.send(encodeEnvelope({ fromRole: this.fromRole, messageName, payload }))
         }
 <% for (const handler of ctx.handlers) { -%>
-<% const handlerApiType = handler.bindFromRoles.map(fromRole => ctx.remoteRoles.find(remoteRole => remoteRole.roleName === fromRole.roleName)?.scopedApiName).filter(Boolean).join(' | ') || `${ctx.className}PeerApi` -%>
-        this.handlersByMessageName[<%- JSON.stringify(handler.messageName) %>] = async (payload, api) => {
-            await this.<%= handler.dispatchMethodName %>(payload as <%= handler.payloadType %>, api as <%= handlerApiType %>)
+<% const handlerPeerType = handler.bindFromRoles.map(fromRole => ctx.remoteRoles.find(remoteRole => remoteRole.roleName === fromRole.roleName)?.scopedPeerName).filter(Boolean).join(' | ') || `${ctx.className}Peer` -%>
+        this.handlersByMessageName[<%- JSON.stringify(handler.messageName) %>] = async (payload, peer) => {
+            await this.<%= handler.dispatchMethodName %>(payload as <%= handler.payloadType %>, peer as <%= handlerPeerType %>)
         }
 <% for (const fromRole of handler.bindFromRoles) { -%>
-        this.binder.fromRoles[<%- JSON.stringify(fromRole.roleName) %>].on(<%- JSON.stringify(handler.messageName) %>, async (payload, api) => {
-            await this.<%= handler.dispatchMethodName %>(payload as <%= handler.payloadType %>, api as unknown as <%= handlerApiType %>)
+        this.binder.fromRoles[<%- JSON.stringify(fromRole.roleName) %>].on(<%- JSON.stringify(handler.messageName) %>, async (payload, peer) => {
+            await this.<%= handler.dispatchMethodName %>(payload as <%= handler.payloadType %>, peer as unknown as <%= handlerPeerType %>)
         })
 <% } -%>
+<% } -%>
+<% for (const remoteRole of ctx.remoteRoles) { -%>
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onOpen(async fromRole => {
+            await this.handleOpen(fromRole)
+        })
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onClose(async fromRole => {
+            await this.handleClose(fromRole)
+        })
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onError(async (fromRole, error) => {
+            await this.handleError(fromRole, error)
+        })
 <% } -%>
         if (canBindTransport(transport)) {
             this.bindTransport(transport)
@@ -97,26 +148,33 @@ export class <%= ctx.className %> {
     }
 
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-    async connect(roleName: <%- JSON.stringify(remoteRole.roleName) %>, endpoint?: OpenWsEndpoint): Promise<<%= remoteRole.scopedApiName %>>
+    /**
+     * Connects this client to the <%- JSON.stringify(remoteRole.roleName) %> role and returns the connected peer handle.
+     */
+    async connect(roleName: <%- JSON.stringify(remoteRole.roleName) %>, endpoint?: OpenWsEndpoint): Promise<<%= remoteRole.scopedPeerName %>>
 <% } -%>
-    async connect(roleName: string, endpoint?: OpenWsEndpoint): Promise<<%= ctx.className %>PeerApi> {
+    async connect(roleName: string, endpoint?: OpenWsEndpoint): Promise<<%= ctx.className %>Peer> {
         switch (roleName) {
 <% for (const remoteRole of ctx.remoteRoles) { -%>
             case <%- JSON.stringify(remoteRole.roleName) %>: {
                 const remoteEndpoint = endpoint ?? (<%- remoteRole.endpoints.length > 0 ? JSON.stringify(remoteRole.endpoints[0]) : 'undefined' %> as OpenWsEndpoint | undefined)
                 await this.transport.connect?.(roleName, remoteEndpoint)
-                if (!this.apisByRole[<%- JSON.stringify(remoteRole.roleName) %>]) {
-                    const <%= remoteRole.varName %>Api = this.runtime.createApi(<%- JSON.stringify(remoteRole.roleName) %>, this.sendEnvelope)
-                    this.<%= remoteRole.apiVarName %> = <%= remoteRole.varName %>Api as unknown as <%= remoteRole.scopedApiName %>
-                    this.apisByRole[<%- JSON.stringify(remoteRole.roleName) %>] = <%= remoteRole.varName %>Api
+                const session = this.runtime.newSession(this.sendEnvelope)
+                const <%= remoteRole.varName %>Peer = await session.open(<%- JSON.stringify(remoteRole.roleName) %>)
+                this.connections.add({
+                    roleName: <%- JSON.stringify(remoteRole.roleName) %>,
+                    session,
+                    peer: <%= remoteRole.varName %>Peer,
+                })
+                this.<%= remoteRole.peerVarName %> = <%= remoteRole.varName %>Peer as unknown as <%= remoteRole.scopedPeerName %>
 <% for (const handler of ctx.handlers) { -%>
-<% const handlerDefaultApi = handler.bindFromRoles.find(fromRole => ctx.remoteRoles.some(remoteRole => remoteRole.roleName === fromRole.roleName)) ?? ctx.remoteRoles[0] -%>
-<% if (handlerDefaultApi?.roleName === remoteRole.roleName) { -%>
-                    this.apisByMessageName[<%- JSON.stringify(handler.messageName) %>] = <%= remoteRole.varName %>Api
+<% const handlerDefaultPeer = handler.bindFromRoles.find(fromRole => ctx.remoteRoles.some(remoteRole => remoteRole.roleName === fromRole.roleName)) ?? ctx.remoteRoles[0] -%>
+<% if (handlerDefaultPeer?.roleName === remoteRole.roleName) { -%>
+                this.peersByMessageName[<%- JSON.stringify(handler.messageName) %>] = <%= remoteRole.varName %>Peer
+                this.peerRoleByMessageName[<%- JSON.stringify(handler.messageName) %>] = <%- JSON.stringify(remoteRole.roleName) %>
 <% } -%>
 <% } -%>
-                }
-                return this.<%= remoteRole.apiVarName %>
+                return this.<%= remoteRole.peerVarName %>
             }
 <% } -%>
             default:
@@ -124,28 +182,61 @@ export class <%= ctx.className %> {
         }
     }
 
-    async disconnect(roleName: string): Promise<void> {
-        await this.transport.disconnect?.(roleName)
-        delete this.apisByRole[roleName]
+<% for (const remoteRole of ctx.remoteRoles) { -%>
+    async disconnect(peer: <%= remoteRole.scopedPeerName %>): Promise<void>
+<% } -%>
+    async disconnect(peer: string): Promise<void>
+    /**
+     * Disconnects from a peer and closes its session.
+     *
+     * Pass the peer returned by `connect` to close that exact peer connection.
+     * Passing a role name closes all active peer connections for that role.
+     */
+    async disconnect(peer: string | <%= ctx.className %>Peer): Promise<void> {
+        if (typeof peer === 'string') {
+            await this.transport.disconnect?.(peer)
+            await this.closeSessions(peer)
+            return
+        }
+        const connection = this.findConnectionByPeer(peer as PeerProto)
+        if (!connection) {
+            throw new Error('Peer is not connected')
+        }
+        await this.closeConnection(connection)
     }
 
+    /**
+     * Binds a transport to this client.
+     *
+     * Transport events call this client's `handle...` methods. Application code
+     * should use `on...` methods to observe those events.
+     */
     bindTransport(transport: Transport = this.transport, options: BindTransportOptions = {}): Unsubscribe {
         this.transportUnsubscribe?.()
         this.transportUnsubscribe = bindTransport(transport, this, options)
         return this.transportUnsubscribe
     }
 
+    /**
+     * Removes the current transport event bindings.
+     */
     unbindTransport(): void {
         this.transportUnsubscribe?.()
         this.transportUnsubscribe = undefined
     }
 
-    async messageError(error: unknown): Promise<void> {
+    /**
+     * Framework entrypoint for message decoding or dispatch failures.
+     */
+    async handleMessageError(error: unknown): Promise<void> {
         for (const handler of this.messageErrorHandlers) {
             await handler(error)
         }
     }
 
+    /**
+     * Registers an application callback for message decoding or dispatch failures.
+     */
     onMessageError(handler: <%= ctx.className %>ErrorHandler): Unsubscribe {
         this.messageErrorHandlers.add(handler)
         return () => {
@@ -153,12 +244,22 @@ export class <%= ctx.className %> {
         }
     }
 
-    async socketError(error: unknown): Promise<void> {
+    /**
+     * Framework entrypoint for transport-level socket errors.
+     */
+    async handleSocketError(error: unknown): Promise<void> {
+        const sessionError = toOpenWsError(error)
+        for (const connection of this.connections) {
+            await connection.session.error(sessionError)
+        }
         for (const handler of this.socketErrorHandlers) {
             await handler(error)
         }
     }
 
+    /**
+     * Registers an application callback for transport-level socket errors.
+     */
     onSocketError(handler: <%= ctx.className %>ErrorHandler): Unsubscribe {
         this.socketErrorHandlers.add(handler)
         return () => {
@@ -166,15 +267,117 @@ export class <%= ctx.className %> {
         }
     }
 
-<% for (const handler of ctx.handlers) { -%>
-<% const handlerApiType = handler.bindFromRoles.map(fromRole => ctx.remoteRoles.find(remoteRole => remoteRole.roleName === fromRole.roleName)?.scopedApiName).filter(Boolean).join(' | ') || `${ctx.className}PeerApi` -%>
-    async <%= handler.dispatchMethodName %>(payload: <%= handler.payloadType %>, api: <%= handlerApiType %>): Promise<void> {
-        for (const handler of this.<%= handler.listenerFieldName %>) {
-            await handler(payload, api)
+    /**
+     * Framework entrypoint for transport-level socket close events.
+     */
+    async handleSocketClose(_event: unknown): Promise<void> {
+        for (const connection of Array.from(this.connections)) {
+            await this.closeConnection(connection)
         }
     }
 
-    <%= handler.onMethodName %>(handler: <%= ctx.className %>MessageHandler<<%= handler.payloadType %>, <%= handlerApiType %>>): Unsubscribe {
+    /**
+     * Framework entrypoint for a peer session opening.
+     */
+    async handleOpen(roleName: string): Promise<void> {
+        for (const handler of this.openHandlers) {
+            await handler(roleName)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session open events.
+     */
+    onOpen(handler: <%= ctx.className %>LifecycleHandler): Unsubscribe {
+        this.openHandlers.add(handler)
+        return () => {
+            this.openHandlers.delete(handler)
+        }
+    }
+
+    /**
+     * Framework entrypoint for a peer session closing.
+     */
+    async handleClose(roleName: string): Promise<void> {
+        for (const handler of this.closeHandlers) {
+            await handler(roleName)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session close events.
+     */
+    onClose(handler: <%= ctx.className %>LifecycleHandler): Unsubscribe {
+        this.closeHandlers.add(handler)
+        return () => {
+            this.closeHandlers.delete(handler)
+        }
+    }
+
+    /**
+     * Framework entrypoint for a peer session error.
+     */
+    async handleError(roleName: string, error: Error): Promise<void> {
+        for (const handler of this.lifecycleErrorHandlers) {
+            await handler(roleName, error)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session errors.
+     */
+    onError(handler: <%= ctx.className %>LifecycleErrorHandler): Unsubscribe {
+        this.lifecycleErrorHandlers.add(handler)
+        return () => {
+            this.lifecycleErrorHandlers.delete(handler)
+        }
+    }
+
+    private async closeSessions(roleName: string): Promise<void> {
+        for (const connection of this.findConnections(roleName)) {
+            await this.closeConnection(connection)
+        }
+    }
+
+    private async closeConnection(connection: <%= ctx.className %>Connection): Promise<void> {
+        if (!this.connections.delete(connection)) {
+            return
+        }
+        if (this.findConnections(connection.roleName).length === 0) {
+            for (const [messageName, peerRoleName] of Object.entries(this.peerRoleByMessageName)) {
+                if (peerRoleName !== connection.roleName) {
+                    continue
+                }
+                delete this.peersByMessageName[messageName]
+                delete this.peerRoleByMessageName[messageName]
+            }
+        }
+        await connection.session.close()
+    }
+
+    private findConnections(roleName: string): <%= ctx.className %>Connection[] {
+        return Array.from(this.connections).filter(connection => connection.roleName === roleName)
+    }
+
+    private findConnectionByPeer(peer: PeerProto): <%= ctx.className %>Connection | undefined {
+        return Array.from(this.connections).find(connection => connection.peer === peer)
+    }
+
+<% for (const handler of ctx.handlers) { -%>
+<% const handlerPeerType = handler.bindFromRoles.map(fromRole => ctx.remoteRoles.find(remoteRole => remoteRole.roleName === fromRole.roleName)?.scopedPeerName).filter(Boolean).join(' | ') || `${ctx.className}Peer` -%>
+    /**
+     * Dispatches the <%- JSON.stringify(handler.messageName) %> message to registered application callbacks.
+     */
+    async <%= handler.dispatchMethodName %>(payload: <%= handler.payloadType %>, peer: <%= handlerPeerType %>): Promise<void> {
+        for (const handler of this.<%= handler.listenerFieldName %>) {
+            await handler(payload, peer)
+        }
+    }
+
+    /**
+     * Registers an application callback for the <%- JSON.stringify(handler.messageName) %> message.
+     */
+    <%= handler.onMethodName %>(handler: <%= ctx.className %>MessageHandler<<%= handler.payloadType %>, <%= handlerPeerType %>>): Unsubscribe {
         this.<%= handler.listenerFieldName %>.add(handler)
         return () => {
             this.<%= handler.listenerFieldName %>.delete(handler)
@@ -182,27 +385,45 @@ export class <%= ctx.className %> {
     }
 
 <% } -%>
+    /**
+     * Framework entrypoint for a raw transport message.
+     */
     async handleRawMessage(data: string): Promise<void> {
         await this.handleMessage(decodeEnvelope(data))
     }
 
+    /**
+     * Framework entrypoint for a decoded OpenWS envelope.
+     */
     async handleMessage(envelope: OpenWsEnvelope): Promise<void> {
-        const remote = this.binder.fromRoles[envelope.fromRole]
-        const api = this.apisByRole[envelope.fromRole]
-        if (remote && api) {
-            await remote.handleMessage(envelope.messageName, envelope.payload, api)
+        const connections = this.findConnections(envelope.fromRole)
+        if (connections.length === 1) {
+            await connections[0].session.handleMessage(
+                envelope.fromRole,
+                envelope.messageName,
+                envelope.payload
+            )
             return
+        }
+        if (connections.length > 1) {
+            throw new Error(
+                `Multiple sessions for remote role ${envelope.fromRole}; dispatch requires connection context`
+            )
         }
 
         const localHandler = this.handlersByMessageName[envelope.messageName]
-        const localApi = this.apisByMessageName[envelope.messageName]
-        if (envelope.fromRole === this.fromRole && localHandler && localApi) {
-            await localHandler(envelope.payload, localApi as unknown as <%= ctx.className %>PeerApi)
+        const localPeer = this.peersByMessageName[envelope.messageName]
+        if (envelope.fromRole === this.fromRole && localHandler && localPeer) {
+            await localHandler(envelope.payload, localPeer as unknown as <%= ctx.className %>Peer)
             return
         }
 
         throw new Error(`Remote role ${envelope.fromRole} not found`)
     }
+}
+
+function toOpenWsError(error: unknown): Error {
+    return error instanceof Error ? error : new Error(String(error))
 }
 <% } else { -%>
 import * as WS from '@polytric/openws/class'
@@ -218,6 +439,13 @@ import {
 <% } -%>
 } from '<%= rolesImport %>'
 
+/**
+ * Generated OpenWS client for the <%- JSON.stringify(ctx.roleName) %> role in the <%- JSON.stringify(ctx.networkName) %> network.
+ *
+ * Application code calls command methods such as `connect` and registers
+ * callbacks with `on...` methods. Transport and framework glue call `handle...`
+ * methods to deliver inbound data, errors, and lifecycle events.
+ */
 export class <%= ctx.className %> {
     static CONFIG = <%= ctx.hostRoleClassName %>.CONFIG
 
@@ -226,11 +454,15 @@ export class <%= ctx.className %> {
     runtime
     sendEnvelope
     #transportUnsubscribe
-    #apisByRole = {}
-    #apisByMessageName = {}
+    #connections = new Set()
+    #peersByMessageName = {}
+    #peerRoleByMessageName = {}
     #handlersByMessageName = {}
     #messageErrorHandlers = new Set()
     #socketErrorHandlers = new Set()
+    #openHandlers = new Set()
+    #closeHandlers = new Set()
+    #lifecycleErrorHandlers = new Set()
     #fromRole = <%- JSON.stringify(ctx.roleName) %>
 <% for (const handler of ctx.handlers) { -%>
     #<%= handler.listenerFieldName %> = new Set()
@@ -252,37 +484,55 @@ export class <%= ctx.className %> {
             await this.transport.send(encodeEnvelope({ fromRole: this.#fromRole, messageName, payload }))
         }
 <% for (const handler of ctx.handlers) { -%>
-        this.#handlersByMessageName[<%- JSON.stringify(handler.messageName) %>] = async (payload, api) => {
-            await this.<%= handler.dispatchMethodName %>(payload, api)
+        this.#handlersByMessageName[<%- JSON.stringify(handler.messageName) %>] = async (payload, peer) => {
+            await this.<%= handler.dispatchMethodName %>(payload, peer)
         }
 <% for (const fromRole of handler.bindFromRoles) { -%>
-        this.binder.fromRoles[<%- JSON.stringify(fromRole.roleName) %>].on(<%- JSON.stringify(handler.messageName) %>, async (payload, api) => {
-            await this.<%= handler.dispatchMethodName %>(payload, api)
+        this.binder.fromRoles[<%- JSON.stringify(fromRole.roleName) %>].on(<%- JSON.stringify(handler.messageName) %>, async (payload, peer) => {
+            await this.<%= handler.dispatchMethodName %>(payload, peer)
         })
 <% } -%>
+<% } -%>
+<% for (const remoteRole of ctx.remoteRoles) { -%>
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onOpen(async fromRole => {
+            await this.handleOpen(fromRole)
+        })
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onClose(async fromRole => {
+            await this.handleClose(fromRole)
+        })
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onError(async (fromRole, error) => {
+            await this.handleError(fromRole, error)
+        })
 <% } -%>
         if (canBindTransport(transport)) {
             this.bindTransport(transport)
         }
     }
 
+    /**
+     * Connects this client to a role and returns the connected peer handle.
+     */
     async connect(roleName, endpoint) {
         switch (roleName) {
 <% for (const remoteRole of ctx.remoteRoles) { -%>
             case <%- JSON.stringify(remoteRole.roleName) %>: {
                 const remoteEndpoint = endpoint ?? <%- remoteRole.endpoints.length > 0 ? JSON.stringify(remoteRole.endpoints[0]) : 'undefined' %>
                 await this.transport.connect?.(roleName, remoteEndpoint)
-                if (!this.#apisByRole[<%- JSON.stringify(remoteRole.roleName) %>]) {
-                    this.<%= remoteRole.apiVarName %> = this.runtime.createApi(<%- JSON.stringify(remoteRole.roleName) %>, this.sendEnvelope)
-                    this.#apisByRole[<%- JSON.stringify(remoteRole.roleName) %>] = this.<%= remoteRole.apiVarName %>
+                const session = this.runtime.newSession(this.sendEnvelope)
+                this.<%= remoteRole.peerVarName %> = await session.open(<%- JSON.stringify(remoteRole.roleName) %>)
+                this.#connections.add({
+                    roleName: <%- JSON.stringify(remoteRole.roleName) %>,
+                    session,
+                    peer: this.<%= remoteRole.peerVarName %>,
+                })
 <% for (const handler of ctx.handlers) { -%>
-<% const handlerDefaultApi = handler.bindFromRoles.find(fromRole => ctx.remoteRoles.some(remoteRole => remoteRole.roleName === fromRole.roleName)) ?? ctx.remoteRoles[0] -%>
-<% if (handlerDefaultApi?.roleName === remoteRole.roleName) { -%>
-                    this.#apisByMessageName[<%- JSON.stringify(handler.messageName) %>] = this.<%= remoteRole.apiVarName %>
+<% const handlerDefaultPeer = handler.bindFromRoles.find(fromRole => ctx.remoteRoles.some(remoteRole => remoteRole.roleName === fromRole.roleName)) ?? ctx.remoteRoles[0] -%>
+<% if (handlerDefaultPeer?.roleName === remoteRole.roleName) { -%>
+                this.#peersByMessageName[<%- JSON.stringify(handler.messageName) %>] = this.<%= remoteRole.peerVarName %>
+                this.#peerRoleByMessageName[<%- JSON.stringify(handler.messageName) %>] = <%- JSON.stringify(remoteRole.roleName) %>
 <% } -%>
 <% } -%>
-                }
-                return this.<%= remoteRole.apiVarName %>
+                return this.<%= remoteRole.peerVarName %>
             }
 <% } -%>
             default:
@@ -290,28 +540,57 @@ export class <%= ctx.className %> {
         }
     }
 
-    async disconnect(roleName) {
-        await this.transport.disconnect?.(roleName)
-        delete this.#apisByRole[roleName]
+    /**
+     * Disconnects from a peer and closes its session.
+     *
+     * Pass the peer returned by `connect` to close that exact peer connection.
+     * Passing a role name closes all active peer connections for that role.
+     */
+    async disconnect(peer) {
+        if (typeof peer === 'string') {
+            await this.transport.disconnect?.(peer)
+            await this.#closeSessions(peer)
+            return
+        }
+        const connection = this.#findConnectionByPeer(peer)
+        if (!connection) {
+            throw new Error('Peer is not connected')
+        }
+        await this.#closeConnection(connection)
     }
 
+    /**
+     * Binds a transport to this client.
+     *
+     * Transport events call this client's `handle...` methods. Application code
+     * should use `on...` methods to observe those events.
+     */
     bindTransport(transport = this.transport, options = {}) {
         this.#transportUnsubscribe?.()
         this.#transportUnsubscribe = bindTransport(transport, this, options)
         return this.#transportUnsubscribe
     }
 
+    /**
+     * Removes the current transport event bindings.
+     */
     unbindTransport() {
         this.#transportUnsubscribe?.()
         this.#transportUnsubscribe = undefined
     }
 
-    async messageError(error) {
+    /**
+     * Framework entrypoint for message decoding or dispatch failures.
+     */
+    async handleMessageError(error) {
         for (const handler of this.#messageErrorHandlers) {
             await handler(error)
         }
     }
 
+    /**
+     * Registers an application callback for message decoding or dispatch failures.
+     */
     onMessageError(handler) {
         this.#messageErrorHandlers.add(handler)
         return () => {
@@ -319,12 +598,22 @@ export class <%= ctx.className %> {
         }
     }
 
-    async socketError(error) {
+    /**
+     * Framework entrypoint for transport-level socket errors.
+     */
+    async handleSocketError(error) {
+        const sessionError = toOpenWsError(error)
+        for (const connection of this.#connections) {
+            await connection.session.error(sessionError)
+        }
         for (const handler of this.#socketErrorHandlers) {
             await handler(error)
         }
     }
 
+    /**
+     * Registers an application callback for transport-level socket errors.
+     */
     onSocketError(handler) {
         this.#socketErrorHandlers.add(handler)
         return () => {
@@ -332,13 +621,115 @@ export class <%= ctx.className %> {
         }
     }
 
-<% for (const handler of ctx.handlers) { -%>
-    async <%= handler.dispatchMethodName %>(payload, api) {
-        for (const handler of this.#<%= handler.listenerFieldName %>) {
-            await handler(payload, api)
+    /**
+     * Framework entrypoint for transport-level socket close events.
+     */
+    async handleSocketClose(_event) {
+        for (const connection of Array.from(this.#connections)) {
+            await this.#closeConnection(connection)
         }
     }
 
+    /**
+     * Framework entrypoint for a peer session opening.
+     */
+    async handleOpen(roleName) {
+        for (const handler of this.#openHandlers) {
+            await handler(roleName)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session open events.
+     */
+    onOpen(handler) {
+        this.#openHandlers.add(handler)
+        return () => {
+            this.#openHandlers.delete(handler)
+        }
+    }
+
+    /**
+     * Framework entrypoint for a peer session closing.
+     */
+    async handleClose(roleName) {
+        for (const handler of this.#closeHandlers) {
+            await handler(roleName)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session close events.
+     */
+    onClose(handler) {
+        this.#closeHandlers.add(handler)
+        return () => {
+            this.#closeHandlers.delete(handler)
+        }
+    }
+
+    /**
+     * Framework entrypoint for a peer session error.
+     */
+    async handleError(roleName, error) {
+        for (const handler of this.#lifecycleErrorHandlers) {
+            await handler(roleName, error)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session errors.
+     */
+    onError(handler) {
+        this.#lifecycleErrorHandlers.add(handler)
+        return () => {
+            this.#lifecycleErrorHandlers.delete(handler)
+        }
+    }
+
+    async #closeSessions(roleName) {
+        for (const connection of this.#findConnections(roleName)) {
+            await this.#closeConnection(connection)
+        }
+    }
+
+    async #closeConnection(connection) {
+        if (!this.#connections.delete(connection)) {
+            return
+        }
+        if (this.#findConnections(connection.roleName).length === 0) {
+            for (const [messageName, peerRoleName] of Object.entries(this.#peerRoleByMessageName)) {
+                if (peerRoleName !== connection.roleName) {
+                    continue
+                }
+                delete this.#peersByMessageName[messageName]
+                delete this.#peerRoleByMessageName[messageName]
+            }
+        }
+        await connection.session.close()
+    }
+
+    #findConnections(roleName) {
+        return Array.from(this.#connections).filter(connection => connection.roleName === roleName)
+    }
+
+    #findConnectionByPeer(peer) {
+        return Array.from(this.#connections).find(connection => connection.peer === peer)
+    }
+
+<% for (const handler of ctx.handlers) { -%>
+    /**
+     * Dispatches the <%- JSON.stringify(handler.messageName) %> message to registered application callbacks.
+     */
+    async <%= handler.dispatchMethodName %>(payload, peer) {
+        for (const handler of this.#<%= handler.listenerFieldName %>) {
+            await handler(payload, peer)
+        }
+    }
+
+    /**
+     * Registers an application callback for the <%- JSON.stringify(handler.messageName) %> message.
+     */
     <%= handler.onMethodName %>(handler) {
         this.#<%= handler.listenerFieldName %>.add(handler)
         return () => {
@@ -347,26 +738,44 @@ export class <%= ctx.className %> {
     }
 
 <% } -%>
+    /**
+     * Framework entrypoint for a raw transport message.
+     */
     async handleRawMessage(data) {
         await this.handleMessage(decodeEnvelope(data))
     }
 
+    /**
+     * Framework entrypoint for a decoded OpenWS envelope.
+     */
     async handleMessage(envelope) {
-        const remote = this.binder.fromRoles[envelope.fromRole]
-        const api = this.#apisByRole[envelope.fromRole]
-        if (remote && api) {
-            await remote.handleMessage(envelope.messageName, envelope.payload, api)
+        const connections = this.#findConnections(envelope.fromRole)
+        if (connections.length === 1) {
+            await connections[0].session.handleMessage(
+                envelope.fromRole,
+                envelope.messageName,
+                envelope.payload
+            )
             return
+        }
+        if (connections.length > 1) {
+            throw new Error(
+                `Multiple sessions for remote role ${envelope.fromRole}; dispatch requires connection context`
+            )
         }
 
         const localHandler = this.#handlersByMessageName[envelope.messageName]
-        const localApi = this.#apisByMessageName[envelope.messageName]
-        if (envelope.fromRole === this.#fromRole && localHandler && localApi) {
-            await localHandler(envelope.payload, localApi)
+        const localPeer = this.#peersByMessageName[envelope.messageName]
+        if (envelope.fromRole === this.#fromRole && localHandler && localPeer) {
+            await localHandler(envelope.payload, localPeer)
             return
         }
 
         throw new Error(`Remote role ${envelope.fromRole} not found`)
     }
+}
+
+function toOpenWsError(error) {
+    return error instanceof Error ? error : new Error(String(error))
 }
 <% } -%>

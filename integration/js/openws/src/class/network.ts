@@ -9,6 +9,9 @@ import type {
 } from './types'
 import { isHostRoleCtor, flattenRoles } from './utils'
 
+/**
+ * Copies common message metadata from class-first config into a fluent message.
+ */
 export function addCommonMetadata(message: Fluent.Message, messageConfig: MessageConfig) {
     const { description, payload, version, ...metadata } = messageConfig
     if (description) message.description(description)
@@ -20,6 +23,13 @@ export function addCommonMetadata(message: Fluent.Message, messageConfig: Messag
     }
 }
 
+/**
+ * Builds a declarative OpenWS network graph from class-first role config.
+ *
+ * The returned network is the normalized spec memory graph. It does not attach
+ * runtime behavior by itself; pass the same config to `bindings(config)` when
+ * you want host handler methods wired into a runtime binder.
+ */
 export function network(config: NetworkConfig): Fluent.Network {
     const { roles, name, description, version, ...metadata } = config
 

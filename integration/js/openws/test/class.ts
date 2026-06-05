@@ -54,41 +54,41 @@ class Server {
     }
 
     rooms: { [roomId: string]: { members: string[] } } = {}
-    users: { [userId: string]: { userId: string; api: WS.Api<typeof Client> } } = {}
+    users: { [userId: string]: { userId: string; peer: WS.Peer<typeof Client> } } = {}
 
     async createRoom(
         { userId, roomId }: { userId: string; roomId: string },
-        api: WS.Api<typeof Client>
+        peer: WS.Peer<typeof Client>
     ) {
         this.rooms[roomId] = { members: [userId] }
-        this.users[userId] = { userId, api }
-        await api.joinedRoom({ roomId, joinerId: userId })
+        this.users[userId] = { userId, peer }
+        await peer.joinedRoom({ roomId, joinerId: userId })
     }
 
     async joinRoom(
         { userId, roomId }: { userId: string; roomId: string },
-        api: WS.Api<typeof Client>
+        peer: WS.Peer<typeof Client>
     ) {
         this.rooms[roomId].members.push(userId)
-        this.users[userId] = { userId, api }
+        this.users[userId] = { userId, peer }
         for (const member of this.rooms[roomId].members) {
-            await this.users[member].api.joinedRoom({ roomId, joinerId: userId })
+            await this.users[member].peer.joinedRoom({ roomId, joinerId: userId })
         }
     }
 
     async sendMessage(
         { userId, roomId, text }: { userId: string; roomId: string; text: string },
-        _api: WS.Api<typeof Client> | WS.Api<typeof Portal>
+        _peer: WS.Peer<typeof Client> | WS.Peer<typeof Portal>
     ) {
         for (const member of this.rooms[roomId].members) {
             if (member !== userId) {
-                await this.users[member].api.receivedMessage({ roomId, senderId: userId, text })
+                await this.users[member].peer.receivedMessage({ roomId, senderId: userId, text })
             }
         }
     }
 
-    async requestRoomStats({ roomId }: { roomId: string }, api: WS.Api<typeof Portal>) {
-        await api.receivedRoomStats({ roomId, members: this.rooms[roomId].members })
+    async requestRoomStats({ roomId }: { roomId: string }, peer: WS.Peer<typeof Portal>) {
+        await peer.receivedRoomStats({ roomId, members: this.rooms[roomId].members })
     }
 }
 

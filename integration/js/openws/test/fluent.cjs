@@ -66,17 +66,17 @@ validate(specJson)
 
 const binder = WS.bindings(network)
 binder.fromRoles.client
-    .on('createRoom', async (payload, api) => {
+    .on('createRoom', async (payload, peer) => {
         globalCtx.rooms[payload.roomId] = { users: new Set([payload.userId]) }
-        globalCtx.users[payload.userId] = { userId: payload.userId, api }
-        api.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
+        globalCtx.users[payload.userId] = { userId: payload.userId, peer }
+        peer.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
     })
-    .on('joinRoom', async (payload, api) => {
+    .on('joinRoom', async (payload, peer) => {
         globalCtx.rooms[payload.roomId].users.add(payload.userId)
-        globalCtx.users[payload.userId] = { userId: payload.userId, api }
-        api.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
+        globalCtx.users[payload.userId] = { userId: payload.userId, peer }
+        peer.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
     })
-    .on('sendMessage', async (payload, _api) => {
+    .on('sendMessage', async (payload, _peer) => {
         const room = globalCtx.rooms[payload.roomId]
         if (!room) {
             throw new Error(`Room ${payload.roomId} not found`)
@@ -86,7 +86,7 @@ binder.fromRoles.client
             if (!user || userId === payload.userId) {
                 continue
             }
-            user.api.receivedMessage({
+            user.peer.receivedMessage({
                 roomId: payload.roomId,
                 senderId: payload.userId,
                 text: payload.text,
@@ -94,7 +94,7 @@ binder.fromRoles.client
             })
         }
     })
-    .on('requestRoomStats', async (payload, _api) => {
+    .on('requestRoomStats', async (payload, _peer) => {
         console.log('requestRoomStats', payload.roomId)
     })
 

@@ -10,7 +10,7 @@ import type { <%= payloadImports.join(', ') %> } from '<%= modelImportPath %>'
 import { <%= peerRoleImports.join(', ') %> } from './index'
 <% } -%>
 
-export interface <%= ctx.apiName %> {
+export interface <%= ctx.peerName %> {
 <% for (const message of ctx.messages) { -%>
     <%= message.methodName %>(payload: <%= message.payloadType %> | <%= message.payloadType %>Init): Promise<void>
 <% } -%>

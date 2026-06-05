@@ -6,7 +6,7 @@ import type {
 } from '../models/client'
 import { Server } from './index'
 
-export interface ClientApi {
+export interface ClientPeer {
     joinedRoom(payload: JoinedRoomPayload | JoinedRoomPayloadInit): Promise<void>
     receivedMessage(payload: ReceivedMessagePayload | ReceivedMessagePayloadInit): Promise<void>
 }

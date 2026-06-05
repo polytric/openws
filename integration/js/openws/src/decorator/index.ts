@@ -6,7 +6,13 @@ export * from './message'
 
 type ExtractInstance<T> = T extends new (...args: any[]) => infer I ? I : T
 
-export type Api<T> = {
+/**
+ * Type helper for a connected decorated peer role class.
+ *
+ * `Peer<typeof Client>` maps public instance methods declared on `Client` to
+ * async payload-sending methods available inside host handlers.
+ */
+export type Peer<T> = {
     [K in keyof ExtractInstance<T> as K extends 'constructor'
         ? never
         : ExtractInstance<T>[K] extends (...args: any[]) => any

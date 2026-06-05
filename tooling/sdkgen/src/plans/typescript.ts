@@ -39,9 +39,9 @@ interface RoleInfo {
     className: string
     roleClassName: string
     hostRoleClassName: string
-    apiName: string
+    peerName: string
     varName: string
-    apiVarName: string
+    peerVarName: string
     fileName: string
     roleFileName: string
     description: string
@@ -49,7 +49,7 @@ interface RoleInfo {
 }
 
 interface ScopedRoleInfo extends RoleInfo {
-    scopedApiName: string
+    scopedPeerName: string
     allowedMethodNames: string[]
 }
 
@@ -273,7 +273,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 remoteRole =>
                     ({
                         ...remoteRole,
-                        scopedApiName: `${hostRole.className}${remoteRole.className}Api`,
+                        scopedPeerName: `${hostRole.className}${remoteRole.className}Peer`,
                         allowedMethodNames: getAllowedMessageMethodNames(
                             networkSpec,
                             remoteRole.roleName,
@@ -424,9 +424,9 @@ function toRoleInfo(role: SpecRole): RoleInfo {
         className,
         roleClassName: className,
         hostRoleClassName: `${className}Host`,
-        apiName: `${className}Api`,
+        peerName: `${className}Peer`,
         varName: camelCase(role.name),
-        apiVarName: `${camelCase(role.name)}Api`,
+        peerVarName: `${camelCase(role.name)}Peer`,
         fileName,
         roleFileName: `${fileName}-role`,
         description: role.description || '',

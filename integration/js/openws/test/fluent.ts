@@ -2,7 +2,7 @@ import S from '@pocketgems/schema'
 
 // fluent start
 import * as WS from '@polytric/openws/fluent'
-import type { ApiProto } from '@polytric/openws/fluent'
+import type { PeerProto } from '@polytric/openws/fluent'
 import { validate } from '@polytric/openws-spec'
 
 const globalCtx: AppContext = {
@@ -68,24 +68,24 @@ validate(specJson)
 
 type AppContext = {
     rooms: { [roomId: string]: { users: Set<string> } }
-    users: { [userId: string]: { userId: string; api: ApiProto } }
+    users: { [userId: string]: { userId: string; peer: PeerProto } }
 }
 
 const binder = WS.bindings(network)
 binder.fromRoles.client
-    .on('createRoom', async (payload: { userId: string; roomId: string }, api: ApiProto) => {
+    .on('createRoom', async (payload: { userId: string; roomId: string }, peer: PeerProto) => {
         globalCtx.rooms[payload.roomId] = { users: new Set([payload.userId]) }
-        globalCtx.users[payload.userId] = { userId: payload.userId, api }
-        api.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
+        globalCtx.users[payload.userId] = { userId: payload.userId, peer }
+        peer.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
     })
-    .on('joinRoom', async (payload: { userId: string; roomId: string }, api: ApiProto) => {
+    .on('joinRoom', async (payload: { userId: string; roomId: string }, peer: PeerProto) => {
         globalCtx.rooms[payload.roomId].users.add(payload.userId)
-        globalCtx.users[payload.userId] = { userId: payload.userId, api }
-        api.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
+        globalCtx.users[payload.userId] = { userId: payload.userId, peer }
+        peer.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
     })
     .on(
         'sendMessage',
-        async (payload: { userId: string; roomId: string; text: string }, api: ApiProto) => {
+        async (payload: { userId: string; roomId: string; text: string }, peer: PeerProto) => {
             const room = globalCtx.rooms[payload.roomId]
             if (!room) {
                 throw new Error(`Room ${payload.roomId} not found`)
@@ -95,7 +95,7 @@ binder.fromRoles.client
                 if (!user || userId === payload.userId) {
                     continue
                 }
-                user.api.receivedMessage({
+                user.peer.receivedMessage({
                     roomId: payload.roomId,
                     senderId: payload.userId,
                     text: payload.text,
@@ -104,13 +104,13 @@ binder.fromRoles.client
             }
         }
     )
-    .on('requestRoomStats', async (payload: { roomId: string }, api: ApiProto) => {
+    .on('requestRoomStats', async (payload: { roomId: string }, peer: PeerProto) => {
         console.log('requestRoomStats', payload.roomId)
     })
 
 binder.fromRoles.portal.on(
     'requestRoomStats',
-    async (payload: { roomId: string }, api: ApiProto) => {
+    async (payload: { roomId: string }, peer: PeerProto) => {
         console.log('requestRoomStats', payload.roomId)
     }
 )

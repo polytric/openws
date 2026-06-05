@@ -1,6 +1,6 @@
 import {
     Client as BaseClient,
-    type ClientServerApi,
+    type ClientServerPeer,
     JoinedRoomPayload,
     ReceivedMessagePayload,
 } from './openws-sdkgen-typescript-node/chat/core/src/sdk/client.ts'
@@ -19,24 +19,24 @@ class Client extends BaseClient {
     public joined: boolean = false
     public received: boolean = false
 
-    async messageError(error: unknown): Promise<void> {
+    async handleMessageError(error: unknown): Promise<void> {
         console.error('Error handling server message:', error)
         this.transport.close?.()
     }
 
-    async socketError(error: unknown): Promise<void> {
+    async handleSocketError(error: unknown): Promise<void> {
         console.error('Socket error:', error)
         this.transport.close?.()
     }
 
-    async joinedRoom(payload: JoinedRoomPayload, _api: ClientServerApi): Promise<void> {
-        await super.joinedRoom(payload, _api)
+    async joinedRoom(payload: JoinedRoomPayload, _peer: ClientServerPeer): Promise<void> {
+        await super.joinedRoom(payload, _peer)
         console.log(`joined ${payload.roomId} as ${payload.joinerId}`)
         this.joined = true
     }
 
-    async receivedMessage(payload: ReceivedMessagePayload, _api: ClientServerApi): Promise<void> {
-        await super.receivedMessage(payload, _api)
+    async receivedMessage(payload: ReceivedMessagePayload, _peer: ClientServerPeer): Promise<void> {
+        await super.receivedMessage(payload, _peer)
         console.log(`${payload.senderId} says: ${payload.text}`)
         this.received = true
     }
@@ -50,13 +50,13 @@ client.onJoinedRoom(payload => {
 
 await client.connect('server')
 
-await client.serverApi.createRoom({
+await client.serverPeer.createRoom({
     userId,
     roomId,
 })
 await waitFor(() => client.joined)
 
-await client.serverApi.sendMessage(
+await client.serverPeer.sendMessage(
     new SendMessagePayload({
         userId,
         roomId,

@@ -4,6 +4,13 @@ import * as WS from './network'
 import { handlerCache, messageCache, roleCache } from './store'
 import type { NetworkConfig } from './types'
 
+/**
+ * Creates runtime bindings from decorator-style network configuration.
+ *
+ * This reads the metadata recorded by `@role`, `@message`, and `@handler`,
+ * builds the normalized network graph, and registers decorated host handler
+ * methods on the appropriate remote-role binders.
+ */
 export function bindings(config: NetworkConfig): Fluent.NetworkBinder {
     const network = WS.network(config)
     const binder = Fluent.bindings(network)
@@ -36,8 +43,8 @@ export function bindings(config: NetworkConfig): Fluent.NetworkBinder {
 
             const from = messageConfig.from ?? Object.keys(remoteRoles)
             for (const fromRoleName of from) {
-                binder.fromRoles[fromRoleName].on(messageConfig.name, (payload, api) =>
-                    (role as any)[descriptor.value.name](payload, api)
+                binder.fromRoles[fromRoleName].on(messageConfig.name, (payload, peer) =>
+                    (role as any)[descriptor.value.name](payload, peer)
                 )
             }
         }

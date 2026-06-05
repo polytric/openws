@@ -30,7 +30,7 @@ export default function parseInput(ctx: PipelineContext): PipelineContext {
         .option('hostRole', {
             type: 'array',
             string: true,
-            description: 'The target participant roles that use the generated code',
+            description: 'The target peer roles that use the generated code',
             demandOption: true,
         })
         .option('language', {

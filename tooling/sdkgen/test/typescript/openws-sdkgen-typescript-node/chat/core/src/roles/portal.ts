@@ -1,7 +1,7 @@
 import type { ReceivedRoomStatsPayload, ReceivedRoomStatsPayloadInit } from '../models/portal'
 import { Server } from './index'
 
-export interface PortalApi {
+export interface PortalPeer {
     receivedRoomStats(
         payload: ReceivedRoomStatsPayload | ReceivedRoomStatsPayloadInit
     ): Promise<void>

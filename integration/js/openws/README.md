@@ -9,7 +9,7 @@ It provides:
 
 - A single source of truth for WebSocket message contracts (the network spec)
 - Automatic binding between inbound messages and handler functions
-- Typed and ergonomic outbound message APIs (in JS and especially in TS)
+- Typed and ergonomic peer handles (in JS and especially in TS)
 - Connection-scoped state (one connection -> one object)
 - Lifecycle hooks and consistent routing conventions
 - A stable spec artifact for tooling (UI, SDK generation, validation)
@@ -26,7 +26,7 @@ OpenWS supports three authoring styles:
 - [Core Concepts](#core-concepts)
     - [Roles](#roles)
         - [HostRole and Handlers](#hostrole-and-handlers)
-        - [API Type Hints](#api-type-hints)
+        - [Peer Type Hints](#peer-type-hints)
     - [Message Rejection](#message-rejection)
     - [Handler Bindings](#handler-bindings)
     - [Runtime and Sessions](#runtime-and-sessions)
@@ -80,7 +80,7 @@ We will first explore the class-first approach to build this system, and walk th
 
 A role describes:
 
-- Which messages exist for that participant
+- Which messages exist for that peer role
 - The contract (payload shape) for each message
 - Metadata used to produce the normalized network spec
 
@@ -111,26 +111,26 @@ The same pattern applies to the `portal` role.
 
 A role definition is intentionally declarative:
 
-- It can be consumed by the binder to produce APIs and validation rules.
+- It can be consumed by the binder to produce peer handles and validation rules.
 - It can be exported as a stable spec artifact for tooling.
 
 ### HostRole and Handlers
 
-While the OpenWS spec treats roles uniformly, the runtime distinguishes the participant running on the host machine. The host participant differs because it must:
+While the OpenWS spec treats roles uniformly, the runtime distinguishes the peer role running on the host machine. The host peer differs because it must:
 
 - Receive inbound messages and dispatch them to application logic
 - Send validated outbound messages to connected peers
 
-The runtime defines `hostRole` as the role the host participant implements.
+The runtime defines `hostRole` as the role the host peer implements.
 
 For remote roles, the `CONFIG` object declares `messages`.
 
 For the host role, the `CONFIG` object declares `handlers` instead of `messages`:
 
 1. Host role defines `handlers` instead of `messages`.
-2. Host role defines `async handler(payload, api)` for each handler defined in `CONFIG`.
+2. Host role defines `async handler(payload, peer)` for each handler defined in `CONFIG`.
 
-The `api` argument is the bound peer API for the connection that sent the message (for example a `client` API instance or a `portal` API instance). This is a critical part of the design: a handler receives both the validated payload and a capability-scoped API for responding.
+The `peer` argument is the connected peer handle for the connection that sent the message (for example a `client` peer or a `portal` peer). This is a critical part of the design: a handler receives both the validated payload and a capability-scoped peer handle for responding.
 
 Concretely, the server role (that handles createRoom, joinRoom, sendMessage and requestRoomStats) would look like this:
 
@@ -160,50 +160,50 @@ class Server {
     }
 
     rooms: { [roomId: string]: { members: string[] } } = {}
-    users: { [userId: string]: { userId: string; api: WS.Api<typeof Client> } } = {}
+    users: { [userId: string]: { userId: string; peer: WS.Peer<typeof Client> } } = {}
 
     async createRoom(
         { userId, roomId }: { userId: string; roomId: string },
-        api: WS.Api<typeof Client>
+        peer: WS.Peer<typeof Client>
     ) {
         this.rooms[roomId] = { members: [userId] }
-        this.users[userId] = { userId, api }
-        await api.joinedRoom({ roomId, joinerId: userId })
+        this.users[userId] = { userId, peer }
+        await peer.joinedRoom({ roomId, joinerId: userId })
     }
 
     async joinRoom(
         { userId, roomId }: { userId: string; roomId: string },
-        api: WS.Api<typeof Client>
+        peer: WS.Peer<typeof Client>
     ) {
         this.rooms[roomId].members.push(userId)
-        this.users[userId] = { userId, api }
+        this.users[userId] = { userId, peer }
         for (const member of this.rooms[roomId].members) {
-            await this.users[member].api.joinedRoom({ roomId, joinerId: userId })
+            await this.users[member].peer.joinedRoom({ roomId, joinerId: userId })
         }
     }
 
     async sendMessage(
         { userId, roomId, text }: { userId: string; roomId: string; text: string },
-        _api: WS.Api<typeof Client> | WS.Api<typeof Portal>
+        _peer: WS.Peer<typeof Client> | WS.Peer<typeof Portal>
     ) {
         for (const member of this.rooms[roomId].members) {
             if (member !== userId) {
-                await this.users[member].api.receivedMessage({ roomId, senderId: userId, text })
+                await this.users[member].peer.receivedMessage({ roomId, senderId: userId, text })
             }
         }
     }
 
-    async requestRoomStats({ roomId }: { roomId: string }, api: WS.Api<typeof Portal>) {
-        await api.receivedRoomStats({ roomId, members: this.rooms[roomId].members })
+    async requestRoomStats({ roomId }: { roomId: string }, peer: WS.Peer<typeof Portal>) {
+        await peer.receivedRoomStats({ roomId, members: this.rooms[roomId].members })
     }
 }
 ```
 
-### API Type Hints
+### Peer Type Hints
 
-Depending on the connected participant's role, a different `api` object is passed to the `handler(payload, api)` method.
+Depending on the connected peer's role, a different `peer` object is passed to the `handler(payload, peer)` method.
 
-In TypeScript, instead of using `any` for the `api` parameter, you can use `Api<typeof RoleClass>` to enable compiler type checks. This ensures that when a handler is invoked, the `api` object is statically constrained to the messages that the connected peer is allowed to receive.
+In TypeScript, instead of using `any` for the `peer` parameter, you can use `Peer<typeof RoleClass>` to enable compiler type checks. This ensures that when a handler is invoked, the `peer` object is statically constrained to the messages that the connected peer is allowed to receive.
 
 This is shown consistently in the embedded examples above.
 
@@ -215,7 +215,7 @@ The OpenWS spec allows modeling a sender whitelist per message. For example:
 - Only the portal may call `requestRoomStats`
 - Both the client and the portal may call `sendMessage`
 
-This framework faithfully models these constraints in message configuration and enforces them at runtime. When a participant sends a message it is not permitted to send, the runtime rejects the message before it reaches application logic.
+This framework faithfully models these constraints in message configuration and enforces them at runtime. When a peer sends a message it is not permitted to send, the runtime rejects the message before it reaches application logic.
 
 In other words:
 
@@ -235,15 +235,16 @@ Example configuration:
 
 A key concept of this framework is handler bindings.
 
-A handler binding maps messages defined in the OpenWS spec for the `hostRole` to a concrete handler implementation on the host role, while passing an instance of the connected role (`client` or `portal` in this example) as the `api` argument to the `handler`.
+A handler binding maps messages defined in the OpenWS spec for the `hostRole` to a concrete handler implementation on the host role, while passing the connected peer handle (`client` or `portal` in this example) as the `peer` argument to the handler.
 
 Bindings are created from `binding(networkConfig)`, where the config contains the name, description and roles of the network.
 
 The binder is responsible for:
 
 - Normalizing role configuration into a single network definition
-- Producing role-aware APIs for outbound messaging
+- Producing role-aware peer handles for outbound messaging
 - Producing handler dispatch rules for inbound messaging
+- Holding lifecycle behavior for remote roles (`onOpen`, `onClose`, `onError`)
 - Providing access to the network spec for export and tooling
 
 The binder is created like this:
@@ -261,16 +262,18 @@ In practice, you will typically keep the binder close to your application entryp
 - It is a pure artifact derived from static configuration.
 - It can be reused across test harnesses and server integrations.
 - It is the easiest place to centralize network metadata (name, description, versioning fields, etc.).
+- It is where you attach behavior to the network before a runtime materializes that behavior.
 
 ## Runtime and Sessions
 
-A concrete runtime is created from the bindings.
+A concrete runtime is created from the bindings. The network is the declarative memory graph of the spec; bindings attach behavior to that graph; the runtime turns those bindings into concrete peer handles and per-connection sessions.
 
 The runtime is intentionally lightweight and framework-agnostic. It provides an API to create session objects. Once defined, the runtime will:
 
 - Validate message envelopes and payloads
 - Dispatch inbound messages to instance methods
-- Provide outbound APIs to talk to connected peers
+- Provide peer handles to talk to connected peers
+- Invoke lifecycle callbacks when transport glue opens, closes, or reports an error on a session
 
 ```<!-- embed:./test/class.ts:section:runtime example start:runtime example end -->
 const runtime = WS.runtime(binder)
@@ -286,6 +289,23 @@ A session object represents a connection established from a remote role to the h
 - `handleMessage(fromRole, messageName, payload)`
 - `close()`
 - `error(error)`
+
+Transport or adapter code should translate concrete socket events into those calls. For example, when a WebSocket is accepted and identified as the `client` role, the adapter calls `session.open('client')`. When the socket receives an OpenWS envelope, the adapter calls `session.handleMessage(...)`. When the socket closes or emits an error, the adapter calls `session.close()` or `session.error(error)`.
+
+Remote-role lifecycle hooks are registered on the binder:
+
+```ts
+binder.fromRoles.client
+    .onOpen(async fromRole => {
+        console.log(`${fromRole} connected`)
+    })
+    .onClose(async fromRole => {
+        console.log(`${fromRole} disconnected`)
+    })
+    .onError(async (fromRole, error) => {
+        console.error(`${fromRole} connection error`, error)
+    })
+```
 
 ```<!-- embed:./test/class.ts:section:session example start:session example end -->
 await session1.open('client')
@@ -307,11 +327,15 @@ await session2.handleMessage('client', 'sendMessage', {
 
 This separation of concerns is deliberate:
 
-- Bindings represent the protocol (the network) and dispatch rules.
-- The runtime represents protocol execution.
+- The network represents the protocol graph and can be exported as a clean JSON spec.
+- Bindings attach runtime behavior to the network: message handlers, lifecycle callbacks, validation, and peer handle construction.
+- The runtime materializes bindings into concrete helpers such as peer handles and sessions.
 - A session represents a single connection, including state and lifecycle.
+- Transport glue owns the socket and is responsible for calling the session lifecycle methods.
 
 Because sessions are independent of any WebSocket framework, they are also suitable for unit tests and simulation harnesses.
+
+Generated SDK clients follow the same network and binding model. Their `connect(...)` methods create a session, open it for the remote role, and return the connected peer handle. Their public error callbacks are transport-level helpers such as `onMessageError(...)` and `onSocketError(...)`. Those callbacks are generated SDK conveniences; they are not the same entry point as fluent `binder.fromRoles.<role>.onError(...)`, which is called through `Session.error(error)`.
 
 # OpenWS Spec Generation
 
@@ -340,13 +364,13 @@ Read more on the builder in the specification repository.
 
 The binder provides APIs to model messages, roles, network and runtime handlers for the host role. The runtime provides an API to integrate with WebSocket frameworks.
 
-Notice the `createSession` and `open(fromRole)` split. Session creation is divided into two distinct steps because, in a naive WebSocket implementation, when a connection is established the identity of the participant on the other side of the connection is not established yet.
+Notice the `createSession` and `open(fromRole)` split. Session creation is divided into two distinct steps because, in a naive WebSocket implementation, when a connection is established the identity of the peer on the other side of the connection is not established yet.
 
 A typical integration flow is:
 
 1. A socket connects.
 2. The server creates a session immediately (`createSession`) to attach lifecycle and outbound send behavior.
-3. The server delays `open(fromRole)` until it can determine the role of the remote participant.
+3. The server delays `open(fromRole)` until it can determine the role of the remote peer.
 4. For each inbound message frame, the server parses the envelope and calls `handleMessage(...)`.
 5. On disconnect or error, the server calls `close()` or `error(err)`.
 
@@ -434,6 +458,8 @@ Typical adoption sequence:
 
 The class-first static configuration style is the most direct approach for plain JavaScript. When you are ready for additional ergonomics, OpenWS also supports decorators and fluent APIs.
 
+All authoring styles produce the same conceptual runtime pieces: a normalized network graph, a binder that attaches behavior to that graph, and a runtime that materializes bindings into peer handles and sessions. The class and decorator styles are convenience layers that compile down to the fluent model internally.
+
 The remainder of this README is brief by design. It serves as orientation so you can recognize these styles when reading other examples.
 
 ## Decorator style (TypeScript)
@@ -441,6 +467,8 @@ The remainder of this README is brief by design. It serves as orientation so you
 Decorator style is still class-first, but uses decorators to keep spec and implementation close together and to improve type inference in TS.
 
 This style typically requires TypeScript (and decorator support) or an equivalent build step.
+
+In this style, `@role`, `@message`, and `@handler` record metadata on classes and methods. `WS.network(config)` reads that metadata into the normalized spec graph, while `WS.bindings(config)` also instantiates host roles and wires decorated handler methods into the runtime binder.
 
 ```ts
 // Canonical example is embedded from tests.
@@ -473,26 +501,26 @@ class Portal {
 @WS.role({ description: 'A chat server role' })
 class Server {
     rooms: { [roomId: string]: { members: string[] } } = {}
-    users: { [userId: string]: { userId: string; api: WS.Api<typeof Client> } } = {}
+    users: { [userId: string]: { userId: string; peer: WS.Peer<typeof Client> } } = {}
 
     @WS.handler({ payload: S.obj({ userId: S.str, roomId: S.str }), from: [Client] })
     async createRoom(
         { userId, roomId }: { userId: string; roomId: string },
-        api: WS.Api<typeof Client>
+        peer: WS.Peer<typeof Client>
     ) {
         this.rooms[roomId] = { members: [userId] }
-        this.users[userId] = { userId, api }
-        await api.joinedRoom({ roomId, joinerId: userId })
+        this.users[userId] = { userId, peer }
+        await peer.joinedRoom({ roomId, joinerId: userId })
     }
 
     @WS.handler({ payload: S.obj({ userId: S.str, roomId: S.str }), from: Client })
     async joinRoom(
         { userId, roomId }: { userId: string; roomId: string },
-        api: WS.Api<typeof Client>
+        peer: WS.Peer<typeof Client>
     ) {
         this.rooms[roomId].members.push(userId)
-        this.users[userId] = { userId, api }
-        await api.joinedRoom({ roomId, joinerId: userId })
+        this.users[userId] = { userId, peer }
+        await peer.joinedRoom({ roomId, joinerId: userId })
     }
 
     @WS.handler({
@@ -502,13 +530,13 @@ class Server {
     })
     async sendMessage(
         { userId, roomId, text }: { userId: string; roomId: string; text: string },
-        _api: WS.Api<typeof Client>
+        _peer: WS.Peer<typeof Client>
     ) {
         for (const member of this.rooms[roomId].members) {
             if (userId && member === userId) {
                 continue
             }
-            await this.users[member].api.receivedMessage({
+            await this.users[member].peer.receivedMessage({
                 roomId,
                 senderId: userId,
                 text,
@@ -532,13 +560,13 @@ class Server {
         text: string
     }) {
         for (const member of this.rooms[roomId].members) {
-            await this.users[member].api.receivedMessage({ roomId, senderId: userId, text })
+            await this.users[member].peer.receivedMessage({ roomId, senderId: userId, text })
         }
     }
 
     @WS.handler({ payload: S.obj({ roomId: S.str }), from: [Portal] })
-    async requestRoomStats({ roomId }: { roomId: string }, api: WS.Api<typeof Portal>) {
-        await api.receivedRoomStats({ roomId })
+    async requestRoomStats({ roomId }: { roomId: string }, peer: WS.Peer<typeof Portal>) {
+        await peer.receivedRoomStats({ roomId })
     }
 }
 
@@ -564,7 +592,7 @@ Fluent and functional APIs are intended for:
 
 ```<!-- embed:./test/fluent.ts:section:fluent start:fluent end -->
 import * as WS from '@polytric/openws/fluent'
-import type { ApiProto } from '@polytric/openws/fluent'
+import type { PeerProto } from '@polytric/openws/fluent'
 import { validate } from '@polytric/openws-spec'
 
 const globalCtx: AppContext = {
@@ -630,24 +658,24 @@ validate(specJson)
 
 type AppContext = {
     rooms: { [roomId: string]: { users: Set<string> } }
-    users: { [userId: string]: { userId: string; api: ApiProto } }
+    users: { [userId: string]: { userId: string; peer: PeerProto } }
 }
 
 const binder = WS.bindings(network)
 binder.fromRoles.client
-    .on('createRoom', async (payload: { userId: string; roomId: string }, api: ApiProto) => {
+    .on('createRoom', async (payload: { userId: string; roomId: string }, peer: PeerProto) => {
         globalCtx.rooms[payload.roomId] = { users: new Set([payload.userId]) }
-        globalCtx.users[payload.userId] = { userId: payload.userId, api }
-        api.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
+        globalCtx.users[payload.userId] = { userId: payload.userId, peer }
+        peer.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
     })
-    .on('joinRoom', async (payload: { userId: string; roomId: string }, api: ApiProto) => {
+    .on('joinRoom', async (payload: { userId: string; roomId: string }, peer: PeerProto) => {
         globalCtx.rooms[payload.roomId].users.add(payload.userId)
-        globalCtx.users[payload.userId] = { userId: payload.userId, api }
-        api.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
+        globalCtx.users[payload.userId] = { userId: payload.userId, peer }
+        peer.joinedRoom({ roomId: payload.roomId, userId: payload.userId })
     })
     .on(
         'sendMessage',
-        async (payload: { userId: string; roomId: string; text: string }, api: ApiProto) => {
+        async (payload: { userId: string; roomId: string; text: string }, peer: PeerProto) => {
             const room = globalCtx.rooms[payload.roomId]
             if (!room) {
                 throw new Error(`Room ${payload.roomId} not found`)
@@ -657,7 +685,7 @@ binder.fromRoles.client
                 if (!user || userId === payload.userId) {
                     continue
                 }
-                user.api.receivedMessage({
+                user.peer.receivedMessage({
                     roomId: payload.roomId,
                     senderId: payload.userId,
                     text: payload.text,
@@ -666,13 +694,13 @@ binder.fromRoles.client
             }
         }
     )
-    .on('requestRoomStats', async (payload: { roomId: string }, api: ApiProto) => {
+    .on('requestRoomStats', async (payload: { roomId: string }, peer: PeerProto) => {
         console.log('requestRoomStats', payload.roomId)
     })
 
 binder.fromRoles.portal.on(
     'requestRoomStats',
-    async (payload: { roomId: string }, api: ApiProto) => {
+    async (payload: { roomId: string }, peer: PeerProto) => {
         console.log('requestRoomStats', payload.roomId)
     }
 )

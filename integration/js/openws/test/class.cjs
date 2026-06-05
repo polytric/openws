@@ -56,30 +56,30 @@ class Server {
     rooms = {}
     users = {}
 
-    async createRoom({ userId, roomId }, api) {
+    async createRoom({ userId, roomId }, peer) {
         this.rooms[roomId] = { members: [userId] }
-        this.users[userId] = { userId, api }
-        await api.joinedRoom({ roomId, joinerId: userId })
+        this.users[userId] = { userId, peer }
+        await peer.joinedRoom({ roomId, joinerId: userId })
     }
 
-    async joinRoom({ userId, roomId }, api) {
+    async joinRoom({ userId, roomId }, peer) {
         this.rooms[roomId].members.push(userId)
-        this.users[userId] = { userId, api }
+        this.users[userId] = { userId, peer }
         for (const member of this.rooms[roomId].members) {
-            await this.users[member].api.joinedRoom({ roomId, joinerId: userId })
+            await this.users[member].peer.joinedRoom({ roomId, joinerId: userId })
         }
     }
 
-    async sendMessage({ userId, roomId, text }, _api) {
+    async sendMessage({ userId, roomId, text }, _peer) {
         for (const member of this.rooms[roomId].members) {
             if (member !== userId) {
-                await this.users[member].api.receivedMessage({ roomId, senderId: userId, text })
+                await this.users[member].peer.receivedMessage({ roomId, senderId: userId, text })
             }
         }
     }
 
-    async requestRoomStats({ roomId }, api) {
-        await api.receivedRoomStats({ roomId, members: this.rooms[roomId].members })
+    async requestRoomStats({ roomId }, peer) {
+        await peer.receivedRoomStats({ roomId, members: this.rooms[roomId].members })
     }
 }
 

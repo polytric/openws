@@ -3,7 +3,7 @@ using System;
 namespace Polytric.OpenWs.Spec.Attributes
 {
     /// <summary>
-    /// Declares an endpoint associated with a role/participant.
+    /// Declares an endpoint associated with a peer role.
     /// Multiple endpoints per role are allowed.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]

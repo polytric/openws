@@ -83,7 +83,7 @@
                             }
                         },
                         "messageReceived": {
-                            "description": "Broadcast of a message to participants in a room.",
+                            "description": "Broadcast of a message to peers in a room.",
                             "payload": {
                                 "type": "object",
                                 "additionalProperties": false,

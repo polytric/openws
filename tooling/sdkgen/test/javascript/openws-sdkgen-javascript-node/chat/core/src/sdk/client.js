@@ -10,6 +10,13 @@ import {
 export * from '../models/client/index.js'
 import { ClientHost, Server } from '../roles/index.js'
 
+/**
+ * Generated OpenWS client for the "client" role in the "core" network.
+ *
+ * Application code calls command methods such as `connect` and registers
+ * callbacks with `on...` methods. Transport and framework glue call `handle...`
+ * methods to deliver inbound data, errors, and lifecycle events.
+ */
 export class Client {
     static CONFIG = ClientHost.CONFIG
 
@@ -18,11 +25,15 @@ export class Client {
     runtime
     sendEnvelope
     #transportUnsubscribe
-    #apisByRole = {}
-    #apisByMessageName = {}
+    #connections = new Set()
+    #peersByMessageName = {}
+    #peerRoleByMessageName = {}
     #handlersByMessageName = {}
     #messageErrorHandlers = new Set()
     #socketErrorHandlers = new Set()
+    #openHandlers = new Set()
+    #closeHandlers = new Set()
+    #lifecycleErrorHandlers = new Set()
     #fromRole = 'client'
     #joinedRoomHandlers = new Set()
     #receivedMessageHandlers = new Set()
@@ -44,23 +55,35 @@ export class Client {
                 encodeEnvelope({ fromRole: this.#fromRole, messageName, payload })
             )
         }
-        this.#handlersByMessageName['joinedRoom'] = async (payload, api) => {
-            await this.joinedRoom(payload, api)
+        this.#handlersByMessageName['joinedRoom'] = async (payload, peer) => {
+            await this.joinedRoom(payload, peer)
         }
-        this.binder.fromRoles['server'].on('joinedRoom', async (payload, api) => {
-            await this.joinedRoom(payload, api)
+        this.binder.fromRoles['server'].on('joinedRoom', async (payload, peer) => {
+            await this.joinedRoom(payload, peer)
         })
-        this.#handlersByMessageName['receivedMessage'] = async (payload, api) => {
-            await this.receivedMessage(payload, api)
+        this.#handlersByMessageName['receivedMessage'] = async (payload, peer) => {
+            await this.receivedMessage(payload, peer)
         }
-        this.binder.fromRoles['server'].on('receivedMessage', async (payload, api) => {
-            await this.receivedMessage(payload, api)
+        this.binder.fromRoles['server'].on('receivedMessage', async (payload, peer) => {
+            await this.receivedMessage(payload, peer)
+        })
+        this.binder.fromRoles['server'].onOpen(async fromRole => {
+            await this.handleOpen(fromRole)
+        })
+        this.binder.fromRoles['server'].onClose(async fromRole => {
+            await this.handleClose(fromRole)
+        })
+        this.binder.fromRoles['server'].onError(async (fromRole, error) => {
+            await this.handleError(fromRole, error)
         })
         if (canBindTransport(transport)) {
             this.bindTransport(transport)
         }
     }
 
+    /**
+     * Connects this client to a role and returns the connected peer handle.
+     */
     async connect(roleName, endpoint) {
         switch (roleName) {
             case 'server': {
@@ -71,41 +94,75 @@ export class Client {
                     path: '/chat',
                 }
                 await this.transport.connect?.(roleName, remoteEndpoint)
-                if (!this.#apisByRole['server']) {
-                    this.serverApi = this.runtime.createApi('server', this.sendEnvelope)
-                    this.#apisByRole['server'] = this.serverApi
-                    this.#apisByMessageName['joinedRoom'] = this.serverApi
-                    this.#apisByMessageName['receivedMessage'] = this.serverApi
-                }
-                return this.serverApi
+                const session = this.runtime.newSession(this.sendEnvelope)
+                this.serverPeer = await session.open('server')
+                this.#connections.add({
+                    roleName: 'server',
+                    session,
+                    peer: this.serverPeer,
+                })
+                this.#peersByMessageName['joinedRoom'] = this.serverPeer
+                this.#peerRoleByMessageName['joinedRoom'] = 'server'
+                this.#peersByMessageName['receivedMessage'] = this.serverPeer
+                this.#peerRoleByMessageName['receivedMessage'] = 'server'
+                return this.serverPeer
             }
             default:
                 throw new Error(`Remote role ${roleName} not found`)
         }
     }
 
-    async disconnect(roleName) {
-        await this.transport.disconnect?.(roleName)
-        delete this.#apisByRole[roleName]
+    /**
+     * Disconnects from a peer and closes its session.
+     *
+     * Pass the peer returned by `connect` to close that exact peer connection.
+     * Passing a role name closes all active peer connections for that role.
+     */
+    async disconnect(peer) {
+        if (typeof peer === 'string') {
+            await this.transport.disconnect?.(peer)
+            await this.#closeSessions(peer)
+            return
+        }
+        const connection = this.#findConnectionByPeer(peer)
+        if (!connection) {
+            throw new Error('Peer is not connected')
+        }
+        await this.#closeConnection(connection)
     }
 
+    /**
+     * Binds a transport to this client.
+     *
+     * Transport events call this client's `handle...` methods. Application code
+     * should use `on...` methods to observe those events.
+     */
     bindTransport(transport = this.transport, options = {}) {
         this.#transportUnsubscribe?.()
         this.#transportUnsubscribe = bindTransport(transport, this, options)
         return this.#transportUnsubscribe
     }
 
+    /**
+     * Removes the current transport event bindings.
+     */
     unbindTransport() {
         this.#transportUnsubscribe?.()
         this.#transportUnsubscribe = undefined
     }
 
-    async messageError(error) {
+    /**
+     * Framework entrypoint for message decoding or dispatch failures.
+     */
+    async handleMessageError(error) {
         for (const handler of this.#messageErrorHandlers) {
             await handler(error)
         }
     }
 
+    /**
+     * Registers an application callback for message decoding or dispatch failures.
+     */
     onMessageError(handler) {
         this.#messageErrorHandlers.add(handler)
         return () => {
@@ -113,12 +170,22 @@ export class Client {
         }
     }
 
-    async socketError(error) {
+    /**
+     * Framework entrypoint for transport-level socket errors.
+     */
+    async handleSocketError(error) {
+        const sessionError = toOpenWsError(error)
+        for (const connection of this.#connections) {
+            await connection.session.error(sessionError)
+        }
         for (const handler of this.#socketErrorHandlers) {
             await handler(error)
         }
     }
 
+    /**
+     * Registers an application callback for transport-level socket errors.
+     */
     onSocketError(handler) {
         this.#socketErrorHandlers.add(handler)
         return () => {
@@ -126,12 +193,114 @@ export class Client {
         }
     }
 
-    async joinedRoom(payload, api) {
-        for (const handler of this.#joinedRoomHandlers) {
-            await handler(payload, api)
+    /**
+     * Framework entrypoint for transport-level socket close events.
+     */
+    async handleSocketClose(_event) {
+        for (const connection of Array.from(this.#connections)) {
+            await this.#closeConnection(connection)
         }
     }
 
+    /**
+     * Framework entrypoint for a peer session opening.
+     */
+    async handleOpen(roleName) {
+        for (const handler of this.#openHandlers) {
+            await handler(roleName)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session open events.
+     */
+    onOpen(handler) {
+        this.#openHandlers.add(handler)
+        return () => {
+            this.#openHandlers.delete(handler)
+        }
+    }
+
+    /**
+     * Framework entrypoint for a peer session closing.
+     */
+    async handleClose(roleName) {
+        for (const handler of this.#closeHandlers) {
+            await handler(roleName)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session close events.
+     */
+    onClose(handler) {
+        this.#closeHandlers.add(handler)
+        return () => {
+            this.#closeHandlers.delete(handler)
+        }
+    }
+
+    /**
+     * Framework entrypoint for a peer session error.
+     */
+    async handleError(roleName, error) {
+        for (const handler of this.#lifecycleErrorHandlers) {
+            await handler(roleName, error)
+        }
+    }
+
+    /**
+     * Registers an application callback for peer session errors.
+     */
+    onError(handler) {
+        this.#lifecycleErrorHandlers.add(handler)
+        return () => {
+            this.#lifecycleErrorHandlers.delete(handler)
+        }
+    }
+
+    async #closeSessions(roleName) {
+        for (const connection of this.#findConnections(roleName)) {
+            await this.#closeConnection(connection)
+        }
+    }
+
+    async #closeConnection(connection) {
+        if (!this.#connections.delete(connection)) {
+            return
+        }
+        if (this.#findConnections(connection.roleName).length === 0) {
+            for (const [messageName, peerRoleName] of Object.entries(this.#peerRoleByMessageName)) {
+                if (peerRoleName !== connection.roleName) {
+                    continue
+                }
+                delete this.#peersByMessageName[messageName]
+                delete this.#peerRoleByMessageName[messageName]
+            }
+        }
+        await connection.session.close()
+    }
+
+    #findConnections(roleName) {
+        return Array.from(this.#connections).filter(connection => connection.roleName === roleName)
+    }
+
+    #findConnectionByPeer(peer) {
+        return Array.from(this.#connections).find(connection => connection.peer === peer)
+    }
+
+    /**
+     * Dispatches the "joinedRoom" message to registered application callbacks.
+     */
+    async joinedRoom(payload, peer) {
+        for (const handler of this.#joinedRoomHandlers) {
+            await handler(payload, peer)
+        }
+    }
+
+    /**
+     * Registers an application callback for the "joinedRoom" message.
+     */
     onJoinedRoom(handler) {
         this.#joinedRoomHandlers.add(handler)
         return () => {
@@ -139,12 +308,18 @@ export class Client {
         }
     }
 
-    async receivedMessage(payload, api) {
+    /**
+     * Dispatches the "receivedMessage" message to registered application callbacks.
+     */
+    async receivedMessage(payload, peer) {
         for (const handler of this.#receivedMessageHandlers) {
-            await handler(payload, api)
+            await handler(payload, peer)
         }
     }
 
+    /**
+     * Registers an application callback for the "receivedMessage" message.
+     */
     onReceivedMessage(handler) {
         this.#receivedMessageHandlers.add(handler)
         return () => {
@@ -152,25 +327,43 @@ export class Client {
         }
     }
 
+    /**
+     * Framework entrypoint for a raw transport message.
+     */
     async handleRawMessage(data) {
         await this.handleMessage(decodeEnvelope(data))
     }
 
+    /**
+     * Framework entrypoint for a decoded OpenWS envelope.
+     */
     async handleMessage(envelope) {
-        const remote = this.binder.fromRoles[envelope.fromRole]
-        const api = this.#apisByRole[envelope.fromRole]
-        if (remote && api) {
-            await remote.handleMessage(envelope.messageName, envelope.payload, api)
+        const connections = this.#findConnections(envelope.fromRole)
+        if (connections.length === 1) {
+            await connections[0].session.handleMessage(
+                envelope.fromRole,
+                envelope.messageName,
+                envelope.payload
+            )
             return
+        }
+        if (connections.length > 1) {
+            throw new Error(
+                `Multiple sessions for remote role ${envelope.fromRole}; dispatch requires connection context`
+            )
         }
 
         const localHandler = this.#handlersByMessageName[envelope.messageName]
-        const localApi = this.#apisByMessageName[envelope.messageName]
-        if (envelope.fromRole === this.#fromRole && localHandler && localApi) {
-            await localHandler(envelope.payload, localApi)
+        const localPeer = this.#peersByMessageName[envelope.messageName]
+        if (envelope.fromRole === this.#fromRole && localHandler && localPeer) {
+            await localHandler(envelope.payload, localPeer)
             return
         }
 
         throw new Error(`Remote role ${envelope.fromRole} not found`)
     }
+}
+
+function toOpenWsError(error) {
+    return error instanceof Error ? error : new Error(String(error))
 }

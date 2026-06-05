@@ -15,7 +15,7 @@ const network = WS.network('chat').role(serverRole).role(clientRole)
 const binder = WS.bindings(network)
 const runtime = WS.runtime(binder)
 
-assert.equal(typeof runtime.createApi, 'function')
+assert.equal(typeof runtime.createPeer, 'function')
 
 const sentEnvelopes: Array<{
     toRole: string
@@ -23,11 +23,11 @@ const sentEnvelopes: Array<{
     payload: unknown
 }> = []
 
-const clientApi = runtime.createApi('client', async (toRole, messageName, payload) => {
+const clientPeer = runtime.createPeer('client', async (toRole, messageName, payload) => {
     sentEnvelopes.push({ toRole, messageName, payload })
 })
 
-await clientApi.joinedRoom({ roomId: 'room-1' })
+await clientPeer.joinedRoom({ roomId: 'room-1' })
 
 assert.deepEqual(sentEnvelopes, [
     {

@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws-sdkgen",
-    "version": "0.0.13",
+    "version": "0.0.14",
     "description": "OpenWS SDK generator CLI",
     "type": "module",
     "bin": {
@@ -41,6 +41,7 @@
         "test:typescript:node": "node dist/main.cjs --spec ./test/spec.json --out ./generated/typescript/node --project Example --network core --hostRole client --language typescript --environment node",
         "test:typescript:server": "tsx ./test/typescript/server.ts",
         "test:typescript:client": "tsx ./test/typescript/client.ts",
+        "test:client-lifecycle": "tsx ./test/typescript/client-lifecycle.ts",
         "test:transport-close": "tsx ./test/typescript/transport-close.ts"
     },
     "dependencies": {

@@ -1,6 +1,6 @@
 # OpenWS
 
-**OpenWS** is an **OpenAPI-style specification + toolkit** for **asymmetric, bidirectional messaging**—primarily over **WebSockets**—across an interconnected mesh of participants (“roles”).
+**OpenWS** is an **OpenAPI-style specification + toolkit** for **asymmetric, bidirectional messaging**, primarily over **WebSockets**, across an interconnected mesh of peers (“roles”).
 
 Where OpenAPI documents request/response REST endpoints, **OpenWS documents roles and the messages they can exchange**, then uses that contract to power:
 
@@ -30,7 +30,7 @@ An OpenWS **network** defines the communication contract:
 | Concept       | Description                                                      |
 | ------------- | ---------------------------------------------------------------- |
 | **Network**   | Name, version, and description of the contract                   |
-| **Roles**     | Participants in the network (e.g., `client`, `server`, `portal`) |
+| **Roles**     | Peer types in the network (e.g., `client`, `server`, `portal`)    |
 | **Endpoints** | How host roles are reached (`scheme://host:port/path`)           |
 | **Messages**  | Named message types with directionality and JSON schemas         |
 
