@@ -1,13 +1,38 @@
 import * as Fluent from '../fluent'
 
 import * as WS from './network'
-import { HostRole, type HostRoleLikeCtor, type NetworkConfig, type RoleLikeCtor } from './types'
+import { type HostRoleLikeCtor, type NetworkConfig, type RoleLikeCtor } from './types'
 import { isHostRoleCtor, flattenRoles } from './utils'
 
 /**
  * Optional host-role instances accepted by the class-first binding signature.
  */
 export type HostRoleInstances = Record<string, unknown>
+
+const lifecycleEvents = ['open', 'close', 'error'] as const
+
+type LifecycleEvent = (typeof lifecycleEvents)[number]
+
+function getLifecycleMethodName(event: LifecycleEvent): string {
+    return `handle${event.charAt(0).toUpperCase()}${event.slice(1)}`
+}
+
+function bindLifecycle(
+    binder: Fluent.NetworkBinder,
+    fromRoleName: string,
+    event: LifecycleEvent,
+    hostRole: unknown,
+    methodName: string
+) {
+    const handler = (hostRole as any)[methodName].bind(hostRole)
+    if (event === 'open') {
+        binder.fromRoles[fromRoleName].onOpen(handler)
+    } else if (event === 'close') {
+        binder.fromRoles[fromRoleName].onClose(handler)
+    } else {
+        binder.fromRoles[fromRoleName].onError(handler)
+    }
+}
 
 /**
  * Creates runtime bindings from class-first network configuration.
@@ -33,17 +58,29 @@ export function bindings(
     }
 
     for (const role of allRoles) {
-        if (isHostRoleCtor(role)) {
-            const hostRole = new (role as HostRoleLikeCtor)()
-            for (const [handlerName, handlerConfig] of Object.entries(role.CONFIG.handlers)) {
-                const from = handlerConfig.from
-                    ? handlerConfig.from.map(r => r.CONFIG.name)
-                    : Object.keys(remoteRoles)
-                for (const fromRoleName of from) {
-                    binder.fromRoles[fromRoleName].on(handlerName, (payload, peer) =>
-                        (hostRole as any)[handlerName](payload, peer)
-                    )
-                }
+        if (!isHostRoleCtor(role)) {
+            continue
+        }
+        const hostRole = hostRoleInstances[role.CONFIG.name] ?? new (role as HostRoleLikeCtor)()
+
+        for (const event of lifecycleEvents) {
+            const methodName = getLifecycleMethodName(event)
+            if (typeof (hostRole as any)[methodName] !== 'function') {
+                continue
+            }
+            for (const fromRoleName of Object.keys(remoteRoles)) {
+                bindLifecycle(binder, fromRoleName, event, hostRole, methodName)
+            }
+        }
+
+        for (const [handlerName, handlerConfig] of Object.entries(role.CONFIG.handlers)) {
+            const from = handlerConfig.from
+                ? handlerConfig.from.map(r => r.CONFIG.name)
+                : Object.keys(remoteRoles)
+            for (const fromRoleName of from) {
+                binder.fromRoles[fromRoleName].on(handlerName, (payload, peer) =>
+                    (hostRole as any)[handlerName](payload, peer)
+                )
             }
         }
     }

@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "Polytric OpenWS Runtime",
     "type": "module",
     "main": "./dist/index.js",
@@ -52,6 +52,7 @@
         "setup": "pnpm install",
         "test:create-peer:ts": "tsx test/runtime-create-peer.ts",
         "test:class:cjs": "nodemon -w dist -w test/class.cjs test/class.cjs",
+        "test:class-lifecycle:ts": "tsx test/class-lifecycle.ts",
         "test:class:ts": "tsx watch test/class.ts",
         "test:decorator:cjs": "nodemon -w dist -w test/decorator.cjs --exec 'esbuild test/decorator.cjs --bundle --platform=node --target=node18 --format=cjs --packages=external | node'",
         "test:decorator:ts": "tsx watch test/decorator.ts",
