@@ -30,7 +30,7 @@ export class Session {
         }
         this.fromRole = fromRole
         this.peer = this.binder.fromRoles[fromRole].createPeer(this.rawSend)
-        await this.binder.fromRoles[fromRole].handleOpen?.(fromRole)
+        await this.binder.fromRoles[fromRole].handleOpen?.(fromRole, this.peer)
         return this.peer
     }
 
@@ -41,10 +41,10 @@ export class Session {
      * associated with the session yet.
      */
     async close() {
-        if (!this.fromRole) {
+        if (!this.fromRole || !this.peer) {
             return // not opened
         }
-        await this.binder.fromRoles[this.fromRole].handleClose?.(this.fromRole)
+        await this.binder.fromRoles[this.fromRole].handleClose?.(this.fromRole, this.peer)
     }
 
     /**
@@ -55,10 +55,10 @@ export class Session {
      * session yet.
      */
     async error(error: Error) {
-        if (!this.fromRole) {
+        if (!this.fromRole || !this.peer) {
             return // not opened
         }
-        await this.binder.fromRoles[this.fromRole].handleError?.(this.fromRole, error)
+        await this.binder.fromRoles[this.fromRole].handleError?.(this.fromRole, this.peer, error)
     }
 
     /**

@@ -57,11 +57,11 @@ export type <%= ctx.className %>ErrorHandler = (error: unknown) => void | Promis
 /**
  * Application callback for connection lifecycle events.
  */
-export type <%= ctx.className %>LifecycleHandler = (roleName: string) => void | Promise<void>
+export type <%= ctx.className %>LifecycleHandler = (roleName: string, peer: <%= ctx.className %>Peer) => void | Promise<void>
 /**
  * Application callback for connection lifecycle errors.
  */
-export type <%= ctx.className %>LifecycleErrorHandler = (roleName: string, error: Error) => void | Promise<void>
+export type <%= ctx.className %>LifecycleErrorHandler = (roleName: string, peer: <%= ctx.className %>Peer, error: Error) => void | Promise<void>
 
 type <%= ctx.className %>Connection = {
     roleName: string
@@ -132,14 +132,14 @@ export class <%= ctx.className %> {
 <% } -%>
 <% } -%>
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onOpen(async fromRole => {
-            await this.handleOpen(fromRole)
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onOpen(async (fromRole, peer) => {
+            await this.handleOpen(fromRole, peer as <%= ctx.className %>Peer)
         })
-        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onClose(async fromRole => {
-            await this.handleClose(fromRole)
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onClose(async (fromRole, peer) => {
+            await this.handleClose(fromRole, peer as <%= ctx.className %>Peer)
         })
-        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onError(async (fromRole, error) => {
-            await this.handleError(fromRole, error)
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onError(async (fromRole, peer, error) => {
+            await this.handleError(fromRole, peer as <%= ctx.className %>Peer, error)
         })
 <% } -%>
         if (canBindTransport(transport)) {
@@ -279,9 +279,9 @@ export class <%= ctx.className %> {
     /**
      * Framework entrypoint for a peer session opening.
      */
-    async handleOpen(roleName: string): Promise<void> {
+    async handleOpen(roleName: string, peer: <%= ctx.className %>Peer): Promise<void> {
         for (const handler of this.openHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -298,9 +298,9 @@ export class <%= ctx.className %> {
     /**
      * Framework entrypoint for a peer session closing.
      */
-    async handleClose(roleName: string): Promise<void> {
+    async handleClose(roleName: string, peer: <%= ctx.className %>Peer): Promise<void> {
         for (const handler of this.closeHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -317,9 +317,9 @@ export class <%= ctx.className %> {
     /**
      * Framework entrypoint for a peer session error.
      */
-    async handleError(roleName: string, error: Error): Promise<void> {
+    async handleError(roleName: string, peer: <%= ctx.className %>Peer, error: Error): Promise<void> {
         for (const handler of this.lifecycleErrorHandlers) {
-            await handler(roleName, error)
+            await handler(roleName, peer, error)
         }
     }
 
@@ -494,14 +494,14 @@ export class <%= ctx.className %> {
 <% } -%>
 <% } -%>
 <% for (const remoteRole of ctx.remoteRoles) { -%>
-        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onOpen(async fromRole => {
-            await this.handleOpen(fromRole)
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onOpen(async (fromRole, peer) => {
+            await this.handleOpen(fromRole, peer)
         })
-        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onClose(async fromRole => {
-            await this.handleClose(fromRole)
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onClose(async (fromRole, peer) => {
+            await this.handleClose(fromRole, peer)
         })
-        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onError(async (fromRole, error) => {
-            await this.handleError(fromRole, error)
+        this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onError(async (fromRole, peer, error) => {
+            await this.handleError(fromRole, peer, error)
         })
 <% } -%>
         if (canBindTransport(transport)) {
@@ -633,9 +633,9 @@ export class <%= ctx.className %> {
     /**
      * Framework entrypoint for a peer session opening.
      */
-    async handleOpen(roleName) {
+    async handleOpen(roleName, peer) {
         for (const handler of this.#openHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -652,9 +652,9 @@ export class <%= ctx.className %> {
     /**
      * Framework entrypoint for a peer session closing.
      */
-    async handleClose(roleName) {
+    async handleClose(roleName, peer) {
         for (const handler of this.#closeHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -671,9 +671,9 @@ export class <%= ctx.className %> {
     /**
      * Framework entrypoint for a peer session error.
      */
-    async handleError(roleName, error) {
+    async handleError(roleName, peer, error) {
         for (const handler of this.#lifecycleErrorHandlers) {
-            await handler(roleName, error)
+            await handler(roleName, peer, error)
         }
     }
 

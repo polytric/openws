@@ -67,14 +67,14 @@ export class Client {
         this.binder.fromRoles['server'].on('receivedMessage', async (payload, peer) => {
             await this.receivedMessage(payload, peer)
         })
-        this.binder.fromRoles['server'].onOpen(async fromRole => {
-            await this.handleOpen(fromRole)
+        this.binder.fromRoles['server'].onOpen(async (fromRole, peer) => {
+            await this.handleOpen(fromRole, peer)
         })
-        this.binder.fromRoles['server'].onClose(async fromRole => {
-            await this.handleClose(fromRole)
+        this.binder.fromRoles['server'].onClose(async (fromRole, peer) => {
+            await this.handleClose(fromRole, peer)
         })
-        this.binder.fromRoles['server'].onError(async (fromRole, error) => {
-            await this.handleError(fromRole, error)
+        this.binder.fromRoles['server'].onError(async (fromRole, peer, error) => {
+            await this.handleError(fromRole, peer, error)
         })
         if (canBindTransport(transport)) {
             this.bindTransport(transport)
@@ -205,9 +205,9 @@ export class Client {
     /**
      * Framework entrypoint for a peer session opening.
      */
-    async handleOpen(roleName) {
+    async handleOpen(roleName, peer) {
         for (const handler of this.#openHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -224,9 +224,9 @@ export class Client {
     /**
      * Framework entrypoint for a peer session closing.
      */
-    async handleClose(roleName) {
+    async handleClose(roleName, peer) {
         for (const handler of this.#closeHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -243,9 +243,9 @@ export class Client {
     /**
      * Framework entrypoint for a peer session error.
      */
-    async handleError(roleName, error) {
+    async handleError(roleName, peer, error) {
         for (const handler of this.#lifecycleErrorHandlers) {
-            await handler(roleName, error)
+            await handler(roleName, peer, error)
         }
     }
 

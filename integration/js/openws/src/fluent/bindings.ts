@@ -82,7 +82,7 @@ export class RemoteRoleBinder {
      * responsible for translating the concrete socket open event into that
      * session call.
      */
-    onOpen(handler: (fromRole: string) => Promise<void>): this {
+    onOpen(handler: (fromRole: string, peer: PeerProto) => Promise<void>): this {
         this.handleOpen = handler
         return this
     }
@@ -92,7 +92,7 @@ export class RemoteRoleBinder {
      * This is called by `Session.close()`. The session must have been opened
      * first so the runtime knows which remote role owns the connection.
      */
-    onClose(handler: (fromRole: string) => Promise<void>): this {
+    onClose(handler: (fromRole: string, peer: PeerProto) => Promise<void>): this {
         this.handleClose = handler
         return this
     }
@@ -103,7 +103,7 @@ export class RemoteRoleBinder {
      * thrown by `handleMessage`; generated SDK clients may expose those through
      * separate message-error callbacks.
      */
-    onError(handler: (fromRole: string, error: Error) => Promise<void>): this {
+    onError(handler: (fromRole: string, peer: PeerProto, error: Error) => Promise<void>): this {
         this.handleError = handler
         return this
     }
@@ -132,9 +132,9 @@ export class RemoteRoleBinder {
         return this
     }
 
-    handleOpen: (fromRole: string) => Promise<void> = async () => {}
-    handleClose: (fromRole: string) => Promise<void> = async () => {}
-    handleError: (fromRole: string, error: Error) => Promise<void> = async () => {}
+    handleOpen: (fromRole: string, peer: PeerProto) => Promise<void> = async () => {}
+    handleClose: (fromRole: string, peer: PeerProto) => Promise<void> = async () => {}
+    handleError: (fromRole: string, peer: PeerProto, error: Error) => Promise<void> = async () => {}
 
     /**
      * Dispatches an inbound message from this remote role to its registered

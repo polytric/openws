@@ -44,11 +44,15 @@ export type ClientErrorHandler = (error: unknown) => void | Promise<void>
 /**
  * Application callback for connection lifecycle events.
  */
-export type ClientLifecycleHandler = (roleName: string) => void | Promise<void>
+export type ClientLifecycleHandler = (roleName: string, peer: ClientPeer) => void | Promise<void>
 /**
  * Application callback for connection lifecycle errors.
  */
-export type ClientLifecycleErrorHandler = (roleName: string, error: Error) => void | Promise<void>
+export type ClientLifecycleErrorHandler = (
+    roleName: string,
+    peer: ClientPeer,
+    error: Error
+) => void | Promise<void>
 
 type ClientConnection = {
     roleName: string
@@ -129,14 +133,14 @@ export class Client {
                 peer as unknown as ClientServerPeer
             )
         })
-        this.binder.fromRoles['server'].onOpen(async fromRole => {
-            await this.handleOpen(fromRole)
+        this.binder.fromRoles['server'].onOpen(async (fromRole, peer) => {
+            await this.handleOpen(fromRole, peer as ClientPeer)
         })
-        this.binder.fromRoles['server'].onClose(async fromRole => {
-            await this.handleClose(fromRole)
+        this.binder.fromRoles['server'].onClose(async (fromRole, peer) => {
+            await this.handleClose(fromRole, peer as ClientPeer)
         })
-        this.binder.fromRoles['server'].onError(async (fromRole, error) => {
-            await this.handleError(fromRole, error)
+        this.binder.fromRoles['server'].onError(async (fromRole, peer, error) => {
+            await this.handleError(fromRole, peer as ClientPeer, error)
         })
         if (canBindTransport(transport)) {
             this.bindTransport(transport)
@@ -273,9 +277,9 @@ export class Client {
     /**
      * Framework entrypoint for a peer session opening.
      */
-    async handleOpen(roleName: string): Promise<void> {
+    async handleOpen(roleName: string, peer: ClientPeer): Promise<void> {
         for (const handler of this.openHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -292,9 +296,9 @@ export class Client {
     /**
      * Framework entrypoint for a peer session closing.
      */
-    async handleClose(roleName: string): Promise<void> {
+    async handleClose(roleName: string, peer: ClientPeer): Promise<void> {
         for (const handler of this.closeHandlers) {
-            await handler(roleName)
+            await handler(roleName, peer)
         }
     }
 
@@ -311,9 +315,9 @@ export class Client {
     /**
      * Framework entrypoint for a peer session error.
      */
-    async handleError(roleName: string, error: Error): Promise<void> {
+    async handleError(roleName: string, peer: ClientPeer, error: Error): Promise<void> {
         for (const handler of this.lifecycleErrorHandlers) {
-            await handler(roleName, error)
+            await handler(roleName, peer, error)
         }
     }
 

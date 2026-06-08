@@ -46,15 +46,19 @@ async function waitFor(condition: () => boolean): Promise<void> {
 const transport = new FakeTransport()
 const client = new Client(transport)
 const lifecycleEvents: string[] = []
+const lifecyclePeerTypes: string[] = []
 
-client.onOpen(roleName => {
+client.onOpen((roleName, peer) => {
     lifecycleEvents.push(`open:${roleName}`)
+    lifecyclePeerTypes.push(`open:${typeof peer.createRoom}`)
 })
-client.onError((roleName, error) => {
+client.onError((roleName, peer, error) => {
     lifecycleEvents.push(`error:${roleName}:${error.message}`)
+    lifecyclePeerTypes.push(`error:${typeof peer.createRoom}`)
 })
-client.onClose(roleName => {
+client.onClose((roleName, peer) => {
     lifecycleEvents.push(`close:${roleName}`)
+    lifecyclePeerTypes.push(`close:${typeof peer.createRoom}`)
 })
 
 const firstServer = await client.connect('server')
@@ -91,4 +95,11 @@ assert.deepEqual(lifecycleEvents, [
     'close:server',
     'error:server:socket failed',
     'close:server',
+])
+assert.deepEqual(lifecyclePeerTypes, [
+    'open:function',
+    'open:function',
+    'close:function',
+    'error:function',
+    'close:function',
 ])

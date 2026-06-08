@@ -82,7 +82,7 @@
     },
     "files": ["dist"],
     "dependencies": {
-        "@polytric/openws": "^0.0.9"
+        "@polytric/openws": "^0.0.10"
     },
     "scripts": {
         "build": "tsup",
