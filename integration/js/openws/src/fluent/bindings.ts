@@ -26,6 +26,13 @@ type HandlerBinder = {
 export type SendFn = (fromRole: string, messageName: string, payload: any) => Promise<void>
 
 /**
+ * Closes the transport/session associated with a connected peer handle.
+ */
+export type DisconnectFn = () => Promise<void> | void
+
+const peerDisconnects = new WeakMap<PeerProto, DisconnectFn>()
+
+/**
  * Runtime peer handle exposed to message handlers for replying to the connected peer.
  *
  * `rawSend` is the transport-provided send function. Message names from the
@@ -35,6 +42,14 @@ export type SendFn = (fromRole: string, messageName: string, payload: any) => Pr
 export type PeerProto = {
     rawSend: SendFn
     [messageName: string]: (...args: any[]) => Promise<void>
+}
+
+export async function disconnect(peer: PeerProto): Promise<void> {
+    const disconnectPeer = peerDisconnects.get(peer)
+    if (!disconnectPeer) {
+        throw new Error('Peer is not connected')
+    }
+    await disconnectPeer()
 }
 
 /**
@@ -159,9 +174,12 @@ export class RemoteRoleBinder {
      * Runtime and SDK code use this to materialize the message methods that are
      * passed to handlers or returned from `Runtime.createPeer`.
      */
-    createPeer(send: SendFn) {
+    createPeer(send: SendFn, disconnectPeer?: DisconnectFn) {
         const peer = Object.create(this.peerProto) as PeerProto
         peer.rawSend = send
+        if (disconnectPeer) {
+            peerDisconnects.set(peer, disconnectPeer)
+        }
         return peer
     }
 }
@@ -207,5 +225,12 @@ export class NetworkBinder {
         for (const remoteRole of remoteRoles) {
             this.fromRoles[remoteRole.name] = new RemoteRoleBinder(remoteRole, hostMessages)
         }
+    }
+
+    /**
+     * Disconnects a connected peer handle created by a runtime session.
+     */
+    disconnect(peer: PeerProto) {
+        return disconnect(peer)
     }
 }

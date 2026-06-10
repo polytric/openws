@@ -94,13 +94,21 @@ export class Client {
                     path: '/chat',
                 }
                 await this.transport.connect?.(roleName, remoteEndpoint)
-                const session = this.runtime.newSession(this.sendEnvelope)
+                let connection
+                const session = this.runtime.newSession(this.sendEnvelope, async () => {
+                    if (!connection) {
+                        await session.close()
+                        return
+                    }
+                    await this.#closeConnection(connection)
+                })
                 this.serverPeer = await session.open('server')
-                this.#connections.add({
+                connection = {
                     roleName: 'server',
                     session,
                     peer: this.serverPeer,
-                })
+                }
+                this.#connections.add(connection)
                 this.#peersByMessageName['joinedRoom'] = this.serverPeer
                 this.#peerRoleByMessageName['joinedRoom'] = 'server'
                 this.#peersByMessageName['receivedMessage'] = this.serverPeer
@@ -128,7 +136,7 @@ export class Client {
         if (!connection) {
             throw new Error('Peer is not connected')
         }
-        await this.#closeConnection(connection)
+        await this.runtime.disconnect(connection.peer)
     }
 
     /**

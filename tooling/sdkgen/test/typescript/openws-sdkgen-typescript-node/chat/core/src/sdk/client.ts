@@ -134,13 +134,13 @@ export class Client {
             )
         })
         this.binder.fromRoles['server'].onOpen(async (fromRole, peer) => {
-            await this.handleOpen(fromRole, peer as ClientPeer)
+            await this.handleOpen(fromRole, peer as unknown as ClientPeer)
         })
         this.binder.fromRoles['server'].onClose(async (fromRole, peer) => {
-            await this.handleClose(fromRole, peer as ClientPeer)
+            await this.handleClose(fromRole, peer as unknown as ClientPeer)
         })
         this.binder.fromRoles['server'].onError(async (fromRole, peer, error) => {
-            await this.handleError(fromRole, peer as ClientPeer, error)
+            await this.handleError(fromRole, peer as unknown as ClientPeer, error)
         })
         if (canBindTransport(transport)) {
             this.bindTransport(transport)
@@ -160,13 +160,21 @@ export class Client {
                         | OpenWsEndpoint
                         | undefined)
                 await this.transport.connect?.(roleName, remoteEndpoint)
-                const session = this.runtime.newSession(this.sendEnvelope)
+                let connection: ClientConnection | undefined
+                const session = this.runtime.newSession(this.sendEnvelope, async () => {
+                    if (!connection) {
+                        await session.close()
+                        return
+                    }
+                    await this.closeConnection(connection)
+                })
                 const serverPeer = await session.open('server')
-                this.connections.add({
+                connection = {
                     roleName: 'server',
                     session,
                     peer: serverPeer,
-                })
+                }
+                this.connections.add(connection)
                 this.serverPeer = serverPeer as unknown as ClientServerPeer
                 this.peersByMessageName['joinedRoom'] = serverPeer
                 this.peerRoleByMessageName['joinedRoom'] = 'server'
@@ -193,11 +201,11 @@ export class Client {
             await this.closeSessions(peer)
             return
         }
-        const connection = this.findConnectionByPeer(peer as PeerProto)
+        const connection = this.findConnectionByPeer(peer as unknown as PeerProto)
         if (!connection) {
             throw new Error('Peer is not connected')
         }
-        await this.closeConnection(connection)
+        await this.runtime.disconnect(connection.peer)
     }
 
     /**

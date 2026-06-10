@@ -16,9 +16,9 @@ export {
     endpoint,
     spec,
 } from '@polytric/openws-spec/builder'
-export type { PeerProto } from './bindings'
+export type { DisconnectFn, PeerProto } from './bindings'
 
-export { NetworkBinder } from './bindings'
+export { disconnect, NetworkBinder } from './bindings'
 export { Session, Runtime } from './runtime'
 
 /**

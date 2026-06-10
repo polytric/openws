@@ -133,13 +133,13 @@ export class <%= ctx.className %> {
 <% } -%>
 <% for (const remoteRole of ctx.remoteRoles) { -%>
         this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onOpen(async (fromRole, peer) => {
-            await this.handleOpen(fromRole, peer as <%= ctx.className %>Peer)
+            await this.handleOpen(fromRole, peer as unknown as <%= ctx.className %>Peer)
         })
         this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onClose(async (fromRole, peer) => {
-            await this.handleClose(fromRole, peer as <%= ctx.className %>Peer)
+            await this.handleClose(fromRole, peer as unknown as <%= ctx.className %>Peer)
         })
         this.binder.fromRoles[<%- JSON.stringify(remoteRole.roleName) %>].onError(async (fromRole, peer, error) => {
-            await this.handleError(fromRole, peer as <%= ctx.className %>Peer, error)
+            await this.handleError(fromRole, peer as unknown as <%= ctx.className %>Peer, error)
         })
 <% } -%>
         if (canBindTransport(transport)) {
@@ -159,13 +159,21 @@ export class <%= ctx.className %> {
             case <%- JSON.stringify(remoteRole.roleName) %>: {
                 const remoteEndpoint = endpoint ?? (<%- remoteRole.endpoints.length > 0 ? JSON.stringify(remoteRole.endpoints[0]) : 'undefined' %> as OpenWsEndpoint | undefined)
                 await this.transport.connect?.(roleName, remoteEndpoint)
-                const session = this.runtime.newSession(this.sendEnvelope)
+                let connection: <%= ctx.className %>Connection | undefined
+                const session = this.runtime.newSession(this.sendEnvelope, async () => {
+                    if (!connection) {
+                        await session.close()
+                        return
+                    }
+                    await this.closeConnection(connection)
+                })
                 const <%= remoteRole.varName %>Peer = await session.open(<%- JSON.stringify(remoteRole.roleName) %>)
-                this.connections.add({
+                connection = {
                     roleName: <%- JSON.stringify(remoteRole.roleName) %>,
                     session,
                     peer: <%= remoteRole.varName %>Peer,
-                })
+                }
+                this.connections.add(connection)
                 this.<%= remoteRole.peerVarName %> = <%= remoteRole.varName %>Peer as unknown as <%= remoteRole.scopedPeerName %>
 <% for (const handler of ctx.handlers) { -%>
 <% const handlerDefaultPeer = handler.bindFromRoles.find(fromRole => ctx.remoteRoles.some(remoteRole => remoteRole.roleName === fromRole.roleName)) ?? ctx.remoteRoles[0] -%>
@@ -198,11 +206,11 @@ export class <%= ctx.className %> {
             await this.closeSessions(peer)
             return
         }
-        const connection = this.findConnectionByPeer(peer as PeerProto)
+        const connection = this.findConnectionByPeer(peer as unknown as PeerProto)
         if (!connection) {
             throw new Error('Peer is not connected')
         }
-        await this.closeConnection(connection)
+        await this.runtime.disconnect(connection.peer)
     }
 
     /**
@@ -518,13 +526,21 @@ export class <%= ctx.className %> {
             case <%- JSON.stringify(remoteRole.roleName) %>: {
                 const remoteEndpoint = endpoint ?? <%- remoteRole.endpoints.length > 0 ? JSON.stringify(remoteRole.endpoints[0]) : 'undefined' %>
                 await this.transport.connect?.(roleName, remoteEndpoint)
-                const session = this.runtime.newSession(this.sendEnvelope)
+                let connection
+                const session = this.runtime.newSession(this.sendEnvelope, async () => {
+                    if (!connection) {
+                        await session.close()
+                        return
+                    }
+                    await this.#closeConnection(connection)
+                })
                 this.<%= remoteRole.peerVarName %> = await session.open(<%- JSON.stringify(remoteRole.roleName) %>)
-                this.#connections.add({
+                connection = {
                     roleName: <%- JSON.stringify(remoteRole.roleName) %>,
                     session,
                     peer: this.<%= remoteRole.peerVarName %>,
-                })
+                }
+                this.#connections.add(connection)
 <% for (const handler of ctx.handlers) { -%>
 <% const handlerDefaultPeer = handler.bindFromRoles.find(fromRole => ctx.remoteRoles.some(remoteRole => remoteRole.roleName === fromRole.roleName)) ?? ctx.remoteRoles[0] -%>
 <% if (handlerDefaultPeer?.roleName === remoteRole.roleName) { -%>
@@ -556,7 +572,7 @@ export class <%= ctx.className %> {
         if (!connection) {
             throw new Error('Peer is not connected')
         }
-        await this.#closeConnection(connection)
+        await this.runtime.disconnect(connection.peer)
     }
 
     /**

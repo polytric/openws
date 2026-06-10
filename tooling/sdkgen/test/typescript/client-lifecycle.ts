@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 
+import * as Fluent from '@polytric/openws/fluent'
+
 import {
     type OpenWsEndpoint,
     type Transport,
@@ -75,7 +77,7 @@ await assert.rejects(
         }),
     /Multiple sessions for remote role server/
 )
-await client.disconnect(firstServer)
+await Fluent.disconnect(firstServer as unknown as Fluent.PeerProto)
 await client.handleMessage({
     fromRole: 'server',
     messageName: 'joinedRoom',

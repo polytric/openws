@@ -34,6 +34,17 @@ function bindLifecycle(
     }
 }
 
+function bindDisconnect(hostRole: unknown) {
+    if (typeof (hostRole as any).disconnect === 'function') {
+        return
+    }
+    Object.defineProperty(hostRole, 'disconnect', {
+        value: Fluent.disconnect,
+        writable: true,
+        configurable: true,
+    })
+}
+
 /**
  * Creates runtime bindings from class-first network configuration.
  *
@@ -62,6 +73,7 @@ export function bindings(
             continue
         }
         const hostRole = hostRoleInstances[role.CONFIG.name] ?? new (role as HostRoleLikeCtor)()
+        bindDisconnect(hostRole)
 
         for (const event of lifecycleEvents) {
             const methodName = getLifecycleMethodName(event)

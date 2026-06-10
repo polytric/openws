@@ -4,6 +4,42 @@ import * as WS from './network'
 import { handlerCache, messageCache, roleCache } from './store'
 import type { NetworkConfig } from './types'
 
+const lifecycleEvents = ['open', 'close', 'error'] as const
+
+type LifecycleEvent = (typeof lifecycleEvents)[number]
+
+function getLifecycleMethodName(event: LifecycleEvent): string {
+    return `handle${event.charAt(0).toUpperCase()}${event.slice(1)}`
+}
+
+function bindLifecycle(
+    binder: Fluent.NetworkBinder,
+    fromRoleName: string,
+    event: LifecycleEvent,
+    hostRole: unknown,
+    methodName: string
+) {
+    const handler = (hostRole as any)[methodName].bind(hostRole)
+    if (event === 'open') {
+        binder.fromRoles[fromRoleName].onOpen(handler)
+    } else if (event === 'close') {
+        binder.fromRoles[fromRoleName].onClose(handler)
+    } else {
+        binder.fromRoles[fromRoleName].onError(handler)
+    }
+}
+
+function bindDisconnect(hostRole: unknown) {
+    if (typeof (hostRole as any).disconnect === 'function') {
+        return
+    }
+    Object.defineProperty(hostRole, 'disconnect', {
+        value: Fluent.disconnect,
+        writable: true,
+        configurable: true,
+    })
+}
+
 /**
  * Creates runtime bindings from decorator-style network configuration.
  *
@@ -29,6 +65,18 @@ export function bindings(config: NetworkConfig): Fluent.NetworkBinder {
         if (!network.roles[roleConfig.name].isHost) {
             continue
         }
+        bindDisconnect(role)
+
+        for (const event of lifecycleEvents) {
+            const methodName = getLifecycleMethodName(event)
+            if (typeof (role as any)[methodName] !== 'function') {
+                continue
+            }
+            for (const fromRoleName of Object.keys(remoteRoles)) {
+                bindLifecycle(binder, fromRoleName, event, role, methodName)
+            }
+        }
+
         for (const key of Object.getOwnPropertyNames(roleCtor.prototype)) {
             const descriptor = Object.getOwnPropertyDescriptor(roleCtor.prototype, key)
             if (!descriptor?.value || !(descriptor.value instanceof Function)) {

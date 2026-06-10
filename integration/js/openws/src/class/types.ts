@@ -2,6 +2,8 @@ import type { SchemaObject, ValidateFunction } from 'ajv'
 
 import type { Endpoint } from '@polytric/openws-spec/types'
 
+import { disconnect as disconnectPeer } from '../fluent'
+
 export type AnyCtor = abstract new (...args: any[]) => unknown
 
 /**
@@ -107,6 +109,10 @@ export class HostRole {
     static CONFIG: HostRoleConfig = {
         name: this.name,
         handlers: {},
+    }
+
+    async disconnect(peer: unknown): Promise<void> {
+        await disconnectPeer(peer as any)
     }
 }
 

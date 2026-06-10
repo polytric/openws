@@ -1,4 +1,6 @@
-export { runtime } from '../fluent'
+import { disconnect as disconnectPeer } from '../fluent'
+
+export { disconnect, runtime } from '../fluent'
 export { bindings } from './bindings'
 export * from './network'
 export * from './role'
@@ -18,4 +20,10 @@ export type Peer<T> = {
         : ExtractInstance<T>[K] extends (...args: any[]) => any
           ? K
           : never]: (payload: any) => Promise<any>
+}
+
+export class HostRole {
+    async disconnect(peer: unknown): Promise<void> {
+        await disconnectPeer(peer as any)
+    }
 }

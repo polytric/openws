@@ -1,4 +1,5 @@
-import type { NetworkBinder, PeerProto, SendFn } from './bindings'
+import { disconnect } from './bindings'
+import type { DisconnectFn, NetworkBinder, PeerProto, SendFn } from './bindings'
 
 /**
  * Runtime state for one peer connection.
@@ -10,11 +11,14 @@ import type { NetworkBinder, PeerProto, SendFn } from './bindings'
 export class Session {
     private peer?: PeerProto
     private fromRole?: string
+    private closed = false
+    private disconnecting?: Promise<void>
     public remotePeers: { [role: string]: PeerProto } = {}
 
     constructor(
         private readonly binder: NetworkBinder,
-        private readonly rawSend: SendFn
+        private readonly rawSend: SendFn,
+        private readonly rawDisconnect?: DisconnectFn
     ) {}
 
     /**
@@ -29,7 +33,16 @@ export class Session {
             return this.peer
         }
         this.fromRole = fromRole
-        this.peer = this.binder.fromRoles[fromRole].createPeer(this.rawSend)
+        this.peer = this.binder.fromRoles[fromRole].createPeer(this.rawSend, () => {
+            this.disconnecting ??= (async () => {
+                if (this.rawDisconnect) {
+                    await this.rawDisconnect()
+                    return
+                }
+                await this.close()
+            })()
+            return this.disconnecting
+        })
         await this.binder.fromRoles[fromRole].handleOpen?.(fromRole, this.peer)
         return this.peer
     }
@@ -44,6 +57,10 @@ export class Session {
         if (!this.fromRole || !this.peer) {
             return // not opened
         }
+        if (this.closed) {
+            return
+        }
+        this.closed = true
         await this.binder.fromRoles[this.fromRole].handleClose?.(this.fromRole, this.peer)
     }
 
@@ -95,12 +112,19 @@ export class Runtime {
     }
 
     /**
+     * Disconnects a connected peer handle created by this runtime.
+     */
+    disconnect(peer: PeerProto) {
+        return disconnect(peer)
+    }
+
+    /**
      * Creates a new connection-scoped session.
      *
      * Use this when transport glue should drive lifecycle callbacks and inbound
      * message dispatch for a single socket or peer connection.
      */
-    newSession(rawSend: SendFn) {
-        return new Session(this.binder, rawSend)
+    newSession(rawSend: SendFn, rawDisconnect?: DisconnectFn) {
+        return new Session(this.binder, rawSend, rawDisconnect)
     }
 }

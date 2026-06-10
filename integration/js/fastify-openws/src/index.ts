@@ -33,20 +33,25 @@ async function openwsPlugin(fastify: FastifyInstance, _options: any) {
             path,
             { websocket: true, openWsNetwork: network },
             async (conn: WebSocket, _req: FastifyRequest) => {
-                const session = runtime.newSession(async (fromRole, messageName, payload) => {
-                    conn.send(
-                        JSON.stringify({
-                            fromRole,
-                            messageName,
-                            payload,
-                        })
-                    )
-                })
+                const session = runtime.newSession(
+                    async (fromRole, messageName, payload) => {
+                        conn.send(
+                            JSON.stringify({
+                                fromRole,
+                                messageName,
+                                payload,
+                            })
+                        )
+                    },
+                    () => {
+                        conn.close()
+                    }
+                )
 
                 conn.on('message', async (msg: Buffer) => {
                     try {
                         const { fromRole, messageName, payload } = JSON.parse(msg.toString())
-                        session.open(fromRole) // idempotent open, subsequent calls are cheap
+                        await session.open(fromRole) // idempotent open, subsequent calls are cheap
                         await session.handleMessage(fromRole, messageName, payload)
                     } catch (error) {
                         console.error(`Error handling WebSocket message:`, error)
