@@ -300,6 +300,18 @@ importers:
         specifier: ^8.18.3
         version: 8.18.3
 
+  tooling/sdkgen/test/dotnet/UnityTestbed:
+    dependencies:
+      io.polytric.openws.core:
+        specifier: workspace:*
+        version: link:../../../../../integration/csharp/io.polytric.openws.core
+      io.polytric.openws.spec:
+        specifier: workspace:*
+        version: link:../../../../../integration/csharp/io.polytric.openws.spec
+      io.polytric.openws.unity:
+        specifier: workspace:*
+        version: link:../../../../../integration/csharp/io.polytric.openws.unity
+
 packages:
 
   '@babel/code-frame@7.27.1':

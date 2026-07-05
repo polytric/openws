@@ -21,7 +21,10 @@ namespace Polytric.OpenWs.Unity
         {
             foreach (var session in sessions)
             {
-                session.Update();
+                if (session is NativeWebSocketSession nativeWebSocketSession)
+                {
+                    nativeWebSocketSession.Update();
+                }
             }
         }
 
@@ -35,12 +38,12 @@ namespace Polytric.OpenWs.Unity
 
         public static void AddSession(ISession session)
         {
-            FindObjectOfType<OpenWsRunner>().sessions.Add(session);
+            FindAnyObjectByType<OpenWsRunner>().sessions.Add(session);
         }
 
         public static void RemoveSession(ISession session)
         {
-            FindObjectOfType<OpenWsRunner>().sessions.Remove(session);
+            FindAnyObjectByType<OpenWsRunner>().sessions.Remove(session);
         }
     }
 }

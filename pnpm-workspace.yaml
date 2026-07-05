@@ -8,7 +8,7 @@ packages:
     - 'integration/js/openws'
     - 'spec'
     - 'tooling/sdkgen'
-    - 'tooling/sdkgen/dotnet/test/UnityTestbed'
+    - 'tooling/sdkgen/test/dotnet/UnityTestbed'
 
     # Ignore Unity files
     - '!**/Library/**'

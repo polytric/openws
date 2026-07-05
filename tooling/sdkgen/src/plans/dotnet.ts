@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,6 +8,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // From src/plans/ -> ../templates/dotnet
 // From dist/plans/ -> ../templates/dotnet (same relative path!)
 const TEMPLATE_DIR = path.join(__dirname, '../templates/dotnet')
+const UNITY_META_GUID_PREFIX = 'openws-sdkgen/unity-meta/'
+
+type UnityMetaTemplate =
+    | 'UnityAssemblyDefinition.meta.ejs'
+    | 'UnityAssemblyDefinitionReference.meta.ejs'
+    | 'UnityFolder.meta.ejs'
+    | 'UnityMonoScript.meta.ejs'
 
 function pascalCase(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1)
@@ -33,7 +41,13 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     const assemblyName = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.Sdk`
     ir.assemblyName = assemblyName
 
-    const plan: PlanStep[] = [
+    const plan: PlanStep[] = []
+    const folderMetaOutputs = new Set<string>()
+
+    pushUnityAssetStep(
+        plan,
+        request.outputPath,
+        folderMetaOutputs,
         {
             name: 'assembly definition',
             command: 'render',
@@ -41,6 +55,12 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             template: path.join(TEMPLATE_DIR, 'Service.asmdef.ejs'),
             output: path.join(request.outputPath, assemblyName, `${assemblyName}.asmdef`),
         },
+        'UnityAssemblyDefinition.meta.ejs'
+    )
+    pushUnityAssetStep(
+        plan,
+        request.outputPath,
+        folderMetaOutputs,
         {
             name: 'user assembly reference',
             command: 'render',
@@ -52,7 +72,8 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 `${assemblyName}.User.asmref`
             ),
         },
-    ]
+        'UnityAssemblyDefinitionReference.meta.ejs'
+    )
 
     for (const networkIr of ir.networks) {
         const networkNamespace = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.${pascalCase(networkIr.name)}`
@@ -94,7 +115,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         const allModelImports = allRoles.map(role => `${networkNamespace}.Models.${role.className}`)
 
         // Generate Network.cs
-        plan.push({
+        pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
             name: `network ${networkIr.name}`,
             command: 'render',
             getData: () => ({
@@ -140,7 +161,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             const roleHandlers = networkIr.handlers.filter(h => h.roleName === hostRole.roleName)
             const modelImports = [`${networkNamespace}.Models.${hostRole.className}`]
 
-            plan.push({
+            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
                 name: `host role ${hostRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -155,7 +176,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             })
 
             // Generate User stub for HostRole
-            plan.push({
+            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
                 name: `user host role ${hostRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -175,7 +196,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             const roleMessages = networkIr.messages.filter(m => m.roleName === remoteRole.roleName)
             const modelImports = [`${networkNamespace}.Models.${remoteRole.className}`]
 
-            plan.push({
+            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
                 name: `remote role ${remoteRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -192,7 +213,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         // Generate Models
         for (const modelIr of networkIr.models) {
             if (modelIr.type !== 'object') continue
-            plan.push({
+            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
                 name: `model ${modelIr.className}`,
                 command: 'render',
                 getData: () => modelIr,
@@ -211,6 +232,96 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         ...ctx,
         plan,
     }
+}
+
+function pushUnityCSharpStep(
+    plan: PlanStep[],
+    outputRoot: string,
+    folderMetaOutputs: Set<string>,
+    step: PlanStep
+): void {
+    pushUnityAssetStep(plan, outputRoot, folderMetaOutputs, step, 'UnityMonoScript.meta.ejs')
+}
+
+function pushUnityAssetStep(
+    plan: PlanStep[],
+    outputRoot: string,
+    folderMetaOutputs: Set<string>,
+    step: PlanStep,
+    metaTemplate: UnityMetaTemplate
+): void {
+    pushUnityFolderMetaSteps(plan, outputRoot, folderMetaOutputs, path.dirname(step.output))
+    plan.push(step)
+    plan.push({
+        name: `${step.name} meta`,
+        command: 'render',
+        getData: () => ({
+            guid: unityMetaGuid(outputRoot, step.output),
+        }),
+        template: path.join(TEMPLATE_DIR, metaTemplate),
+        output: `${step.output}.meta`,
+    })
+}
+
+function pushUnityFolderMetaSteps(
+    plan: PlanStep[],
+    outputRoot: string,
+    folderMetaOutputs: Set<string>,
+    leafFolderPath: string
+): void {
+    const folders = getGeneratedFolders(outputRoot, leafFolderPath)
+    for (const folderPath of folders) {
+        const metaOutput = `${folderPath}.meta`
+        if (folderMetaOutputs.has(metaOutput)) continue
+
+        folderMetaOutputs.add(metaOutput)
+        plan.push({
+            name: `folder ${normalizeRelativeAssetPath(outputRoot, folderPath)} meta`,
+            command: 'render',
+            getData: () => ({
+                guid: unityMetaGuid(outputRoot, folderPath),
+            }),
+            template: path.join(TEMPLATE_DIR, 'UnityFolder.meta.ejs'),
+            output: metaOutput,
+        })
+    }
+}
+
+function getGeneratedFolders(outputRoot: string, leafFolderPath: string): string[] {
+    const folders: string[] = []
+    let folderPath = path.normalize(leafFolderPath)
+
+    while (isGeneratedPath(outputRoot, folderPath)) {
+        folders.push(folderPath)
+        const parentPath = path.dirname(folderPath)
+        if (parentPath === folderPath) break
+        folderPath = parentPath
+    }
+
+    return folders.reverse()
+}
+
+function isGeneratedPath(outputRoot: string, assetPath: string): boolean {
+    const relativePath = path.relative(path.normalize(outputRoot), path.normalize(assetPath))
+    return (
+        relativePath !== '' &&
+        relativePath !== '..' &&
+        !relativePath.startsWith(`..${path.sep}`) &&
+        !path.isAbsolute(relativePath)
+    )
+}
+
+function unityMetaGuid(outputRoot: string, assetPath: string): string {
+    return createHash('md5')
+        .update(`${UNITY_META_GUID_PREFIX}${normalizeRelativeAssetPath(outputRoot, assetPath)}`)
+        .digest('hex')
+}
+
+function normalizeRelativeAssetPath(outputRoot: string, assetPath: string): string {
+    return path
+        .relative(path.normalize(outputRoot), path.normalize(assetPath))
+        .replaceAll(path.sep, '/')
+        .replaceAll('\\', '/')
 }
 
 function mapType(property: IRProperty): string {
