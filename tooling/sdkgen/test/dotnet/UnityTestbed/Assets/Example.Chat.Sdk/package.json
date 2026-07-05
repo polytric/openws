@@ -1,0 +1,7 @@
+{
+    "name": "com.example.chat.sdk",
+    "version": "1.0.0",
+    "displayName": "Example Chat SDK",
+    "description": "A chat service",
+    "dependencies": {}
+}

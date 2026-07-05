@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payload Models</title>
+  <style>
+    body { color: #1f2937; font: 16px/1.55 system-ui, sans-serif; margin: 0; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+    code, pre { background: #f3f4f6; border-radius: 4px; padding: 0.12rem 0.28rem; }
+    pre { overflow-x: auto; padding: 12px; }
+    table { border-collapse: collapse; margin: 16px 0 28px; width: 100%; }
+    th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f9fafb; }
+    nav a { margin-right: 16px; }
+  </style>
+</head>
+<body><main><h1>Payload Models</h1><h2>JoinedRoomPayload</h2>
+<p>Message: <code>joinedRoom</code></p>
+<p>Source: <code>chat/core/src/models/client/joined-room-payload.ts</code></p><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>joinerId</td><td>string</td><td>yes</td><td>n/a</td></tr><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table><h2>ReceivedMessagePayload</h2>
+<p>Message: <code>receivedMessage</code></p>
+<p>Source: <code>chat/core/src/models/client/received-message-payload.ts</code></p><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr><tr><td>senderId</td><td>string</td><td>yes</td><td>n/a</td></tr><tr><td>text</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table><h2>ReceivedRoomStatsPayload</h2>
+<p>Message: <code>receivedRoomStats</code></p>
+<p>Source: <code>chat/core/src/models/portal/received-room-stats-payload.ts</code></p><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table><h2>CreateRoomPayload</h2>
+<p>Message: <code>createRoom</code></p>
+<p>Source: <code>chat/core/src/models/server/create-room-payload.ts</code></p><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr><tr><td>userId</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table><h2>JoinRoomPayload</h2>
+<p>Message: <code>joinRoom</code></p>
+<p>Source: <code>chat/core/src/models/server/join-room-payload.ts</code></p><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr><tr><td>userId</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table><h2>RequestRoomStatsPayload</h2>
+<p>Message: <code>requestRoomStats</code></p>
+<p>Source: <code>chat/core/src/models/server/request-room-stats-payload.ts</code></p><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table><h2>SendMessagePayload</h2>
+<p>Message: <code>sendMessage</code></p>
+<p>Source: <code>chat/core/src/models/server/send-message-payload.ts</code></p><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr><tr><td>tags</td><td>string[]</td><td>no</td><td>n/a</td></tr><tr><td>text</td><td>string</td><td>yes</td><td>n/a</td></tr><tr><td>userId</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table></main></body>
+</html>

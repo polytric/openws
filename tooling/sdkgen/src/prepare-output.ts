@@ -41,7 +41,30 @@ function getNetworkOutputPaths(ctx: PipelineContext): string[] {
     if (request.target.csharp) {
         const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
         const networkFolder = pascalCase(request.network)
-        return [path.join(request.outputPath, assemblyName, networkFolder)]
+        const outputRoot = request.packageName
+            ? path.join(request.outputPath, 'Runtime')
+            : request.outputPath
+        const cleanupPaths = [
+            path.join(outputRoot, assemblyName, networkFolder),
+            path.join(outputRoot, `${assemblyName}.User`, networkFolder),
+        ]
+
+        if (request.packageName) {
+            const legacyNetworkFolder = path.join(request.outputPath, networkFolder)
+            const legacyAssemblyDefinition = path.join(request.outputPath, `${assemblyName}.asmdef`)
+            cleanupPaths.push(
+                path.join(request.outputPath, 'package.json'),
+                path.join(request.outputPath, 'package.json.meta'),
+                path.join(request.outputPath, assemblyName),
+                path.join(request.outputPath, `${assemblyName}.User`),
+                legacyNetworkFolder,
+                `${legacyNetworkFolder}.meta`,
+                legacyAssemblyDefinition,
+                `${legacyAssemblyDefinition}.meta`
+            )
+        }
+
+        return cleanupPaths
     }
 
     return [path.join(request.outputPath, kebabCase(spec.name), kebabCase(request.network))]

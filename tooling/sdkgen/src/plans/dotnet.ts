@@ -13,6 +13,7 @@ const UNITY_META_GUID_PREFIX = 'openws-sdkgen/unity-meta/'
 type UnityMetaTemplate =
     | 'UnityAssemblyDefinition.meta.ejs'
     | 'UnityAssemblyDefinitionReference.meta.ejs'
+    | 'UnityDefaultAsset.meta.ejs'
     | 'UnityFolder.meta.ejs'
     | 'UnityMonoScript.meta.ejs'
 
@@ -22,6 +23,14 @@ function pascalCase(str: string): string {
 
 function camelCase(str: string): string {
     return str.charAt(0).toLowerCase() + str.slice(1)
+}
+
+function displayName(str: string): string {
+    return str
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/[^a-zA-Z0-9]+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, char => char.toUpperCase())
 }
 
 interface RoleInfo {
@@ -43,23 +52,49 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
 
     const plan: PlanStep[] = []
     const folderMetaOutputs = new Set<string>()
+    const packageRootPath = request.outputPath
+    const outputRootPath = request.packageName
+        ? path.join(packageRootPath, 'Runtime')
+        : packageRootPath
+
+    if (request.packageName) {
+        pushUnityAssetStep(
+            plan,
+            packageRootPath,
+            folderMetaOutputs,
+            {
+                name: 'unity package manifest',
+                command: 'render',
+                getData: () => ({
+                    name: request.packageName,
+                    version: ir.package.version ?? '0.0.1',
+                    displayName: `${displayName(ir.package.project)} ${displayName(ir.package.service)} SDK`,
+                    description: ir.package.description ?? '',
+                    dependencies: {},
+                }),
+                template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
+                output: path.join(packageRootPath, 'package.json'),
+            },
+            'UnityDefaultAsset.meta.ejs'
+        )
+    }
 
     pushUnityAssetStep(
         plan,
-        request.outputPath,
+        packageRootPath,
         folderMetaOutputs,
         {
             name: 'assembly definition',
             command: 'render',
             getData: () => ir,
             template: path.join(TEMPLATE_DIR, 'Service.asmdef.ejs'),
-            output: path.join(request.outputPath, assemblyName, `${assemblyName}.asmdef`),
+            output: path.join(outputRootPath, assemblyName, `${assemblyName}.asmdef`),
         },
         'UnityAssemblyDefinition.meta.ejs'
     )
     pushUnityAssetStep(
         plan,
-        request.outputPath,
+        packageRootPath,
         folderMetaOutputs,
         {
             name: 'user assembly reference',
@@ -67,7 +102,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             getData: () => ir,
             template: path.join(TEMPLATE_DIR, 'UserService.asmref.ejs'),
             output: path.join(
-                request.outputPath,
+                outputRootPath,
                 `${assemblyName}.User`,
                 `${assemblyName}.User.asmref`
             ),
@@ -79,12 +114,12 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         const networkNamespace = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.${pascalCase(networkIr.name)}`
         const networkClassName = `${pascalCase(networkIr.name)}Network`
         const networkOutputPath = path.join(
-            request.outputPath,
+            outputRootPath,
             assemblyName,
             pascalCase(networkIr.name)
         )
         const userNetworkOutputPath = path.join(
-            request.outputPath,
+            outputRootPath,
             `${assemblyName}.User`,
             pascalCase(networkIr.name)
         )
@@ -115,7 +150,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         const allModelImports = allRoles.map(role => `${networkNamespace}.Models.${role.className}`)
 
         // Generate Network.cs
-        pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
+        pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
             name: `network ${networkIr.name}`,
             command: 'render',
             getData: () => ({
@@ -161,7 +196,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             const roleHandlers = networkIr.handlers.filter(h => h.roleName === hostRole.roleName)
             const modelImports = [`${networkNamespace}.Models.${hostRole.className}`]
 
-            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
                 name: `host role ${hostRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -176,7 +211,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             })
 
             // Generate User stub for HostRole
-            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
                 name: `user host role ${hostRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -196,7 +231,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             const roleMessages = networkIr.messages.filter(m => m.roleName === remoteRole.roleName)
             const modelImports = [`${networkNamespace}.Models.${remoteRole.className}`]
 
-            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
                 name: `remote role ${remoteRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -213,7 +248,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         // Generate Models
         for (const modelIr of networkIr.models) {
             if (modelIr.type !== 'object') continue
-            pushUnityCSharpStep(plan, request.outputPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
                 name: `model ${modelIr.className}`,
                 command: 'render',
                 getData: () => modelIr,

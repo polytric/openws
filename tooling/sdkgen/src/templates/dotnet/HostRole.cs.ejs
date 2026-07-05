@@ -60,7 +60,7 @@ namespace <%= ctx.namespace %>
         public event Action<<%= handler.modelClassName -%>, <%= remoteRole.className -%>> On<%= handler.methodName -%>From<%= remoteRole.className -%>;
         partial void Handle<%= handler.methodName %>(JToken payload, <%= remoteRole.className -%> <%= remoteRole.varName -%>);
         partial void HandleMessage(<%= handler.modelClassName -%> payload, <%= remoteRole.className -%> <%= remoteRole.varName -%>);
-        
+
 <% } -%>
 <% } -%>
     }

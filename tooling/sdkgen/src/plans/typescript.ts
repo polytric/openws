@@ -110,7 +110,6 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     const serviceFileName = kebabCase(ir.package.service)
     const networkFileName = kebabCase(request.network)
     const packageOutputPath = path.join(request.outputPath, serviceFileName, networkFileName)
-    const packageName = `@${kebabCase(ir.package.project)}/${serviceFileName}-${networkFileName}-openws-sdk`
 
     const plan: PlanStep[] = []
 
@@ -135,33 +134,34 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         })
         const modelScopes = buildModelScopes(buildSpecModels(networkSpec))
         const packageEntries = buildPackageEntries(extension, allRoles, hostRoles, modelScopes)
-        const packageExports = buildPackageExports(packageEntries)
 
-        plan.push(
-            {
+        if (request.packageName) {
+            const packageExports = buildPackageExports(packageEntries)
+            plan.push({
                 name: `${language} package manifest`,
                 command: 'render',
                 getData: () => ({
                     isTypeScript,
-                    packageName,
+                    packageName: request.packageName,
                     description: ir.package.description,
                     version: ir.package.version ?? '0.0.1',
                     packageExports,
                 }),
                 template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
                 output: path.join(packageOutputPath, 'package.json'),
-            },
-            {
-                name: `${language} tsup config`,
-                command: 'render',
-                getData: () => ({
-                    isTypeScript,
-                    packageEntries,
-                }),
-                template: path.join(TEMPLATE_DIR, 'tsup.config.ts.ejs'),
-                output: path.join(packageOutputPath, 'tsup.config.ts'),
-            }
-        )
+            })
+        }
+
+        plan.push({
+            name: `${language} tsup config`,
+            command: 'render',
+            getData: () => ({
+                isTypeScript,
+                packageEntries,
+            }),
+            template: path.join(TEMPLATE_DIR, 'tsup.config.ts.ejs'),
+            output: path.join(packageOutputPath, 'tsup.config.ts'),
+        })
 
         if (isTypeScript) {
             plan.push({

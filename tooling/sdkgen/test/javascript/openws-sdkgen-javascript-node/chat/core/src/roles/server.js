@@ -30,6 +30,7 @@ export class Server {
                         userId: { type: 'string' },
                         roomId: { type: 'string' },
                         text: { type: 'string' },
+                        tags: { type: 'array', items: { type: 'string' } },
                     },
                     required: ['userId', 'roomId', 'text'],
                     additionalProperties: false,

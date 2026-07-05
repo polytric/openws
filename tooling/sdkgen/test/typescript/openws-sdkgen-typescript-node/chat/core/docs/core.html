@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Core Network</title>
+  <style>
+    body { color: #1f2937; font: 16px/1.55 system-ui, sans-serif; margin: 0; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+    code, pre { background: #f3f4f6; border-radius: 4px; padding: 0.12rem 0.28rem; }
+    pre { overflow-x: auto; padding: 12px; }
+    table { border-collapse: collapse; margin: 16px 0 28px; width: 100%; }
+    th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f9fafb; }
+    nav a { margin-right: 16px; }
+  </style>
+</head>
+<body><main><h1>Core Network</h1>
+<p>A chat network</p>
+<p>Network class: <code>CoreNetwork</code></p>
+<p>Source: <code>chat/core/src/network.ts</code></p><table><thead><tr><th>Role</th><th>Generated class</th><th>Messages</th><th>Source</th></tr></thead><tbody><tr><td>client</td><td>Client</td><td>2</td><td>chat/core/src/roles/client.ts</td></tr><tr><td>portal</td><td>Portal</td><td>1</td><td>chat/core/src/roles/portal.ts</td></tr><tr><td>server</td><td>Server</td><td>4</td><td>chat/core/src/roles/server.ts</td></tr></tbody></table><h2>Client Role</h2><p>Generated role surface for client.</p><table><thead><tr><th>Message</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td>joinedRoom</td><td>JoinedRoomPayload</td><td>n/a</td></tr><tr><td>receivedMessage</td><td>ReceivedMessagePayload</td><td>n/a</td></tr></tbody></table><h2>Portal Role</h2><p>Generated role surface for portal.</p><table><thead><tr><th>Message</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td>receivedRoomStats</td><td>ReceivedRoomStatsPayload</td><td>n/a</td></tr></tbody></table><h2>Server Role</h2><p>Generated role surface for server.</p><h3>Endpoints</h3><ul><li><code>ws://localhost:8082/chat</code></li></ul><table><thead><tr><th>Message</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td>createRoom</td><td>CreateRoomPayload</td><td>n/a</td></tr><tr><td>joinRoom</td><td>JoinRoomPayload</td><td>n/a</td></tr><tr><td>requestRoomStats</td><td>RequestRoomStatsPayload</td><td>n/a</td></tr><tr><td>sendMessage</td><td>SendMessagePayload</td><td>n/a</td></tr></tbody></table></main></body>
+</html>

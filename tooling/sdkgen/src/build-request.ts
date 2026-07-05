@@ -12,6 +12,11 @@ const validateBuildRequest = S.obj({
     project: S.str,
     network: S.str,
     hostRoles: S.arr(S.str),
+    packageName: S.str.optional(),
+    rstInputPath: S.str.optional(),
+    rstOutputPath: S.str.optional(),
+    docOutputPath: S.str.optional(),
+    docFormat: S.str.enum('html', 'markdown').optional(),
     target: S.obj({
         csharp: S.obj({
             environment: S.str.enum('unity'),
@@ -31,16 +36,30 @@ const validateBuildRequest = S.obj({
         .desc('The target platform to generate code for'),
 }).compile('BuildRequestValidator')
 
+function optionalPath(value: string | undefined): string | undefined {
+    const trimmed = value?.trim()
+    return trimmed ? path.resolve(process.cwd(), trimmed) : undefined
+}
+
 export default function buildRequest(ctx: PipelineContext): PipelineContext {
     const { rawInput } = ctx
     if (!rawInput) throw new Error('rawInput is required')
 
+    const packageName = rawInput.packageName?.trim()
+    const rstInputPath = optionalPath(rawInput.rstIn)
+    const rstOutputPath = optionalPath(rawInput.rstOut)
+    const docOutputPath = optionalPath(rawInput.docOut)
     const request: BuildRequest = {
         specPath: path.join(process.cwd(), rawInput.spec),
         outputPath: path.join(process.cwd(), rawInput.out),
         project: rawInput.project,
         network: toCamelCase(rawInput.network),
         hostRoles: rawInput.hostRole.map(r => toCamelCase(r)),
+        ...(packageName ? { packageName } : {}),
+        ...(rstInputPath ? { rstInputPath } : {}),
+        ...(rstOutputPath ? { rstOutputPath } : {}),
+        ...(docOutputPath ? { docOutputPath } : {}),
+        ...(docOutputPath ? { docFormat: rawInput.docFormat ?? 'html' } : {}),
         target: {
             [rawInput.language]: {
                 environment: rawInput.environment,
@@ -50,6 +69,12 @@ export default function buildRequest(ctx: PipelineContext): PipelineContext {
     }
 
     validateBuildRequest(request)
+    if (rawInput.docFormat && !request.docOutputPath) {
+        throw new Error('--doc-format requires --doc-out')
+    }
+    if (request.rstInputPath && !request.rstOutputPath && !request.docOutputPath) {
+        throw new Error('--rst-in requires --rst-out or --doc-out')
+    }
 
     return {
         ...ctx,

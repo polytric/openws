@@ -20,6 +20,11 @@ export interface RawInput {
     project: string
     network: string
     hostRole: string[]
+    packageName?: string
+    rstIn?: string
+    rstOut?: string
+    docOut?: string
+    docFormat?: 'html' | 'markdown'
     language: 'csharp' | 'javascript' | 'typescript'
     environment: 'unity' | 'node' | 'browser'
     frameworks?: string[]
@@ -31,6 +36,11 @@ export interface BuildRequest {
     project: string
     network: string
     hostRoles: string[]
+    packageName?: string
+    rstInputPath?: string
+    rstOutputPath?: string
+    docOutputPath?: string
+    docFormat?: 'html' | 'markdown'
     target: {
         csharp?: {
             environment: 'unity'

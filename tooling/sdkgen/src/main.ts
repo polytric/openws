@@ -3,6 +3,7 @@ import buildIr from './build-ir.js'
 import dispatchBuildPlan from './build-plan.js'
 import buildRequest from './build-request.js'
 import executePlan from './execute-plan.js'
+import generateDocs from './generate-docs.js'
 import loadSpec from './load-spec.js'
 import parseInput from './parse-input.js'
 import prepareOutput from './prepare-output.js'
@@ -16,6 +17,7 @@ const Pipeline: PipelineStep[] = [
     buildIr,
     dispatchBuildPlan,
     executePlan,
+    generateDocs,
 ]
 
 async function main(): Promise<PipelineContext> {

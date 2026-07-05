@@ -33,6 +33,27 @@ export default function parseInput(ctx: PipelineContext): PipelineContext {
             description: 'The target peer roles that use the generated code',
             demandOption: true,
         })
+        .option('package-name', {
+            type: 'string',
+            description: 'Generate a package manifest with this package name',
+        })
+        .option('rst-in', {
+            type: 'string',
+            description: 'Optional RST source directory to use as the rendered docs input',
+        })
+        .option('rst-out', {
+            type: 'string',
+            description: 'Optional output directory for the generated RST source tree',
+        })
+        .option('doc-out', {
+            type: 'string',
+            description: 'Optional output directory for rendered documentation',
+        })
+        .option('doc-format', {
+            type: 'string',
+            description: 'Rendered documentation format',
+            choices: ['html', 'markdown'] as const,
+        })
         .option('language', {
             type: 'string',
             description: 'The language to generate code for',
