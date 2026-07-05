@@ -30,12 +30,13 @@ The plugin will register `@fastify/websocket` automatically if it is not already
 
 The plugin decorates Fastify with one method:
 
-- `app.openws({ path, bindings })`
+- `app.openws({ path, bindings, version })`
 
 Where:
 
 - `path` is the WebSocket route (for example `'/chat'`)
 - `bindings` is a `NetworkBinder` created by the OpenWS framework
+- `version` is an optional per-network contract version override
 
 Minimal wiring:
 
@@ -49,11 +50,15 @@ import { bindings } from './chat.bindings'
 const app = fastify()
 
 async function main() {
-    await app.register(openws)
+    await app.register(openws, {
+        name: 'Chat Service',
+        version: '1.0.0',
+    })
 
     app.openws({
         path: '/chat',
         bindings,
+        version: '2.0.0',
     })
 
     await app.listen({ port: 8082 })
@@ -63,6 +68,21 @@ main()
 ```
 
 You may register multiple endpoints by calling `app.openws(...)` multiple times (one OpenWS network per route).
+
+The plugin-level `version` is the service/spec contract version. A route-level
+`version` is the network contract version and overrides the service version for
+that network. If the `bindings.network` already has a version, you can omit the
+route-level version:
+
+```ts
+const bindings = WS.bindings({
+    name: 'chat',
+    version: '2.0.0',
+    roles: [Server, Client],
+})
+
+app.openws({ path: '/chat', bindings })
+```
 
 ---
 
@@ -77,10 +97,11 @@ app.openws({ path, bindings })
 the plugin:
 
 1. derives the network from the bindings (`bindings.network`)
-2. validates the network (`network.assertValid()`)
-3. builds an OpenWS runtime from the bindings
-4. registers a Fastify `GET` route at `path` with `{ websocket: true }`
-5. for each WebSocket connection:
+2. applies the route-level network `version`, if provided
+3. validates the network (`network.assertValid()`)
+4. builds an OpenWS runtime from the bindings
+5. registers a Fastify `GET` route at `path` with `{ websocket: true }`
+6. for each WebSocket connection:
     - creates a new OpenWS session (`runtime.newSession(...)`)
     - wires WebSocket events into the session lifecycle:
         - `message` -> parse envelope, `session.open(fromRole)`, `session.handleMessage(...)`
@@ -138,6 +159,10 @@ The plugin attaches the resolved network to the Fastify route options as:
 - `openWsNetwork`
 
 This allows companion tooling (for example a spec emitter plugin) to discover registered OpenWS networks from the Fastify instance without maintaining a separate registry.
+
+The plugin also decorates Fastify with `openwsContract`, containing the optional
+service-level `name` and `version` passed to `app.register(openws, ...)`. Spec
+emitters use this as top-level OpenWS document metadata.
 
 ---
 

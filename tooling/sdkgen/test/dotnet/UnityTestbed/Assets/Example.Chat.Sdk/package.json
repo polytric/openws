@@ -3,5 +3,7 @@
     "version": "1.0.0",
     "displayName": "Example Chat SDK",
     "description": "A chat service",
-    "dependencies": {}
+    "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.2"
+    }
 }

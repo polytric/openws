@@ -119,6 +119,10 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     }
 
     for (const [networkName, networkSpec] of [[request.network, selectedNetworkSpec]] as const) {
+        const networkIr = ir.networks.find(network => network.name === networkName)
+        if (!networkIr) {
+            throw new Error(`Network "${networkName}" was not built into the IR`)
+        }
         const sourceOutputPath = path.join(packageOutputPath, 'src')
         const sdkOutputPath = path.join(sourceOutputPath, 'sdk')
         const allRoles = Object.values(networkSpec.roles).map(toRoleInfo)
@@ -144,7 +148,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     isTypeScript,
                     packageName: request.packageName,
                     description: ir.package.description,
-                    version: ir.package.version ?? '0.0.1',
+                    version: ir.package.version,
                     packageExports,
                 }),
                 template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
@@ -181,7 +185,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 networkName,
                 networkClassName: `${pascalCase(networkName)}Network`,
                 description: networkSpec.description,
-                version: networkSpec.version,
+                version: networkIr.version,
                 hostRoles,
                 allRoles,
                 extension,
@@ -302,7 +306,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                     handlers: roleHandlers,
                     networkName,
                     networkDescription: networkSpec.description,
-                    networkVersion: networkSpec.version,
+                    networkVersion: networkIr.version,
                     remoteRoles,
                     ...hostRole,
                 }),

@@ -7,6 +7,7 @@ const messageSchema = S.obj({
         'Must be a valid JSON schema spec. For brevity, openws omits this spec, but implementations should valid this'
     ),
     description: S.str.optional(),
+    version: S.str.optional(),
     from: S.arr(S.str).desc('A list of roles that can send this message').optional(),
 })
 
@@ -34,6 +35,7 @@ const roleSchema = S.obj({
             "A message accepted by the role and handled by the role, and roles can send messages to remote roles that accept them. The OpenWS spec only defines the shape of the payload, and how things get encoded / decoded on the wire, it doesn't determine behavior (though description can document the behavior)."
         ),
     description: S.str.optional(),
+    version: S.str.optional(),
 })
 
 roleSchema.additionalProperties = true
@@ -47,6 +49,7 @@ const networkSchema = S.obj({
         )
         .value(roleSchema),
     description: S.str.optional(),
+    version: S.str.optional(),
 })
 
 networkSchema.additionalProperties = true

@@ -56,6 +56,43 @@ test('package manifests are generated only when --package-name is provided', () 
         )
         assert.equal(manifest.name, '@example/chat-openws-sdk')
         assert.equal(manifest.version, '1.0.0')
+        assert.equal(manifest.dependencies['@polytric/openws'], '^0.0.11')
+    } finally {
+        rmSync(tempRoot, { recursive: true, force: true })
+    }
+})
+
+test('CLI accepts absolute spec and output paths', () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'openws-sdkgen-absolute-paths-'))
+    try {
+        const specPath = path.join(tempRoot, 'spec.json')
+        const outPath = path.join(tempRoot, 'typescript-package')
+        writeFileSync(specPath, JSON.stringify(loadTestSpec(), null, 4), 'utf8')
+
+        runCli([
+            '--spec',
+            specPath,
+            '--out',
+            outPath,
+            '--project',
+            'Example',
+            '--network',
+            'core',
+            '--hostRole',
+            'client',
+            '--package-name',
+            '@example/chat-openws-sdk',
+            '--language',
+            'typescript',
+            '--environment',
+            'node',
+        ])
+
+        assert.ok(existsSync(path.join(outPath, 'chat', 'core', 'package.json')))
+        assert.equal(
+            existsSync(path.join(packageRoot, outPath, 'chat', 'core', 'package.json')),
+            false
+        )
     } finally {
         rmSync(tempRoot, { recursive: true, force: true })
     }
@@ -98,7 +135,9 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
             version: '1.0.0',
             displayName: 'Example Chat SDK',
             description: 'A chat service',
-            dependencies: {},
+            dependencies: {
+                'com.unity.nuget.newtonsoft-json': '3.2.2',
+            },
         })
         assert.ok(existsSync(path.join(tempRoot, 'package.json.meta')))
         assert.ok(existsSync(path.join(tempRoot, 'Runtime.meta')))
@@ -125,11 +164,90 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
     }
 })
 
+test('package manifest uses network version before service version', () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'openws-sdkgen-network-version-'))
+    try {
+        const spec = loadTestSpec()
+        spec.networks.core.version = '2.5.0'
+        const specPath = path.join(tempRoot, 'spec.json')
+        writeFileSync(specPath, JSON.stringify(spec, null, 4), 'utf8')
+
+        runCli([
+            '--spec',
+            relativeToPackageRoot(specPath),
+            '--out',
+            relativeToPackageRoot(path.join(tempRoot, 'typescript-package')),
+            '--project',
+            'Example',
+            '--network',
+            'core',
+            '--hostRole',
+            'client',
+            '--package-name',
+            '@example/chat-openws-sdk',
+            '--language',
+            'typescript',
+            '--environment',
+            'node',
+        ])
+
+        const packageRoot = path.join(tempRoot, 'typescript-package', 'chat', 'core')
+        const manifest = JSON.parse(readFileSync(path.join(packageRoot, 'package.json'), 'utf8'))
+        assert.equal(manifest.version, '2.5.0')
+        assert.match(
+            readFileSync(path.join(packageRoot, 'src', 'network.ts'), 'utf8'),
+            /networkVersion = '2\.5\.0'/
+        )
+    } finally {
+        rmSync(tempRoot, { recursive: true, force: true })
+    }
+})
+
+test('sdkgen requires a service or network version', () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'openws-sdkgen-missing-version-'))
+    try {
+        const spec = loadTestSpec()
+        delete spec.version
+        delete spec.networks.core.version
+        const specPath = path.join(tempRoot, 'spec.json')
+        writeFileSync(specPath, JSON.stringify(spec, null, 4), 'utf8')
+
+        assert.throws(
+            () =>
+                runCli([
+                    '--spec',
+                    relativeToPackageRoot(specPath),
+                    '--out',
+                    relativeToPackageRoot(path.join(tempRoot, 'typescript-package')),
+                    '--project',
+                    'Example',
+                    '--network',
+                    'core',
+                    '--hostRole',
+                    'client',
+                    '--package-name',
+                    '@example/chat-openws-sdk',
+                    '--language',
+                    'typescript',
+                    '--environment',
+                    'node',
+                ]),
+            /Version is required for network "core"/
+        )
+    } finally {
+        rmSync(tempRoot, { recursive: true, force: true })
+    }
+})
+
 function runCli(args) {
     execFileSync(process.execPath, [cliPath, ...args], {
         cwd: packageRoot,
         stdio: 'pipe',
     })
+}
+
+function loadTestSpec() {
+    return JSON.parse(readFileSync(path.join(packageRoot, 'test', 'spec.json'), 'utf8'))
 }
 
 function relativeToPackageRoot(absolutePath) {

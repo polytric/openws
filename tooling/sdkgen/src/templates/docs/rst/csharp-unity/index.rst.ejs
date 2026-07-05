@@ -12,7 +12,7 @@ Use this reference to find the generated C# Unity package surfaces for <%- helpe
         helpers.rstDocLink(model.network.title, model.network.pagePath),
         String(model.network.roles.length),
         String(helpers.roleMessageCount(model)),
-        model.version ? helpers.code(model.version) : 'n/a',
+        helpers.code(model.version),
     ]]
 ) %>
 <% if (model.installLines.length > 0) { -%>

@@ -112,7 +112,7 @@ export class <%= ctx.className %> {
             WS.network({
                 name: <%- JSON.stringify(ctx.networkName) %>,
                 description: <%- JSON.stringify(ctx.networkDescription ?? '') %>,
-                version: <%- JSON.stringify(ctx.networkVersion ?? '1.0.0') %>,
+                version: <%- JSON.stringify(ctx.networkVersion) %>,
                 roles: [HostRole<% if (ctx.remoteRoles.length > 0) { %>, <%= ctx.remoteRoles.map(remoteRole => remoteRole.roleClassName).join(', ') %><% } %>],
             })
         )
@@ -483,7 +483,7 @@ export class <%= ctx.className %> {
             WS.network({
                 name: <%- JSON.stringify(ctx.networkName) %>,
                 description: <%- JSON.stringify(ctx.networkDescription ?? '') %>,
-                version: <%- JSON.stringify(ctx.networkVersion ?? '1.0.0') %>,
+                version: <%- JSON.stringify(ctx.networkVersion) %>,
                 roles: [HostRole<% if (ctx.remoteRoles.length > 0) { %>, <%= ctx.remoteRoles.map(remoteRole => remoteRole.roleClassName).join(', ') %><% } %>],
             })
         )

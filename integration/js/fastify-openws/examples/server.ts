@@ -99,11 +99,15 @@ class Server {
 const bindings = WS.bindings({
     name: 'chat',
     description: 'A chat network',
+    version: '2.0.0',
     roles: [Server, Client, Portal],
 })
 
 async function main() {
-    await app.register(openws)
+    await app.register(openws, {
+        name: 'Chat Service',
+        version: '1.0.0',
+    })
 
     await app.openws({
         path: '/chat',

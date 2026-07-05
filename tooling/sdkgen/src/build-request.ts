@@ -41,6 +41,10 @@ function optionalPath(value: string | undefined): string | undefined {
     return trimmed ? path.resolve(process.cwd(), trimmed) : undefined
 }
 
+function requiredPath(value: string): string {
+    return path.resolve(process.cwd(), value)
+}
+
 export default function buildRequest(ctx: PipelineContext): PipelineContext {
     const { rawInput } = ctx
     if (!rawInput) throw new Error('rawInput is required')
@@ -50,8 +54,8 @@ export default function buildRequest(ctx: PipelineContext): PipelineContext {
     const rstOutputPath = optionalPath(rawInput.rstOut)
     const docOutputPath = optionalPath(rawInput.docOut)
     const request: BuildRequest = {
-        specPath: path.join(process.cwd(), rawInput.spec),
-        outputPath: path.join(process.cwd(), rawInput.out),
+        specPath: requiredPath(rawInput.spec),
+        outputPath: requiredPath(rawInput.out),
         project: rawInput.project,
         network: toCamelCase(rawInput.network),
         hostRoles: rawInput.hostRole.map(r => toCamelCase(r)),

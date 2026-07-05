@@ -7,7 +7,7 @@ type JsonObject = Record<string, unknown>
 export interface DocModel {
     title: string
     description: string
-    version?: string
+    version: string
     packageName?: string
     language: Language
     languageLabel: string
@@ -272,6 +272,20 @@ function buildImportLines(ctx: PipelineContext, language: Language, networkName:
     return [`import { ${networkClassName}, roles, sdk } from './src';`]
 }
 
+function requireEffectiveVersion(
+    specVersion: string | undefined,
+    networkName: string,
+    networkVersion: string | undefined
+): string {
+    const effectiveVersion = networkVersion ?? specVersion
+    if (!effectiveVersion) {
+        throw new Error(
+            `Version is required for network "${networkName}". Set spec.version or networks.${networkName}.version.`
+        )
+    }
+    return effectiveVersion
+}
+
 function generatedRoleNames(ctx: PipelineContext, language: Language): Set<string> | undefined {
     if (language !== 'csharp') return undefined
 
@@ -343,7 +357,7 @@ export function buildDocModel(ctx: PipelineContext): DocModel {
             selectedNetwork.description ?? spec.description,
             `Generated OpenWS SDK reference for the ${request.network} network.`
         ),
-        version: spec.version,
+        version: requireEffectiveVersion(spec.version, request.network, selectedNetwork.version),
         packageName: request.packageName,
         language,
         languageLabel: languageLabel(language),

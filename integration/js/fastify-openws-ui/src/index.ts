@@ -14,10 +14,15 @@ import openWsPlugin from '../../fastify-openws/dist'
 
 type JsonObject = Record<string, any>
 
+interface OpenWsContract {
+    name?: string
+    version?: string
+}
+
 interface PluginOptions {
     prefix?: string
     exportPath?: string
-    name: string
+    name?: string
 }
 
 declare module 'fastify' {
@@ -29,13 +34,24 @@ declare module 'fastify' {
 // Hide from @fastify/swagger if present
 const hiddenSchema = { schema: { hide: true } as object }
 
-async function openwsDocPlugin(fastify: FastifyInstance, options: PluginOptions) {
+async function openwsDocPlugin(fastify: FastifyInstance, options: PluginOptions = {}) {
     if (!fastify.hasDecorator('openws')) {
-        await fastify.register(openWsPlugin)
+        await fastify.register(openWsPlugin, { name: options.name })
     }
     const { prefix = '/openws', exportPath = '/spec.json', name } = options
+    const contract =
+        (fastify as FastifyInstance & { openwsContract?: OpenWsContract }).openwsContract ?? {}
+    const specName = contract.name ?? name
+    if (!specName) {
+        throw new Error(
+            'OpenWS spec name is required. Set app.register(openws, { name }) or openwsUi({ name }).'
+        )
+    }
 
-    const spec = WS.spec('0.0.2', name)
+    const spec = WS.spec('0.0.2', specName)
+    if (contract.version) {
+        spec.version(contract.version)
+    }
     const networkHosts: Record<string, string[]> = {}
 
     fastify.addHook('onRoute', (routeOptions: RouteOptions) => {

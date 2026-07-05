@@ -68,13 +68,13 @@ export interface IRPackage {
     project: string
     service: string
     description?: string
-    version?: string
+    version: string
 }
 
 export interface IRNetwork {
     name: string
     description?: string
-    version?: string
+    version: string
     roles: IRRole[]
     handlers: IRHandler[]
     messages: IRMessage[]

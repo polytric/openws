@@ -1,6 +1,6 @@
 export const networkName = <%- JSON.stringify(ctx.networkName) %>
 export const networkDescription = <%- JSON.stringify(ctx.description ?? '') %>
-export const networkVersion = <%- JSON.stringify(ctx.version ?? '1.0.0') %>
+export const networkVersion = <%- JSON.stringify(ctx.version) %>
 
 export const endpoints = <%- JSON.stringify(
     Object.fromEntries(ctx.allRoles.map(role => [role.roleName, role.endpoints])),

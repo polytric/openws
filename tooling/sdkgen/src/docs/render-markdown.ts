@@ -139,7 +139,7 @@ export function writeMarkdownDocs(outputRoot: string, model: DocModel): void {
                         `[${model.network.title}](./${networkFile})`,
                         String(model.network.roles.length),
                         String(roleMessageCount(model)),
-                        model.version ? `\`${model.version}\`` : 'n/a',
+                        `\`${model.version}\``,
                     ],
                 ]
             ),

@@ -7,13 +7,13 @@ const validateIr = S.obj({
         project: S.str,
         service: S.str,
         description: S.str.optional(),
-        version: S.str.optional(),
+        version: S.str,
     }),
     networks: S.arr(
         S.obj({
             name: S.str,
             description: S.str.optional(),
-            version: S.str.optional(),
+            version: S.str,
             roles: S.arr(
                 S.obj({
                     name: S.str,
@@ -134,6 +134,20 @@ function buildIrModels(scopeName: string, modelName: string, schema: JsonSchema)
     }
 }
 
+function requireEffectiveVersion(
+    specVersion: string | undefined,
+    networkName: string,
+    networkVersion: string | undefined
+): string {
+    const effectiveVersion = networkVersion ?? specVersion
+    if (!effectiveVersion) {
+        throw new Error(
+            `Version is required for network "${networkName}". Set spec.version or networks.${networkName}.version.`
+        )
+    }
+    return effectiveVersion
+}
+
 export default function buildIr(ctx: PipelineContext): PipelineContext {
     const { request, spec } = ctx
     if (!request) throw new Error('request is required')
@@ -144,13 +158,18 @@ export default function buildIr(ctx: PipelineContext): PipelineContext {
     if (!selectedNetworkSpec) {
         throw new Error(`Network "${network}" does not exist in the spec`)
     }
+    const selectedNetworkVersion = requireEffectiveVersion(
+        spec.version,
+        network,
+        selectedNetworkSpec.version
+    )
 
     const ir: IR = {
         package: {
             project: request.project,
             service: spec.name,
             description: spec.description,
-            version: spec.version,
+            version: selectedNetworkVersion,
         },
         networks: [],
     }
@@ -192,7 +211,7 @@ export default function buildIr(ctx: PipelineContext): PipelineContext {
         const irNetwork = {
             name: networkName,
             description: networkSpec.description,
-            version: networkSpec.version,
+            version: requireEffectiveVersion(spec.version, networkName, networkSpec.version),
             roles: [] as IR['networks'][0]['roles'],
             handlers: [] as IR['networks'][0]['handlers'],
             messages: [] as IR['networks'][0]['messages'],

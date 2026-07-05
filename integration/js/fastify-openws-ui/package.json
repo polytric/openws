@@ -1,6 +1,6 @@
 {
     "name": "@polytric/fastify-openws-ui",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "Polytric OpenWS UI plugin for Fastify",
     "type": "module",
     "main": "./dist/index.js",
@@ -29,6 +29,7 @@
     "license": "Apache-2.0",
     "scripts": {
         "build": "tsup",
+        "test:contract": "pnpm -C ../fastify-openws build && tsx --test test/contract.ts",
         "prepublishOnly": "pnpm build",
         "test:schema": "node test/validate-schema.js && echo valid",
         "typecheck": "tsc --noEmit",
@@ -53,6 +54,7 @@
         "@types/node": "^22.19.3",
         "nodemon": "^3.1.11",
         "tsup": "^8.5.1",
+        "tsx": "^4.21.0",
         "typescript": "^5.9.3"
     },
     "packageManager": "pnpm@10.26.1",

@@ -9,6 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // From dist/plans/ -> ../templates/dotnet (same relative path!)
 const TEMPLATE_DIR = path.join(__dirname, '../templates/dotnet')
 const UNITY_META_GUID_PREFIX = 'openws-sdkgen/unity-meta/'
+const UNITY_NEWTONSOFT_JSON_PACKAGE = 'com.unity.nuget.newtonsoft-json'
+const UNITY_NEWTONSOFT_JSON_VERSION = '3.2.2'
 
 type UnityMetaTemplate =
     | 'UnityAssemblyDefinition.meta.ejs'
@@ -67,10 +69,12 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 command: 'render',
                 getData: () => ({
                     name: request.packageName,
-                    version: ir.package.version ?? '0.0.1',
+                    version: ir.package.version,
                     displayName: `${displayName(ir.package.project)} ${displayName(ir.package.service)} SDK`,
                     description: ir.package.description ?? '',
-                    dependencies: {},
+                    dependencies: {
+                        [UNITY_NEWTONSOFT_JSON_PACKAGE]: UNITY_NEWTONSOFT_JSON_VERSION,
+                    },
                 }),
                 template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
                 output: path.join(packageRootPath, 'package.json'),

@@ -41,7 +41,7 @@ import openwsUi from '@polytric/fastify-openws-ui'
 const app = Fastify()
 
 await app.register(openwsUi, {
-    name: 'My Service',
+    name: 'My Service', // optional if @polytric/fastify-openws registered a name
     prefix: '/openws', // optional (default: "/openws")
     exportPath: '/spec.json', // optional (default: "/spec.json")
 })
@@ -100,7 +100,7 @@ app.get("/chat", {
 interface PluginOptions {
     prefix: string // where to mount the UI + spec endpoints (default "/openws")
     exportPath: string // spec JSON path relative to prefix (default "/spec.json")
-    name: string // spec name, used when creating the OpenWS spec
+    name?: string // spec name fallback if @polytric/fastify-openws did not register one
 }
 ```
 
@@ -108,6 +108,20 @@ Defaults (as implemented):
 
 - `prefix`: `/openws`
 - `exportPath`: `/spec.json`
+
+Contract metadata such as the top-level spec `version` belongs to
+`@polytric/fastify-openws`:
+
+```ts
+await app.register(openws, {
+    name: 'My Service',
+    version: '1.0.0',
+})
+
+await app.register(openwsUi)
+```
+
+When present, `fastify.openwsContract.name` wins over `openwsUi({ name })`.
 
 ---
 

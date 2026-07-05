@@ -8,7 +8,7 @@ namespace <%= ctx.namespace %>
     {
         public override string Name { get; set; } = "<%= ctx.networkName %>";
         public override string Description { get; set; } = "<%= ctx.description ?? '' %>";
-        public override string Version { get; set; } = "<%= ctx.version ?? '1.0.0' %>";
+        public override string Version { get; set; } = "<%= ctx.version %>";
         public override Type[] Roles { get; set; } = new Type[] { <% for (let i = 0; i < ctx.allRoles.length; i++) { -%>typeof(<%= ctx.allRoles[i].className %>)<%= i < ctx.allRoles.length - 1 ? ', ' : '' %><% } -%> };
     }
 }

@@ -6,6 +6,19 @@ import fp from 'fastify-plugin'
 import * as Fluent from '@polytric/openws/fluent'
 import type { Network } from '@polytric/openws-spec/builder'
 
+export interface OpenWsContract {
+    name?: string
+    version?: string
+}
+
+export interface OpenWsPluginOptions extends OpenWsContract {}
+
+export interface RegisterNetworkOptions {
+    path: string
+    bindings: Fluent.NetworkBinder
+    version?: string
+}
+
 // Extend Fastify types to include custom route options
 declare module 'fastify' {
     interface RouteShorthandOptions {
@@ -13,19 +26,43 @@ declare module 'fastify' {
     }
 }
 
+function trimMetadata(value: string | undefined): string | undefined {
+    const trimmed = value?.trim()
+    return trimmed ? trimmed : undefined
+}
+
+function normalizeContract(options: OpenWsPluginOptions): OpenWsContract {
+    const name = trimMetadata(options.name)
+    const version = trimMetadata(options.version)
+    return {
+        ...(name ? { name } : {}),
+        ...(version ? { version } : {}),
+    }
+}
+
 /**
  * OpenWS Fastify Plugin - Type-safe WebSocket communication
  */
-async function openwsPlugin(fastify: FastifyInstance, _options: any) {
+async function openwsPlugin(fastify: FastifyInstance, options: OpenWsPluginOptions) {
+    const contract = normalizeContract(options ?? {})
     if (!fastify.hasDecorator('websocketServer')) {
         await fastify.register(websocket)
     }
     if (fastify.hasDecorator('openws')) {
+        if (fastify.hasDecorator('openwsContract')) {
+            Object.assign(fastify.openwsContract, contract)
+        }
         return
     }
 
-    function registerNetwork({ path, bindings }: { path: string; bindings: Fluent.NetworkBinder }) {
+    fastify.decorate('openwsContract', contract)
+
+    function registerNetwork({ path, bindings, version }: RegisterNetworkOptions) {
         const network = bindings.network
+        const routeVersion = trimMetadata(version)
+        if (routeVersion) {
+            network.version(routeVersion)
+        }
         network.assertValid()
         const runtime = Fluent.runtime(bindings)
 
@@ -76,6 +113,7 @@ export default fp(openwsPlugin, {
 
 declare module 'fastify' {
     interface FastifyInstance {
-        openws(params: { path: string; bindings: Fluent.NetworkBinder }): void
+        openwsContract: OpenWsContract
+        openws(params: RegisterNetworkOptions): void
     }
 }
