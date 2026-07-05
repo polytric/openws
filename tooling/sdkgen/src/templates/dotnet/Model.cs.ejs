@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace <%= ctx.namespace %>
 {
@@ -6,7 +7,7 @@ namespace <%= ctx.namespace %>
     {
 <% for (const property of ctx.properties) { -%>
         [JsonProperty("<%= property.modelName %>")]
-        public <%= property.typeName %> <%= property.propertyName %>;
+        public <%- property.typeName %> <%= property.propertyName %>;
 
 <% } -%>
     }

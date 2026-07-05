@@ -84,6 +84,25 @@ for (const outputRoot of outputRoots) {
     })
 }
 
+test('generated C# Unity models render generic List types without HTML escaping', () => {
+    const modelPath = path.join(
+        packageRoot,
+        'generated',
+        'dotnet',
+        'unity',
+        'Example.Chat.Sdk',
+        'Core',
+        'Models',
+        'Server',
+        'SendMessagePayload.cs'
+    )
+    const model = readFileSync(modelPath, 'utf8')
+
+    assert.match(model, /^using System\.Collections\.Generic;$/m)
+    assert.match(model, /^\s+public List<string> Tags;$/m)
+    assert.doesNotMatch(model, /&lt;|&gt;/)
+})
+
 function listGeneratedUnityAssets(outputRoot, rootPath) {
     const assets = []
 
