@@ -1,0 +1,36 @@
+Payload Models
+==============
+
+Payload model shapes referenced by generated OpenWS role messages.
+
+<% for (const role of model.network.roles) { -%>
+<% if (role.messages.length === 0) continue -%>
+<%- helpers.heading(`${role.title} Role Payloads`, '-') %>
+
+<% for (const message of role.messages) { -%>
+<%- helpers.heading(message.payloadType, '~') %>
+
+Message: <%- helpers.code(message.name) %>
+
+Role: <%- helpers.rstDocLink(role.title, role.pagePath) %>
+
+Accepted from: <%- helpers.codeList(message.senderRoles, 'any role') %>
+
+Source: <%- helpers.code(message.payloadSourcePath) %>
+
+<% if (message.fields.length > 0) { -%>
+<%- helpers.listTable(
+    ['Field', 'Type', 'Required', 'Description'],
+    message.fields.map(field => [
+        helpers.code(field.name),
+        helpers.code(field.type),
+        field.required ? 'yes' : 'no',
+        field.description,
+    ])
+) %>
+<% } else { -%>
+Shape: <%- helpers.code(message.shapeType) %>
+
+<% } -%>
+<% } -%>
+<% } -%>

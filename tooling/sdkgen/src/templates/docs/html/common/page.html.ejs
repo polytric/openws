@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <style>
+<%- css %>
+    body { margin: 0; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+    .lead { color: var(--openws-muted); font-size: 1.08rem; line-height: 1.65; }
+    code, pre { background: var(--openws-panel); border: 1px solid var(--openws-border); border-radius: 5px; padding: 0.12rem 0.28rem; }
+    pre { overflow-x: auto; padding: 12px; }
+    table { border-collapse: collapse; margin: 16px 0 28px; width: 100%; }
+    th, td { border: 1px solid var(--openws-border); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--openws-panel); }
+    nav a { margin-right: 16px; }
+  </style>
+</head>
+<body><main><%- body %></main></body>
+</html>

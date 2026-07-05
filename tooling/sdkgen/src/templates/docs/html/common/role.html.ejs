@@ -1,0 +1,41 @@
+<h1><%= role.title %> Role</h1>
+<p><%= role.description %></p>
+<p class="lead">Generated role surface for <code><%= role.name %></code> in the <code><%= model.network.name %></code> OpenWS network.</p>
+<p>Role class: <code><%= role.className %></code></p>
+<p>Source: <code><%= role.sourcePath %></code></p>
+<% if (role.endpoints.length > 0) { -%>
+<h2>Endpoints</h2>
+<ul><% for (const endpoint of role.endpoints) { %><li><code><%= endpoint %></code></li><% } %></ul>
+<% } -%>
+<% if (role.messages.length > 0) { -%>
+<h2>Messages</h2>
+<%- helpers.htmlTable(
+    ['Message', 'Accepted from', 'Payload', 'Description'],
+    role.messages.map(message => [
+        message.name,
+        message.senderRoles.length > 0 ? message.senderRoles.join(', ') : 'any role',
+        message.payloadType,
+        message.description,
+    ])
+) %>
+<% } -%>
+<% for (const message of role.messages) { -%>
+<h2><%= message.title %></h2>
+<p><%= message.description %></p>
+<p>Payload: <code><%= message.payloadType %></code></p>
+<p>Payload source: <code><%= message.payloadSourcePath %></code></p>
+<p>Accepted from: <%- helpers.htmlCodeList(message.senderRoles, 'any role') %></p>
+<% if (message.fields.length > 0) { -%>
+<%- helpers.htmlTable(
+    ['Field', 'Type', 'Required', 'Description'],
+    message.fields.map(field => [
+        field.name,
+        field.type,
+        field.required ? 'yes' : 'no',
+        field.description,
+    ])
+) %>
+<% } else { -%>
+<p>Shape: <code><%= message.shapeType %></code></p>
+<% } -%>
+<% } -%>

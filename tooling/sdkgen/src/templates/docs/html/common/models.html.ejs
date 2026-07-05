@@ -1,0 +1,25 @@
+<h1>Payload Models</h1>
+<% for (const role of model.network.roles) { -%>
+<% if (role.messages.length === 0) continue -%>
+<h2><%= role.title %> Role Payloads</h2>
+<% for (const message of role.messages) { -%>
+<h3><%= message.payloadType %></h3>
+<p>Message: <code><%= message.name %></code></p>
+<p>Role: <code><%= role.name %></code></p>
+<p>Accepted from: <%- helpers.htmlCodeList(message.senderRoles, 'any role') %></p>
+<p>Source: <code><%= message.payloadSourcePath %></code></p>
+<% if (message.fields.length > 0) { -%>
+<%- helpers.htmlTable(
+    ['Field', 'Type', 'Required', 'Description'],
+    message.fields.map(field => [
+        field.name,
+        field.type,
+        field.required ? 'yes' : 'no',
+        field.description,
+    ])
+) %>
+<% } else { -%>
+<p>Shape: <code><%= message.shapeType %></code></p>
+<% } -%>
+<% } -%>
+<% } -%>

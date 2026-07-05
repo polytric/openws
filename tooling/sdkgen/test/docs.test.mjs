@@ -34,8 +34,17 @@ test('rst-out writes the generated OpenWS RST source tree', () => {
         ])
 
         assert.ok(existsSync(path.join(rstOut, 'conf.py')))
-        assert.match(readFileSync(path.join(rstOut, 'index.rst'), 'utf8'), /Chat Core OpenWS SDK/)
-        assert.match(readFileSync(path.join(rstOut, 'core.rst'), 'utf8'), /Client Role/)
+        assert.ok(existsSync(path.join(rstOut, '_static', 'openws-sdk-sphinx.css')))
+        const index = readFileSync(path.join(rstOut, 'index.rst'), 'utf8')
+        assert.match(index, /Chat Core OpenWS SDK/)
+        assert.match(index, /:caption: API Reference/)
+        assert.match(index, /roles\/server/)
+        assert.doesNotMatch(index, /shadowbot|zoox/i)
+        assert.match(readFileSync(path.join(rstOut, 'core.rst'), 'utf8'), /Role Surfaces/)
+        assert.match(
+            readFileSync(path.join(rstOut, 'roles', 'server.rst'), 'utf8'),
+            /Accepted from/
+        )
         assert.match(readFileSync(path.join(rstOut, 'models.rst'), 'utf8'), /SendMessagePayload/)
     } finally {
         rmSync(tempRoot, { recursive: true, force: true })
@@ -67,7 +76,10 @@ test('doc-out defaults to rendered HTML docs', () => {
 
         const indexPath = path.join(docOut, 'index.html')
         assert.ok(existsSync(indexPath))
+        assert.ok(existsSync(path.join(docOut, 'roles', 'server.html')))
+        assert.equal(existsSync(path.join(docOut, 'roles', 'portal.html')), false)
         assert.match(readFileSync(indexPath, 'utf8'), /Chat Core OpenWS SDK/)
+        assert.match(readFileSync(indexPath, 'utf8'), /Payload Models/)
     } finally {
         rmSync(tempRoot, { recursive: true, force: true })
     }

@@ -1,0 +1,16 @@
+<h1><%= model.network.title %> Network</h1>
+<p><%= model.network.description %></p>
+<p class="lead">The <code><%= model.network.name %></code> network contains <%= model.network.roles.length %> role surfaces and <%= helpers.roleMessageCount(model) %> messages.</p>
+<p>Network class: <code><%= model.network.className %></code></p>
+<p>Source: <code><%= model.network.sourcePath %></code></p>
+<h2>Role Surfaces</h2>
+<%- helpers.htmlTable(
+    ['Role', 'Generated class', 'Messages', 'Endpoints', 'Source'],
+    model.network.roles.map(role => [
+        role.title,
+        role.className,
+        String(role.messages.length),
+        role.endpoints.length > 0 ? String(role.endpoints.length) : 'none',
+        role.sourcePath,
+    ])
+) %>

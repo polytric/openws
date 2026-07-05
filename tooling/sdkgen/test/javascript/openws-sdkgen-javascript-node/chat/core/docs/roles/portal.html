@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Core Network</title>
+  <title>Portal Role</title>
   <style>
 :root {
     color-scheme: light;
@@ -114,12 +114,18 @@ a:hover {
     nav a { margin-right: 16px; }
   </style>
 </head>
-<body><main><h1>Core Network</h1>
-<p>A chat network</p>
-<p class="lead">The <code>core</code> network contains 3 role surfaces and 7 messages.</p>
-<p>Network class: <code>CoreNetwork</code></p>
-<p>Source: <code>chat/core/src/network.js</code></p>
-<h2>Role Surfaces</h2>
-<table><thead><tr><th>Role</th><th>Generated class</th><th>Messages</th><th>Endpoints</th><th>Source</th></tr></thead><tbody><tr><td>Client</td><td>Client</td><td>2</td><td>none</td><td>chat/core/src/roles/client.js</td></tr><tr><td>Portal</td><td>Portal</td><td>1</td><td>none</td><td>chat/core/src/roles/portal.js</td></tr><tr><td>Server</td><td>Server</td><td>4</td><td>1</td><td>chat/core/src/roles/server.js</td></tr></tbody></table>
+<body><main><h1>Portal Role</h1>
+<p>Generated role surface for portal.</p>
+<p class="lead">Generated role surface for <code>portal</code> in the <code>core</code> OpenWS network.</p>
+<p>Role class: <code>Portal</code></p>
+<p>Source: <code>chat/core/src/roles/portal.js</code></p>
+<h2>Messages</h2>
+<table><thead><tr><th>Message</th><th>Accepted from</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td>receivedRoomStats</td><td>server</td><td>ReceivedRoomStatsPayload</td><td>n/a</td></tr></tbody></table>
+<h2>Received Room Stats</h2>
+<p>n/a</p>
+<p>Payload: <code>ReceivedRoomStatsPayload</code></p>
+<p>Payload source: <code>chat/core/src/models/portal/received-room-stats-payload.js</code></p>
+<p>Accepted from: <code>server</code></p>
+<table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>roomId</td><td>string</td><td>yes</td><td>n/a</td></tr></tbody></table>
 </main></body>
 </html>

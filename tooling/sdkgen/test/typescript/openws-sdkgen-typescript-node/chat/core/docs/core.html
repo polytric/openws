@@ -5,18 +5,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Core Network</title>
   <style>
-    body { color: #1f2937; font: 16px/1.55 system-ui, sans-serif; margin: 0; }
+:root {
+    color-scheme: light;
+    --openws-bg: #ffffff;
+    --openws-ink: #1f2937;
+    --openws-muted: #5b6472;
+    --openws-border: #d8dee8;
+    --openws-panel: #f8fafc;
+    --openws-accent: #0f766e;
+    --openws-accent-soft: #d9f0ed;
+}
+
+body {
+    color: var(--openws-ink);
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
+}
+
+div.document {
+    width: min(1180px, calc(100% - 48px));
+}
+
+div.body {
+    max-width: 880px;
+}
+
+div.body h1 {
+    border-bottom: 1px solid var(--openws-border);
+    color: var(--openws-ink);
+    font-size: 2.15rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.7rem;
+}
+
+div.body h2 {
+    border-bottom: 1px solid var(--openws-border);
+    color: var(--openws-ink);
+    margin-top: 2.1rem;
+    padding-bottom: 0.35rem;
+}
+
+div.body p.lead {
+    color: var(--openws-muted);
+    font-size: 1.08rem;
+    line-height: 1.65;
+}
+
+div.body code,
+div.body tt,
+pre {
+    background: var(--openws-panel);
+    border: 1px solid var(--openws-border);
+    border-radius: 5px;
+}
+
+div.body code,
+div.body tt {
+    padding: 0.08rem 0.28rem;
+}
+
+div.body table.docutils {
+    border: 1px solid var(--openws-border);
+    border-collapse: collapse;
+    margin: 1rem 0 1.8rem;
+    width: 100%;
+}
+
+div.body table.docutils th {
+    background: var(--openws-panel);
+    color: var(--openws-ink);
+    font-weight: 650;
+}
+
+div.body table.docutils td,
+div.body table.docutils th {
+    border: 1px solid var(--openws-border);
+    padding: 0.55rem 0.7rem;
+    vertical-align: top;
+}
+
+div.sphinxsidebarwrapper h1.logo,
+div.sphinxsidebarwrapper h1.logo a {
+    color: var(--openws-accent);
+}
+
+a {
+    color: var(--openws-accent);
+}
+
+a:hover {
+    color: #115e59;
+}
+
+    body { margin: 0; }
     main { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
-    code, pre { background: #f3f4f6; border-radius: 4px; padding: 0.12rem 0.28rem; }
+    .lead { color: var(--openws-muted); font-size: 1.08rem; line-height: 1.65; }
+    code, pre { background: var(--openws-panel); border: 1px solid var(--openws-border); border-radius: 5px; padding: 0.12rem 0.28rem; }
     pre { overflow-x: auto; padding: 12px; }
     table { border-collapse: collapse; margin: 16px 0 28px; width: 100%; }
-    th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
-    th { background: #f9fafb; }
+    th, td { border: 1px solid var(--openws-border); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--openws-panel); }
     nav a { margin-right: 16px; }
   </style>
 </head>
 <body><main><h1>Core Network</h1>
 <p>A chat network</p>
+<p class="lead">The <code>core</code> network contains 3 role surfaces and 7 messages.</p>
 <p>Network class: <code>CoreNetwork</code></p>
-<p>Source: <code>chat/core/src/network.ts</code></p><table><thead><tr><th>Role</th><th>Generated class</th><th>Messages</th><th>Source</th></tr></thead><tbody><tr><td>client</td><td>Client</td><td>2</td><td>chat/core/src/roles/client.ts</td></tr><tr><td>portal</td><td>Portal</td><td>1</td><td>chat/core/src/roles/portal.ts</td></tr><tr><td>server</td><td>Server</td><td>4</td><td>chat/core/src/roles/server.ts</td></tr></tbody></table><h2>Client Role</h2><p>Generated role surface for client.</p><table><thead><tr><th>Message</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td>joinedRoom</td><td>JoinedRoomPayload</td><td>n/a</td></tr><tr><td>receivedMessage</td><td>ReceivedMessagePayload</td><td>n/a</td></tr></tbody></table><h2>Portal Role</h2><p>Generated role surface for portal.</p><table><thead><tr><th>Message</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td>receivedRoomStats</td><td>ReceivedRoomStatsPayload</td><td>n/a</td></tr></tbody></table><h2>Server Role</h2><p>Generated role surface for server.</p><h3>Endpoints</h3><ul><li><code>ws://localhost:8082/chat</code></li></ul><table><thead><tr><th>Message</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td>createRoom</td><td>CreateRoomPayload</td><td>n/a</td></tr><tr><td>joinRoom</td><td>JoinRoomPayload</td><td>n/a</td></tr><tr><td>requestRoomStats</td><td>RequestRoomStatsPayload</td><td>n/a</td></tr><tr><td>sendMessage</td><td>SendMessagePayload</td><td>n/a</td></tr></tbody></table></main></body>
+<p>Source: <code>chat/core/src/network.ts</code></p>
+<h2>Role Surfaces</h2>
+<table><thead><tr><th>Role</th><th>Generated class</th><th>Messages</th><th>Endpoints</th><th>Source</th></tr></thead><tbody><tr><td>Client</td><td>Client</td><td>2</td><td>none</td><td>chat/core/src/roles/client.ts</td></tr><tr><td>Portal</td><td>Portal</td><td>1</td><td>none</td><td>chat/core/src/roles/portal.ts</td></tr><tr><td>Server</td><td>Server</td><td>4</td><td>1</td><td>chat/core/src/roles/server.ts</td></tr></tbody></table>
+</main></body>
 </html>

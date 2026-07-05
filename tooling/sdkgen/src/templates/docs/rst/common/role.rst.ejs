@@ -1,0 +1,62 @@
+<%- helpers.heading(`${role.title} Role`, '=') %>
+
+<%- role.description %>
+
+.. rst-class:: lead
+
+Generated role surface for <%- helpers.code(role.name) %> in the <%- helpers.code(model.network.name) %> OpenWS network.
+
+Role class: <%- helpers.code(role.className) %>
+
+Source: <%- helpers.code(role.sourcePath) %>
+
+<% if (role.endpoints.length > 0) { -%>
+Endpoints
+---------
+
+<% for (const endpoint of role.endpoints) { -%>
+- <%- helpers.code(endpoint) %>
+<% } -%>
+
+<% } -%>
+<% if (role.messages.length > 0) { -%>
+Messages
+--------
+
+<%- helpers.listTable(
+    ['Message', 'Accepted from', 'Payload', 'Description'],
+    role.messages.map(message => [
+        helpers.code(message.name),
+        helpers.codeList(message.senderRoles, 'any role'),
+        helpers.code(message.payloadType),
+        message.description,
+    ])
+) %>
+<% } -%>
+
+<% for (const message of role.messages) { -%>
+<%- helpers.heading(message.title, '-') %>
+
+<%- message.description %>
+
+Payload: <%- helpers.code(message.payloadType) %>
+
+Payload source: <%- helpers.code(message.payloadSourcePath) %>
+
+Accepted from: <%- helpers.codeList(message.senderRoles, 'any role') %>
+
+<% if (message.fields.length > 0) { -%>
+<%- helpers.listTable(
+    ['Field', 'Type', 'Required', 'Description'],
+    message.fields.map(field => [
+        helpers.code(field.name),
+        helpers.code(field.type),
+        field.required ? 'yes' : 'no',
+        field.description,
+    ])
+) %>
+<% } else { -%>
+Shape: <%- helpers.code(message.shapeType) %>
+
+<% } -%>
+<% } -%>

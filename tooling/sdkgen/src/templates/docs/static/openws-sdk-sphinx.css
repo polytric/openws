@@ -1,10 +1,3 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Core Network</title>
-  <style>
 :root {
     color-scheme: light;
     --openws-bg: #ffffff;
@@ -102,24 +95,3 @@ a {
 a:hover {
     color: #115e59;
 }
-
-    body { margin: 0; }
-    main { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
-    .lead { color: var(--openws-muted); font-size: 1.08rem; line-height: 1.65; }
-    code, pre { background: var(--openws-panel); border: 1px solid var(--openws-border); border-radius: 5px; padding: 0.12rem 0.28rem; }
-    pre { overflow-x: auto; padding: 12px; }
-    table { border-collapse: collapse; margin: 16px 0 28px; width: 100%; }
-    th, td { border: 1px solid var(--openws-border); padding: 8px 10px; text-align: left; vertical-align: top; }
-    th { background: var(--openws-panel); }
-    nav a { margin-right: 16px; }
-  </style>
-</head>
-<body><main><h1>Core Network</h1>
-<p>A chat network</p>
-<p class="lead">The <code>core</code> network contains 3 role surfaces and 7 messages.</p>
-<p>Network class: <code>CoreNetwork</code></p>
-<p>Source: <code>chat/core/src/network.js</code></p>
-<h2>Role Surfaces</h2>
-<table><thead><tr><th>Role</th><th>Generated class</th><th>Messages</th><th>Endpoints</th><th>Source</th></tr></thead><tbody><tr><td>Client</td><td>Client</td><td>2</td><td>none</td><td>chat/core/src/roles/client.js</td></tr><tr><td>Portal</td><td>Portal</td><td>1</td><td>none</td><td>chat/core/src/roles/portal.js</td></tr><tr><td>Server</td><td>Server</td><td>4</td><td>1</td><td>chat/core/src/roles/server.js</td></tr></tbody></table>
-</main></body>
-</html>

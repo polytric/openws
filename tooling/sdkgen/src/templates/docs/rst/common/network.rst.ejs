@@ -1,0 +1,25 @@
+<%- helpers.heading(`${model.network.title} Network`, '=') %>
+
+<%- model.network.description %>
+
+.. rst-class:: lead
+
+The <%- helpers.code(model.network.name) %> network contains <%- model.network.roles.length %> role surfaces and <%- helpers.roleMessageCount(model) %> messages.
+
+Network class: <%- helpers.code(model.network.className) %>
+
+Source: <%- helpers.code(model.network.sourcePath) %>
+
+Role Surfaces
+-------------
+
+<%- helpers.listTable(
+    ['Role', 'Generated class', 'Messages', 'Endpoints', 'Source'],
+    model.network.roles.map(role => [
+        helpers.rstDocLink(role.title, role.pagePath),
+        helpers.code(role.className),
+        String(role.messages.length),
+        role.endpoints.length > 0 ? String(role.endpoints.length) : 'none',
+        helpers.code(role.sourcePath),
+    ])
+) %>

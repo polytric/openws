@@ -1,0 +1,58 @@
+<%- helpers.heading(model.title, '=') %>
+
+<%- model.description %>
+
+.. rst-class:: lead
+
+Use this reference to find the generated JavaScript surfaces for <%- helpers.code(model.network.name) %>, including role classes, message payloads, source paths, and install/import snippets.
+
+<%- helpers.listTable(
+    ['Network', 'Roles', 'Messages', 'Version'],
+    [[
+        helpers.rstDocLink(model.network.title, model.network.pagePath),
+        String(model.network.roles.length),
+        String(helpers.roleMessageCount(model)),
+        model.version ? helpers.code(model.version) : 'n/a',
+    ]]
+) %>
+<% if (model.installLines.length > 0) { -%>
+Install
+-------
+
+.. code-block:: shell
+
+<% for (const line of model.installLines) { -%>
+   <%- line %>
+<% } -%>
+
+<% } -%>
+Import Surface
+--------------
+
+.. code-block:: javascript
+
+<% for (const line of model.importLines) { -%>
+   <%- line %>
+<% } -%>
+
+Role Surfaces
+-------------
+
+<%- helpers.listTable(
+    ['Role', 'Generated class', 'Messages', 'Endpoints'],
+    model.network.roles.map(role => [
+        helpers.rstDocLink(role.title, role.pagePath),
+        helpers.code(role.className),
+        String(role.messages.length),
+        role.endpoints.length > 0 ? String(role.endpoints.length) : 'none',
+    ])
+) %>
+.. toctree::
+   :caption: API Reference
+   :maxdepth: 2
+
+   <%- model.network.pagePath %>
+<% for (const role of model.network.roles) { -%>
+   <%- role.pagePath %>
+<% } -%>
+   models

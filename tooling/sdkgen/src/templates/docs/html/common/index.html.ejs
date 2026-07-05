@@ -1,0 +1,12 @@
+<h1><%= model.title %></h1>
+<p><%= model.description %></p>
+<p class="lead">Use this reference to find the generated <%= model.languageLabel %> surfaces for <code><%= model.network.name %></code>.</p>
+<%- helpers.htmlTable(['Network', 'Roles', 'Messages', 'Version'], [[model.network.title, String(model.network.roles.length), String(helpers.roleMessageCount(model)), model.version ?? 'n/a']]) %>
+<% if (model.installLines.length > 0) { -%>
+<h2><%= model.language === 'csharp' ? 'UPM Dependency' : 'Install' %></h2>
+<pre><code><%= model.installLines.join('\n') %></code></pre>
+<% } -%>
+<h2>Import Surface</h2>
+<pre><code><%= model.importLines.join('\n') %></code></pre>
+<h2>Pages</h2>
+<nav><a href="./<%= model.network.pagePath %>.html"><%= model.network.title %> Network</a><% for (const role of model.network.roles) { %><a href="./<%= role.pagePath %>.html"><%= role.title %> Role</a><% } %><a href="./models.html">Payload Models</a></nav>
