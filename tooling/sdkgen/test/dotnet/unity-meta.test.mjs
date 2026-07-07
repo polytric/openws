@@ -20,6 +20,8 @@ const outputRoots = [
     {
         label: 'generated C# Unity output',
         root: path.join(packageRoot, 'generated', 'dotnet', 'unity', 'chat', 'core'),
+        // No --package-name in this generation, so the GUID scope is the assembly name.
+        guidScope: 'Example.Chat.Core.Sdk',
     },
 ]
 
@@ -52,7 +54,7 @@ for (const outputRoot of outputRoots) {
                 )
                 assert.equal(
                     meta.guid,
-                    expectedGuid(asset.relativePath),
+                    expectedGuid(outputRoot.guidScope, asset.relativePath),
                     `${asset.relativePath}.meta should use the sdkgen deterministic GUID rule`
                 )
                 assert.ok(
@@ -112,7 +114,8 @@ test('Unity testbed package fixture has deterministic Unity meta files', () => {
         )
         assert.equal(
             meta.guid,
-            expectedGuid(asset.relativePath),
+            // The fixture was generated with --package-name, so that is its GUID scope.
+            expectedGuid('com.example.chat.sdk', asset.relativePath),
             `${asset.relativePath}.meta should use the sdkgen deterministic GUID rule`
         )
         assert.ok(
@@ -225,8 +228,8 @@ function parseMetaFile(metaPath) {
     }
 }
 
-function expectedGuid(relativeAssetPath) {
-    return createHash('md5').update(`${guidPrefix}${relativeAssetPath}`).digest('hex')
+function expectedGuid(guidScope, relativeAssetPath) {
+    return createHash('md5').update(`${guidPrefix}${guidScope}/${relativeAssetPath}`).digest('hex')
 }
 
 function normalizeRelativePath(outputRoot, assetPath) {

@@ -61,6 +61,10 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     ir.assemblyName = assemblyName
 
     const plan: PlanStep[] = []
+    // Seed for the deterministic .meta GUIDs. Must be unique per generated package so
+    // assets with the same package-relative path (package.json, Runtime/...) never
+    // share a GUID across packages installed in one Unity project.
+    const guidScope = request.packageName ?? assemblyName
     const folderMetaOutputs = new Set<string>()
     // Match the JS/TS targets: --out is the root and each network's package lands in
     // <out>/<service>/<network>/ so packages can evolve side by side.
@@ -77,6 +81,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         pushUnityAssetStep(
             plan,
             packageRootPath,
+            guidScope,
             folderMetaOutputs,
             {
                 name: 'unity package manifest',
@@ -98,6 +103,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         pushUnityAssetStep(
             plan,
             packageRootPath,
+            guidScope,
             folderMetaOutputs,
             {
                 name: 'unity readme',
@@ -113,6 +119,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     pushUnityAssetStep(
         plan,
         packageRootPath,
+        guidScope,
         folderMetaOutputs,
         {
             name: 'assembly definition',
@@ -126,6 +133,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     pushUnityAssetStep(
         plan,
         packageRootPath,
+        guidScope,
         folderMetaOutputs,
         {
             name: 'user assembly reference',
@@ -173,7 +181,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         const allModelImports = allRoles.map(role => `${networkNamespace}.Models.${role.className}`)
 
         // Generate Network.cs
-        pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
+        pushUnityCSharpStep(plan, packageRootPath, guidScope, folderMetaOutputs, {
             name: `network ${networkIr.name}`,
             command: 'render',
             getData: () => ({
@@ -219,7 +227,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             const roleHandlers = networkIr.handlers.filter(h => h.roleName === hostRole.roleName)
             const modelImports = [`${networkNamespace}.Models.${hostRole.className}`]
 
-            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, guidScope, folderMetaOutputs, {
                 name: `host role ${hostRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -234,7 +242,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             })
 
             // Generate User stub for HostRole
-            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, guidScope, folderMetaOutputs, {
                 name: `user host role ${hostRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -254,7 +262,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
             const roleMessages = networkIr.messages.filter(m => m.roleName === remoteRole.roleName)
             const modelImports = [`${networkNamespace}.Models.${remoteRole.className}`]
 
-            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, guidScope, folderMetaOutputs, {
                 name: `remote role ${remoteRole.className}`,
                 command: 'render',
                 getData: () => ({
@@ -271,7 +279,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
         // Generate Models
         for (const modelIr of networkIr.models) {
             if (modelIr.type !== 'object') continue
-            pushUnityCSharpStep(plan, packageRootPath, folderMetaOutputs, {
+            pushUnityCSharpStep(plan, packageRootPath, guidScope, folderMetaOutputs, {
                 name: `model ${modelIr.className}`,
                 command: 'render',
                 getData: () => modelIr,
@@ -365,26 +373,41 @@ function buildReadmeData(request: BuildRequest, ir: IR, assemblyName: string) {
 function pushUnityCSharpStep(
     plan: PlanStep[],
     outputRoot: string,
+    guidScope: string,
     folderMetaOutputs: Set<string>,
     step: PlanStep
 ): void {
-    pushUnityAssetStep(plan, outputRoot, folderMetaOutputs, step, 'UnityMonoScript.meta.ejs')
+    pushUnityAssetStep(
+        plan,
+        outputRoot,
+        guidScope,
+        folderMetaOutputs,
+        step,
+        'UnityMonoScript.meta.ejs'
+    )
 }
 
 function pushUnityAssetStep(
     plan: PlanStep[],
     outputRoot: string,
+    guidScope: string,
     folderMetaOutputs: Set<string>,
     step: PlanStep,
     metaTemplate: UnityMetaTemplate
 ): void {
-    pushUnityFolderMetaSteps(plan, outputRoot, folderMetaOutputs, path.dirname(step.output))
+    pushUnityFolderMetaSteps(
+        plan,
+        outputRoot,
+        guidScope,
+        folderMetaOutputs,
+        path.dirname(step.output)
+    )
     plan.push(step)
     plan.push({
         name: `${step.name} meta`,
         command: 'render',
         getData: () => ({
-            guid: unityMetaGuid(outputRoot, step.output),
+            guid: unityMetaGuid(guidScope, outputRoot, step.output),
         }),
         template: path.join(TEMPLATE_DIR, metaTemplate),
         output: `${step.output}.meta`,
@@ -394,6 +417,7 @@ function pushUnityAssetStep(
 function pushUnityFolderMetaSteps(
     plan: PlanStep[],
     outputRoot: string,
+    guidScope: string,
     folderMetaOutputs: Set<string>,
     leafFolderPath: string
 ): void {
@@ -407,7 +431,7 @@ function pushUnityFolderMetaSteps(
             name: `folder ${normalizeRelativeAssetPath(outputRoot, folderPath)} meta`,
             command: 'render',
             getData: () => ({
-                guid: unityMetaGuid(outputRoot, folderPath),
+                guid: unityMetaGuid(guidScope, outputRoot, folderPath),
             }),
             template: path.join(TEMPLATE_DIR, 'UnityFolder.meta.ejs'),
             output: metaOutput,
@@ -439,9 +463,14 @@ function isGeneratedPath(outputRoot: string, assetPath: string): boolean {
     )
 }
 
-function unityMetaGuid(outputRoot: string, assetPath: string): string {
+// The scope keeps GUIDs unique across packages: without it, assets that share a
+// package-relative path (package.json, README.md, Runtime/...) would collide when
+// multiple generated packages are imported into the same Unity project.
+function unityMetaGuid(guidScope: string, outputRoot: string, assetPath: string): string {
     return createHash('md5')
-        .update(`${UNITY_META_GUID_PREFIX}${normalizeRelativeAssetPath(outputRoot, assetPath)}`)
+        .update(
+            `${UNITY_META_GUID_PREFIX}${guidScope}/${normalizeRelativeAssetPath(outputRoot, assetPath)}`
+        )
         .digest('hex')
 }
 
