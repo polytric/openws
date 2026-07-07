@@ -39,24 +39,38 @@ function getNetworkOutputPaths(ctx: PipelineContext): string[] {
     if (!spec) throw new Error('spec is required')
 
     if (request.target.csharp) {
-        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
+        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.${pascalCase(request.network)}.Sdk`
+        // Assemblies used to be service-scoped with per-network subfolders; remove that
+        // layout so regeneration migrates old output cleanly.
+        const legacyAssemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
         const networkFolder = pascalCase(request.network)
         const outputRoot = request.packageName
             ? path.join(request.outputPath, 'Runtime')
             : request.outputPath
         const cleanupPaths = [
-            path.join(outputRoot, assemblyName, networkFolder),
-            path.join(outputRoot, `${assemblyName}.User`, networkFolder),
+            path.join(outputRoot, assemblyName),
+            path.join(outputRoot, `${assemblyName}.meta`),
+            path.join(outputRoot, `${assemblyName}.User`),
+            path.join(outputRoot, `${assemblyName}.User.meta`),
+            path.join(outputRoot, legacyAssemblyName),
+            path.join(outputRoot, `${legacyAssemblyName}.meta`),
+            path.join(outputRoot, `${legacyAssemblyName}.User`),
+            path.join(outputRoot, `${legacyAssemblyName}.User.meta`),
         ]
 
         if (request.packageName) {
             const legacyNetworkFolder = path.join(request.outputPath, networkFolder)
-            const legacyAssemblyDefinition = path.join(request.outputPath, `${assemblyName}.asmdef`)
+            const legacyAssemblyDefinition = path.join(
+                request.outputPath,
+                `${legacyAssemblyName}.asmdef`
+            )
             cleanupPaths.push(
                 path.join(request.outputPath, 'package.json'),
                 path.join(request.outputPath, 'package.json.meta'),
-                path.join(request.outputPath, assemblyName),
-                path.join(request.outputPath, `${assemblyName}.User`),
+                path.join(request.outputPath, 'README.md'),
+                path.join(request.outputPath, 'README.md.meta'),
+                path.join(request.outputPath, legacyAssemblyName),
+                path.join(request.outputPath, `${legacyAssemblyName}.User`),
                 legacyNetworkFolder,
                 `${legacyNetworkFolder}.meta`,
                 legacyAssemblyDefinition,

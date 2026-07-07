@@ -17,12 +17,14 @@ type JsonObject = Record<string, any>
 interface OpenWsContract {
     name?: string
     version?: string
+    description?: string
 }
 
 interface PluginOptions {
     prefix?: string
     exportPath?: string
     name?: string
+    description?: string
 }
 
 declare module 'fastify' {
@@ -36,9 +38,12 @@ const hiddenSchema = { schema: { hide: true } as object }
 
 async function openwsDocPlugin(fastify: FastifyInstance, options: PluginOptions = {}) {
     if (!fastify.hasDecorator('openws')) {
-        await fastify.register(openWsPlugin, { name: options.name })
+        await fastify.register(openWsPlugin, {
+            name: options.name,
+            description: options.description,
+        })
     }
-    const { prefix = '/openws', exportPath = '/spec.json', name } = options
+    const { prefix = '/openws', exportPath = '/spec.json', name, description } = options
     const contract =
         (fastify as FastifyInstance & { openwsContract?: OpenWsContract }).openwsContract ?? {}
     const specName = contract.name ?? name
@@ -51,6 +56,10 @@ async function openwsDocPlugin(fastify: FastifyInstance, options: PluginOptions 
     const spec = WS.spec('0.0.2', specName)
     if (contract.version) {
         spec.version(contract.version)
+    }
+    const specDescription = contract.description ?? description
+    if (specDescription) {
+        spec.description(specDescription)
     }
     const networkHosts: Record<string, string[]> = {}
 

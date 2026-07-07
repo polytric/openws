@@ -9,6 +9,7 @@ import type { Network } from '@polytric/openws-spec/builder'
 export interface OpenWsContract {
     name?: string
     version?: string
+    description?: string
 }
 
 export interface OpenWsPluginOptions extends OpenWsContract {}
@@ -17,6 +18,7 @@ export interface RegisterNetworkOptions {
     path: string
     bindings: Fluent.NetworkBinder
     version?: string
+    description?: string
 }
 
 // Extend Fastify types to include custom route options
@@ -34,9 +36,11 @@ function trimMetadata(value: string | undefined): string | undefined {
 function normalizeContract(options: OpenWsPluginOptions): OpenWsContract {
     const name = trimMetadata(options.name)
     const version = trimMetadata(options.version)
+    const description = trimMetadata(options.description)
     return {
         ...(name ? { name } : {}),
         ...(version ? { version } : {}),
+        ...(description ? { description } : {}),
     }
 }
 
@@ -57,11 +61,15 @@ async function openwsPlugin(fastify: FastifyInstance, options: OpenWsPluginOptio
 
     fastify.decorate('openwsContract', contract)
 
-    function registerNetwork({ path, bindings, version }: RegisterNetworkOptions) {
+    function registerNetwork({ path, bindings, version, description }: RegisterNetworkOptions) {
         const network = bindings.network
         const routeVersion = trimMetadata(version)
         if (routeVersion) {
             network.version(routeVersion)
+        }
+        const routeDescription = trimMetadata(description)
+        if (routeDescription) {
+            network.description(routeDescription)
         }
         network.assertValid()
         const runtime = Fluent.runtime(bindings)

@@ -1,5 +1,5 @@
 {
-    "name": "Example.Chat.Sdk",
+    "name": "Example.Chat.Core.Sdk",
     "rootNamespace": "",
     "references": [
         "Polytric.OpenWs.Core.Runtime",

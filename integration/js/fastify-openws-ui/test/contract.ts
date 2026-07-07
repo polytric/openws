@@ -60,6 +60,31 @@ test('OpenWS Fastify export uses plugin service version and class network versio
     await app.close()
 })
 
+test('OpenWS Fastify export includes service and network descriptions', async () => {
+    const app = fastify()
+    const bindings = WS.bindings({
+        name: 'chat',
+        description: 'Chat network',
+        version: '2.0.0',
+        roles: [Server, Client],
+    })
+
+    await app.register(openws, {
+        name: 'Chat Service',
+        version: '1.0.0',
+        description: 'A chat service',
+    })
+    await app.register(openwsUi)
+    app.openws({ path: '/chat', bindings, description: 'Core chat network' })
+    await app.ready()
+
+    const spec = app.openwsUi.getSpec?.()
+    assert.equal(spec?.description, 'A chat service')
+    assert.equal(spec?.networks.chat.description, 'Core chat network')
+
+    await app.close()
+})
+
 test('OpenWS Fastify route version overrides the registered network version', async () => {
     const app = fastify()
     const bindings = WS.bindings({

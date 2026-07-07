@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { IR, IRProperty, PipelineContext, PlanStep } from '../types.js'
+import type { BuildRequest, IR, IRProperty, PipelineContext, PlanStep } from '../types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // From src/plans/ -> ../templates/dotnet
@@ -49,7 +49,7 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     if (!ir) throw new Error('ir is required')
     if (!request) throw new Error('request is required')
 
-    const assemblyName = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.Sdk`
+    const assemblyName = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.${pascalCase(request.network)}.Sdk`
     ir.assemblyName = assemblyName
 
     const plan: PlanStep[] = []
@@ -70,14 +70,27 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
                 getData: () => ({
                     name: request.packageName,
                     version: ir.package.version,
-                    displayName: `${displayName(ir.package.project)} ${displayName(ir.package.service)} SDK`,
-                    description: ir.package.description ?? '',
+                    displayName: `${displayName(ir.package.project)} ${displayName(ir.package.service)} ${displayName(request.network)} SDK`,
+                    description: ir.networks[0]?.description ?? ir.package.description ?? '',
                     dependencies: {
                         [UNITY_NEWTONSOFT_JSON_PACKAGE]: UNITY_NEWTONSOFT_JSON_VERSION,
                     },
                 }),
                 template: path.join(TEMPLATE_DIR, 'package.json.ejs'),
                 output: path.join(packageRootPath, 'package.json'),
+            },
+            'UnityDefaultAsset.meta.ejs'
+        )
+        pushUnityAssetStep(
+            plan,
+            packageRootPath,
+            folderMetaOutputs,
+            {
+                name: 'unity readme',
+                command: 'render',
+                getData: () => buildReadmeData(request, ir, assemblyName),
+                template: path.join(TEMPLATE_DIR, 'README.md.ejs'),
+                output: path.join(packageRootPath, 'README.md'),
             },
             'UnityDefaultAsset.meta.ejs'
         )
@@ -117,16 +130,8 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     for (const networkIr of ir.networks) {
         const networkNamespace = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.${pascalCase(networkIr.name)}`
         const networkClassName = `${pascalCase(networkIr.name)}Network`
-        const networkOutputPath = path.join(
-            outputRootPath,
-            assemblyName,
-            pascalCase(networkIr.name)
-        )
-        const userNetworkOutputPath = path.join(
-            outputRootPath,
-            `${assemblyName}.User`,
-            pascalCase(networkIr.name)
-        )
+        const networkOutputPath = path.join(outputRootPath, assemblyName)
+        const userNetworkOutputPath = path.join(outputRootPath, `${assemblyName}.User`)
 
         // Build role info from IR
         const hostRoles: RoleInfo[] = []
@@ -270,6 +275,76 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
     return {
         ...ctx,
         plan,
+    }
+}
+
+// Each network ships as its own package so it can be versioned and evolved
+// independently: the README documents only the generated network, built from the IR so
+// it reflects the actual --hostRole selection and the roles present in the package.
+function buildReadmeData(request: BuildRequest, ir: IR, assemblyName: string) {
+    const network = ir.networks[0]
+    if (!network) throw new Error('ir.networks is empty')
+
+    const namespace = `${pascalCase(ir.package.project)}.${pascalCase(ir.package.service)}.${pascalCase(network.name)}`
+    const roles = network.roles.map(role => ({
+        name: role.name,
+        className: pascalCase(role.name),
+        varName: camelCase(role.name),
+        description: role.description ?? '',
+        isHost: role.isHost,
+        endpoints: role.endpoints,
+    }))
+
+    const hostRole = roles.find(role => role.isHost)
+    const remoteRoles = roles.filter(role => !role.isHost)
+    const remoteRole = remoteRoles.find(role => role.endpoints.length > 0) ?? remoteRoles[0]
+
+    const sendMessage = remoteRole
+        ? network.messages.find(message => message.roleName === remoteRole.name)
+        : undefined
+    const receiveHandler = hostRole
+        ? network.handlers.find(handler => handler.roleName === hostRole.name)
+        : undefined
+    const sendExample = sendMessage
+        ? {
+              methodName: pascalCase(sendMessage.handlerName),
+              payloadClassName: `${pascalCase(sendMessage.handlerName)}Payload`,
+          }
+        : undefined
+    const receiveExample = receiveHandler
+        ? {
+              methodName: pascalCase(receiveHandler.handlerName),
+              payloadClassName: `${pascalCase(receiveHandler.handlerName)}Payload`,
+          }
+        : undefined
+    const exampleModelNamespaces = [
+        ...new Set([
+            ...(sendExample && remoteRole ? [`${namespace}.Models.${remoteRole.className}`] : []),
+            ...(receiveExample && hostRole ? [`${namespace}.Models.${hostRole.className}`] : []),
+        ]),
+    ]
+
+    return {
+        packageName: request.packageName,
+        title: `${displayName(ir.package.project)} ${displayName(ir.package.service)} ${displayName(network.name)} SDK`,
+        description: network.description ?? ir.package.description ?? '',
+        serviceName: ir.package.service,
+        version: ir.package.version,
+        hostRoleNames: request.hostRoles,
+        network: {
+            name: network.name,
+            namespace,
+            assemblyName,
+            userAssemblyName: `${assemblyName}.User`,
+            networkClassName: `${pascalCase(network.name)}Network`,
+            behaviourClassName: `${pascalCase(network.name)}Behaviour`,
+            roles,
+            hostRole,
+            remoteRole,
+            sendExample,
+            receiveExample,
+            exampleModelNamespaces,
+        },
     }
 }
 

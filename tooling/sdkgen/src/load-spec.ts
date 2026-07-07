@@ -1,5 +1,7 @@
 import fs from 'node:fs'
 
+import { validate } from '@polytric/openws-spec'
+
 import type { Spec, PipelineContext } from './types.js'
 import { toCamelCase } from './utils.js'
 
@@ -9,6 +11,12 @@ export default function loadSpec(ctx: PipelineContext): PipelineContext {
 
     const { specPath } = request
     const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')) as Spec
+    try {
+        validate(spec)
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error)
+        throw new Error(`Spec "${specPath}" failed OpenWS schema validation: ${reason}`)
+    }
 
     // normalize
     spec.name = toCamelCase(spec.name)

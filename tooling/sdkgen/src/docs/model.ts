@@ -196,9 +196,9 @@ function sourcePathForNetwork(
     const { request, spec } = ctx
     if (!request || !spec) throw new Error('request and spec are required')
     if (language === 'csharp') {
-        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
+        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.${pascalCase(networkName)}.Sdk`
         const prefix = request.packageName ? 'Runtime/' : ''
-        return `${prefix}${assemblyName}/${pascalCase(networkName)}/${pascalCase(networkName)}Network.cs`
+        return `${prefix}${assemblyName}/${pascalCase(networkName)}Network.cs`
     }
 
     const extension = language === 'typescript' ? 'ts' : 'js'
@@ -214,9 +214,9 @@ function sourcePathForRole(
     const { request, spec } = ctx
     if (!request || !spec) throw new Error('request and spec are required')
     if (language === 'csharp') {
-        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
+        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.${pascalCase(networkName)}.Sdk`
         const prefix = request.packageName ? 'Runtime/' : ''
-        return `${prefix}${assemblyName}/${pascalCase(networkName)}/Roles/${pascalCase(roleName)}.cs`
+        return `${prefix}${assemblyName}/Roles/${pascalCase(roleName)}.cs`
     }
 
     const extension = language === 'typescript' ? 'ts' : 'js'
@@ -233,9 +233,9 @@ function sourcePathForPayload(
     const { request, spec } = ctx
     if (!request || !spec) throw new Error('request and spec are required')
     if (language === 'csharp') {
-        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
+        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.${pascalCase(networkName)}.Sdk`
         const prefix = request.packageName ? 'Runtime/' : ''
-        return `${prefix}${assemblyName}/${pascalCase(networkName)}/Models/${pascalCase(roleName)}/${pascalCase(messageName)}Payload.cs`
+        return `${prefix}${assemblyName}/Models/${pascalCase(roleName)}/${pascalCase(messageName)}Payload.cs`
     }
 
     const extension = language === 'typescript' ? 'ts' : 'js'

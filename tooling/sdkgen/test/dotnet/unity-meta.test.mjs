@@ -7,13 +7,14 @@ import { fileURLToPath } from 'node:url'
 
 const testDir = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(testDir, '../..')
-const generatedPackageFolders = ['Example.Chat.Sdk', 'Example.Chat.Sdk.User']
+const generatedPackageFolders = ['Example.Chat.Core.Sdk', 'Example.Chat.Core.Sdk.User']
 const guidPrefix = 'openws-sdkgen/unity-meta/'
 const importerByExtension = new Map([
     ['.asmdef', 'AssemblyDefinitionImporter'],
     ['.asmref', 'AssemblyDefinitionReferenceImporter'],
     ['.cs', 'MonoImporter'],
     ['.json', 'DefaultImporter'],
+    ['.md', 'DefaultImporter'],
 ])
 const outputRoots = [
     {
@@ -143,8 +144,7 @@ test('generated C# Unity models render generic List types without HTML escaping'
         'generated',
         'dotnet',
         'unity',
-        'Example.Chat.Sdk',
-        'Core',
+        'Example.Chat.Core.Sdk',
         'Models',
         'Server',
         'SendMessagePayload.cs'

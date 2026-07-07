@@ -1,9 +1,7 @@
 {
     "name": "com.example.chat.sdk",
     "version": "1.0.0",
-    "displayName": "Example Chat SDK",
-    "description": "A chat service",
-    "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.2.2"
-    }
+    "displayName": "Example Chat Core SDK",
+    "description": "A chat network",
+    "dependencies": { "com.unity.nuget.newtonsoft-json": "3.2.2" }
 }

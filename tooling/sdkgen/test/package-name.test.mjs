@@ -109,6 +109,12 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
             'stale legacy asmdef meta',
             'utf8'
         )
+        mkdirSync(path.join(tempRoot, 'Runtime', 'Example.Chat.Sdk', 'Core'), { recursive: true })
+        writeFileSync(
+            path.join(tempRoot, 'Runtime', 'Example.Chat.Sdk.meta'),
+            'stale legacy service assembly meta',
+            'utf8'
+        )
 
         runCli([
             '--spec',
@@ -133,24 +139,48 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
         assert.deepEqual(manifest, {
             name: 'com.example.chat.sdk',
             version: '1.0.0',
-            displayName: 'Example Chat SDK',
-            description: 'A chat service',
+            displayName: 'Example Chat Core SDK',
+            description: 'A chat network',
             dependencies: {
                 'com.unity.nuget.newtonsoft-json': '3.2.2',
             },
         })
         assert.ok(existsSync(path.join(tempRoot, 'package.json.meta')))
         assert.ok(existsSync(path.join(tempRoot, 'Runtime.meta')))
+
+        const readme = readFileSync(path.join(tempRoot, 'README.md'), 'utf8')
+        assert.match(readme, /^# Example Chat Core SDK$/m)
+        assert.match(readme, /A chat network/)
+        assert.match(readme, /local \(host\) role `client`/)
+        assert.doesNotMatch(readme, /`portal`/)
+        assert.match(readme, /using Example\.Chat\.Core\.Roles;/)
+        assert.match(readme, /new Runtime\(new CoreNetwork\(\), new NewtonSoftSerializer\(\), this\)/)
+        assert.match(readme, /runtime\.GetHostRole<Client>\(\)/)
+        assert.match(readme, /runtime\.ConnectAsync<Server>\(Server\.Endpoints\[0\]\)/)
+        const readmeMeta = readFileSync(path.join(tempRoot, 'README.md.meta'), 'utf8')
+        assert.match(readmeMeta, /^guid: [0-9a-f]{32}$/m)
+        assert.match(readmeMeta, /DefaultImporter:/)
         assert.equal(existsSync(path.join(tempRoot, 'Core.meta')), false)
         assert.equal(existsSync(path.join(tempRoot, 'Example.Chat.Sdk.asmdef')), false)
         assert.equal(existsSync(path.join(tempRoot, 'Example.Chat.Sdk.asmdef.meta')), false)
+        assert.equal(existsSync(path.join(tempRoot, 'Runtime', 'Example.Chat.Sdk')), false)
+        assert.equal(existsSync(path.join(tempRoot, 'Runtime', 'Example.Chat.Sdk.meta')), false)
+        assert.ok(
+            existsSync(
+                path.join(
+                    tempRoot,
+                    'Runtime',
+                    'Example.Chat.Core.Sdk',
+                    'Example.Chat.Core.Sdk.asmdef'
+                )
+            )
+        )
 
         const model = readFileSync(
             path.join(
                 tempRoot,
                 'Runtime',
-                'Example.Chat.Sdk',
-                'Core',
+                'Example.Chat.Core.Sdk',
                 'Models',
                 'Server',
                 'SendMessagePayload.cs'
@@ -197,6 +227,70 @@ test('package manifest uses network version before service version', () => {
         assert.match(
             readFileSync(path.join(packageRoot, 'src', 'network.ts'), 'utf8'),
             /networkVersion = '2\.5\.0'/
+        )
+
+        const unityOutput = path.join(tempRoot, 'unity-package')
+        runCli([
+            '--spec',
+            relativeToPackageRoot(specPath),
+            '--out',
+            relativeToPackageRoot(unityOutput),
+            '--project',
+            'Example',
+            '--network',
+            'core',
+            '--hostRole',
+            'client',
+            '--package-name',
+            'com.example.chat.sdk',
+            '--language',
+            'csharp',
+            '--environment',
+            'unity',
+        ])
+
+        const unityManifest = JSON.parse(
+            readFileSync(path.join(unityOutput, 'package.json'), 'utf8')
+        )
+        assert.equal(unityManifest.version, '2.5.0')
+        assert.match(
+            readFileSync(path.join(unityOutput, 'README.md'), 'utf8'),
+            /"com\.example\.chat\.sdk": "2\.5\.0"/
+        )
+    } finally {
+        rmSync(tempRoot, { recursive: true, force: true })
+    }
+})
+
+test('sdkgen rejects a spec that fails OpenWS schema validation', () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'openws-sdkgen-invalid-spec-'))
+    try {
+        const spec = loadTestSpec()
+        delete spec.openws
+        const specPath = path.join(tempRoot, 'spec.json')
+        writeFileSync(specPath, JSON.stringify(spec, null, 4), 'utf8')
+
+        assert.throws(
+            () =>
+                runCli([
+                    '--spec',
+                    relativeToPackageRoot(specPath),
+                    '--out',
+                    relativeToPackageRoot(path.join(tempRoot, 'unity-package')),
+                    '--project',
+                    'Example',
+                    '--network',
+                    'core',
+                    '--hostRole',
+                    'client',
+                    '--package-name',
+                    'com.example.chat.sdk',
+                    '--language',
+                    'csharp',
+                    '--environment',
+                    'unity',
+                ]),
+            /failed OpenWS schema validation/
         )
     } finally {
         rmSync(tempRoot, { recursive: true, force: true })
