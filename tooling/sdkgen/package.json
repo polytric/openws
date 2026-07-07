@@ -1,6 +1,6 @@
 {
     "name": "@polytric/openws-sdkgen",
-    "version": "0.0.23",
+    "version": "0.0.24",
     "description": "OpenWS SDK generator CLI",
     "type": "module",
     "bin": {

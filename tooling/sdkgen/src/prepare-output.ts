@@ -39,27 +39,20 @@ function getNetworkOutputPaths(ctx: PipelineContext): string[] {
     if (!spec) throw new Error('spec is required')
 
     if (request.target.csharp) {
-        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.${pascalCase(request.network)}.Sdk`
-        // Assemblies used to be service-scoped with per-network subfolders; remove that
-        // layout so regeneration migrates old output cleanly.
-        const legacyAssemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
-        const networkFolder = pascalCase(request.network)
-        const outputRoot = request.packageName
-            ? path.join(request.outputPath, 'Runtime')
-            : request.outputPath
-        const cleanupPaths = [
-            path.join(outputRoot, assemblyName),
-            path.join(outputRoot, `${assemblyName}.meta`),
-            path.join(outputRoot, `${assemblyName}.User`),
-            path.join(outputRoot, `${assemblyName}.User.meta`),
-            path.join(outputRoot, legacyAssemblyName),
-            path.join(outputRoot, `${legacyAssemblyName}.meta`),
-            path.join(outputRoot, `${legacyAssemblyName}.User`),
-            path.join(outputRoot, `${legacyAssemblyName}.User.meta`),
-        ]
+        // The scoped <out>/<service>/<network>/ directory is fully generated, so it can
+        // be removed wholesale. Everything else below migrates legacy layouts that wrote
+        // directly into the output path.
+        const packageRootPath = path.join(
+            request.outputPath,
+            kebabCase(spec.name),
+            kebabCase(request.network)
+        )
+        const cleanupPaths = [packageRootPath, `${packageRootPath}.meta`]
 
+        const assemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.${pascalCase(request.network)}.Sdk`
+        const legacyAssemblyName = `${pascalCase(request.project)}.${pascalCase(spec.name)}.Sdk`
         if (request.packageName) {
-            const legacyNetworkFolder = path.join(request.outputPath, networkFolder)
+            const legacyNetworkFolder = path.join(request.outputPath, pascalCase(request.network))
             const legacyAssemblyDefinition = path.join(
                 request.outputPath,
                 `${legacyAssemblyName}.asmdef`
@@ -69,13 +62,22 @@ function getNetworkOutputPaths(ctx: PipelineContext): string[] {
                 path.join(request.outputPath, 'package.json.meta'),
                 path.join(request.outputPath, 'README.md'),
                 path.join(request.outputPath, 'README.md.meta'),
-                path.join(request.outputPath, legacyAssemblyName),
-                path.join(request.outputPath, `${legacyAssemblyName}.User`),
+                path.join(request.outputPath, 'Runtime'),
+                path.join(request.outputPath, 'Runtime.meta'),
                 legacyNetworkFolder,
                 `${legacyNetworkFolder}.meta`,
                 legacyAssemblyDefinition,
                 `${legacyAssemblyDefinition}.meta`
             )
+        } else {
+            for (const legacy of [assemblyName, legacyAssemblyName]) {
+                cleanupPaths.push(
+                    path.join(request.outputPath, legacy),
+                    path.join(request.outputPath, `${legacy}.meta`),
+                    path.join(request.outputPath, `${legacy}.User`),
+                    path.join(request.outputPath, `${legacy}.User.meta`)
+                )
+            }
         }
 
         return cleanupPaths

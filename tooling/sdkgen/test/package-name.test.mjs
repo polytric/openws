@@ -135,7 +135,10 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
             'unity',
         ])
 
-        const manifest = JSON.parse(readFileSync(path.join(tempRoot, 'package.json'), 'utf8'))
+        const unityPackageRoot = path.join(tempRoot, 'chat', 'core')
+        const manifest = JSON.parse(
+            readFileSync(path.join(unityPackageRoot, 'package.json'), 'utf8')
+        )
         assert.deepEqual(manifest, {
             name: 'com.example.chat.sdk',
             version: '1.0.0',
@@ -145,10 +148,10 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
                 'com.unity.nuget.newtonsoft-json': '3.2.2',
             },
         })
-        assert.ok(existsSync(path.join(tempRoot, 'package.json.meta')))
-        assert.ok(existsSync(path.join(tempRoot, 'Runtime.meta')))
+        assert.ok(existsSync(path.join(unityPackageRoot, 'package.json.meta')))
+        assert.ok(existsSync(path.join(unityPackageRoot, 'Runtime.meta')))
 
-        const readme = readFileSync(path.join(tempRoot, 'README.md'), 'utf8')
+        const readme = readFileSync(path.join(unityPackageRoot, 'README.md'), 'utf8')
         assert.match(readme, /^# Example Chat Core SDK$/m)
         assert.match(readme, /A chat network/)
         assert.match(readme, /local \(host\) role `client`/)
@@ -157,18 +160,18 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
         assert.match(readme, /new Runtime\(new CoreNetwork\(\), new NewtonSoftSerializer\(\), this\)/)
         assert.match(readme, /runtime\.GetHostRole<Client>\(\)/)
         assert.match(readme, /runtime\.ConnectAsync<Server>\(Server\.Endpoints\[0\]\)/)
-        const readmeMeta = readFileSync(path.join(tempRoot, 'README.md.meta'), 'utf8')
+        const readmeMeta = readFileSync(path.join(unityPackageRoot, 'README.md.meta'), 'utf8')
         assert.match(readmeMeta, /^guid: [0-9a-f]{32}$/m)
         assert.match(readmeMeta, /DefaultImporter:/)
         assert.equal(existsSync(path.join(tempRoot, 'Core.meta')), false)
         assert.equal(existsSync(path.join(tempRoot, 'Example.Chat.Sdk.asmdef')), false)
         assert.equal(existsSync(path.join(tempRoot, 'Example.Chat.Sdk.asmdef.meta')), false)
-        assert.equal(existsSync(path.join(tempRoot, 'Runtime', 'Example.Chat.Sdk')), false)
-        assert.equal(existsSync(path.join(tempRoot, 'Runtime', 'Example.Chat.Sdk.meta')), false)
+        assert.equal(existsSync(path.join(tempRoot, 'Runtime')), false)
+        assert.equal(existsSync(path.join(tempRoot, 'package.json')), false)
         assert.ok(
             existsSync(
                 path.join(
-                    tempRoot,
+                    unityPackageRoot,
                     'Runtime',
                     'Example.Chat.Core.Sdk',
                     'Example.Chat.Core.Sdk.asmdef'
@@ -178,7 +181,7 @@ test('Unity package mode emits UPM manifest and Runtime asset metadata', () => {
 
         const model = readFileSync(
             path.join(
-                tempRoot,
+                unityPackageRoot,
                 'Runtime',
                 'Example.Chat.Core.Sdk',
                 'Models',
@@ -250,11 +253,11 @@ test('package manifest uses network version before service version', () => {
         ])
 
         const unityManifest = JSON.parse(
-            readFileSync(path.join(unityOutput, 'package.json'), 'utf8')
+            readFileSync(path.join(unityOutput, 'chat', 'core', 'package.json'), 'utf8')
         )
         assert.equal(unityManifest.version, '2.5.0')
         assert.match(
-            readFileSync(path.join(unityOutput, 'README.md'), 'utf8'),
+            readFileSync(path.join(unityOutput, 'chat', 'core', 'README.md'), 'utf8'),
             /"com\.example\.chat\.sdk": "2\.5\.0"/
         )
     } finally {

@@ -19,7 +19,7 @@ const importerByExtension = new Map([
 const outputRoots = [
     {
         label: 'generated C# Unity output',
-        root: path.join(packageRoot, 'generated', 'dotnet', 'unity'),
+        root: path.join(packageRoot, 'generated', 'dotnet', 'unity', 'chat', 'core'),
     },
 ]
 
@@ -82,7 +82,7 @@ for (const outputRoot of outputRoots) {
 
 test('Unity testbed package fixture has deterministic Unity meta files', () => {
     const assetsRoot = path.join(packageRoot, 'test', 'dotnet', 'UnityTestbed', 'Assets')
-    const packageRootPath = path.join(assetsRoot, 'Example.Chat.Sdk')
+    const packageRootPath = path.join(assetsRoot, 'chat', 'core')
     assert.ok(existsSync(packageRootPath), 'Unity package fixture should exist')
 
     const rootMeta = parseMetaFile(`${packageRootPath}.meta`)
@@ -144,6 +144,8 @@ test('generated C# Unity models render generic List types without HTML escaping'
         'generated',
         'dotnet',
         'unity',
+        'chat',
+        'core',
         'Example.Chat.Core.Sdk',
         'Models',
         'Server',

@@ -27,6 +27,14 @@ function camelCase(str: string): string {
     return str.charAt(0).toLowerCase() + str.slice(1)
 }
 
+function kebabCase(str: string): string {
+    return str
+        .replace(/([a-z])([A-Z])/g, '$1-$2')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase()
+}
+
 function displayName(str: string): string {
     return str
         .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -54,7 +62,13 @@ export default function createPlan(ctx: PipelineContext): PipelineContext {
 
     const plan: PlanStep[] = []
     const folderMetaOutputs = new Set<string>()
-    const packageRootPath = request.outputPath
+    // Match the JS/TS targets: --out is the root and each network's package lands in
+    // <out>/<service>/<network>/ so packages can evolve side by side.
+    const packageRootPath = path.join(
+        request.outputPath,
+        kebabCase(ir.package.service),
+        kebabCase(request.network)
+    )
     const outputRootPath = request.packageName
         ? path.join(packageRootPath, 'Runtime')
         : packageRootPath
