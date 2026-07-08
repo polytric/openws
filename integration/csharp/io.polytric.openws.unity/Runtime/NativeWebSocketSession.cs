@@ -26,11 +26,60 @@ namespace Polytric.OpenWs.Unity
             var url = $"{endpoint.Scheme}://{endpoint.Host}:{endpoint.Port}{endpoint.Path}";
             _webSocket = new WebSocket(url);
             OpenWsRunner.AddSession(this);
-            _webSocket.OnOpen += () => { OnOpen?.Invoke(); };
-            _webSocket.OnError += (errorMessage) => { OnError?.Invoke(errorMessage); };
-            _webSocket.OnClose += (closeCode) => { OnClose?.Invoke(closeCode.ToString()); };
+            var opened = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            void HandleOpen()
+            {
+                try
+                {
+                    OnOpen?.Invoke();
+                }
+                finally
+                {
+                    opened.TrySetResult(true);
+                }
+            }
+
+            void HandleError(string errorMessage)
+            {
+                OnError?.Invoke(errorMessage);
+                opened.TrySetException(new Exception($"WebSocket error: {errorMessage}"));
+            }
+
+            void HandleClose(string reason)
+            {
+                OnClose?.Invoke(reason);
+                opened.TrySetException(new Exception($"WebSocket closed before open: {reason}"));
+            }
+
+            _webSocket.OnOpen += HandleOpen;
+            _webSocket.OnError += HandleError;
+            _webSocket.OnClose += (closeCode) => { HandleClose(closeCode.ToString()); };
             _webSocket.OnMessage += (message) => { OnMessage?.Invoke(System.Text.Encoding.UTF8.GetString(message)); };
-            await _webSocket.Connect().ConfigureAwait(false);
+
+            try
+            {
+                var lifetime = _webSocket.Connect();
+                _ = ObserveLifetime(lifetime, HandleError);
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex.Message);
+            }
+
+            await opened.Task.ConfigureAwait(false);
+        }
+
+        private static async Task ObserveLifetime(Task lifetime, Action<string> onError)
+        {
+            try
+            {
+                await lifetime.ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                onError(ex.Message);
+            }
         }
 
         public async Task CloseAsync()
